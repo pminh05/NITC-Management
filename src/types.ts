@@ -1,0 +1,118 @@
+export type Department =
+  | 'Học thuật'
+  | 'Truyền thông'
+  | 'Sự kiện'
+  | 'Đối ngoại'
+  | 'Ban Chủ nhiệm';
+
+export type Role = 'Chủ tịch' | 'Trưởng ban' | 'Phó ban' | 'Thành viên';
+
+export type VerificationType = 'link_required' | 'report_required';
+
+export type TaskStatus =
+  | 'draft'
+  | 'in_progress'
+  | 'pending_approval'
+  | 'completed'
+  | 'overdue';
+
+export interface Member {
+  id: string;
+  name: string;
+  role: Role;
+  department: Department;
+  email: string;
+  phone?: string;
+  avatar?: string;
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  assigneeId: string;
+  assigneeName: string;
+  department: Department;
+  deadline: string; // YYYY-MM-DD
+  status: TaskStatus;
+  verificationType: VerificationType;
+  evidenceLink?: string;
+  evidenceReport?: string;
+  evidenceSubmittedAt?: string;
+  approvalNote?: string;
+  rejectedReason?: string;
+  sourceMeetingId?: string;
+  sourceMeetingTitle?: string;
+  isSticky?: boolean; // Nhiệm vụ lưu chuyển từ tuần trước
+  stickyWeeksCount?: number;
+  priority?: 'high' | 'medium' | 'normal';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExtractedDraftTask {
+  tempId: string;
+  title: string;
+  rawAssigneeText: string;
+  suggestedAssigneeId?: string;
+  suggestedAssigneeName?: string;
+  suggestedDepartment: Department;
+  rawDeadlinetext: string;
+  suggestedDeadline: string; // YYYY-MM-DD
+  verificationType: VerificationType;
+  hasAmbiguity: boolean;
+  ambiguityMatches: Array<{
+    id: string;
+    name: string;
+    department: Department;
+    role: Role;
+  }>;
+  isAbsentee: boolean;
+  absenteeName?: string;
+  warningMessages: string[];
+  approved: boolean;
+  priority: 'high' | 'medium' | 'normal';
+  reasoning?: string;
+}
+
+export interface DraftParseResult {
+  meetingTitle: string;
+  meetingDate: string;
+  chairperson: string;
+  secretary: string;
+  attendees: string[];
+  absentees: string[];
+  rawBBH: string;
+  draftTasks: ExtractedDraftTask[];
+}
+
+export interface Meeting {
+  id: string;
+  title: string;
+  date: string; // YYYY-MM-DD
+  time?: string;
+  location?: string;
+  chairperson: string;
+  secretary: string;
+  attendees: string[];
+  absentees: string[];
+  discussionSummary: string;
+  actionPlan: string;
+  rawContent: string;
+  taskCount?: number;
+  completedTaskCount?: number;
+  createdAt: string;
+}
+
+export interface NotificationLog {
+  id: string;
+  type: 'weekly_summary' | 'overdue_nag' | 'task_assigned' | 'evidence_approved' | 'evidence_rejected';
+  recipientName: string;
+  recipientEmail: string;
+  department?: Department;
+  subject: string;
+  content: string;
+  sentAt: string;
+  status: 'sent' | 'queued' | 'failed';
+  taskCount?: number;
+}

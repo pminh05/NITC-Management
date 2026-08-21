@@ -1,0 +1,6 @@
+{
+  "name": "NITC Command Center",
+  "description": "Hệ thống điều hành và quản lý công việc từ Biên bản họp dành cho Chủ tịch và Ban điều hành CLB NITC",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
