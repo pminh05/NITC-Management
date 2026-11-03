@@ -334,7 +334,7 @@ export function App() {
   const handleAddMember = async (newMem: Omit<Member, 'id'>) => {
     try {
       const member = await api<Member>('/members', { method: 'POST', body: newMem });
-      showToast('Đã thêm thành viên', `${member.name} đã vào nhiệm kỳ hiện hành (tài khoản: email của họ, mật khẩu mặc định nitc123).`);
+      showToast('Đã thêm thành viên', `${member.name} đã vào danh sách thành viên của nhiệm kỳ hiện hành (tài khoản: email của họ, mật khẩu mặc định nitc123).`);
       await loadMembers(selectedTermId);
     } catch (e) {
       showError(e);
@@ -354,7 +354,7 @@ export function App() {
   const handleDeleteMember = async (id: string) => {
     try {
       await api(`/members/${id}`, { method: 'DELETE' });
-      showToast('Đã xóa thành viên', 'Đã xóa khỏi danh bạ NITC.', 'info');
+      showToast('Đã xóa thành viên', 'Đã xóa khỏi danh sách thành viên.', 'info');
       await loadMembers(selectedTermId);
     } catch (e) {
       showError(e);

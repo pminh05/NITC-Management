@@ -74,10 +74,28 @@ apiRouter.get('/members', async (req: Request, res: Response) => {
     const activeTerm = await prisma.term.findFirst({ where: { isActive: true } });
     where.termId = activeTerm ? activeTerm.id : undefined;
   }
-  const members = await prisma.member.findMany({
-    where,
-    orderBy: [{ role: 'asc' }, { name: 'asc' }],
-  });
+  const members = await prisma.member.findMany({ where });
+  const ROLE_ORDER: Record<string, number> = {
+    'Chủ tịch': 0,
+    'Phó Chủ tịch': 1,
+    'Trưởng ban': 2,
+    'Phó ban': 3,
+    'Thành viên': 4,
+    'Cố vấn': 5,
+  };
+  const DEPT_ORDER: Record<string, number> = {
+    'Ban Chủ nhiệm': 0,
+    'Học thuật': 1,
+    'Truyền thông': 2,
+    'Sự kiện': 3,
+    'Đối ngoại': 4,
+  };
+  members.sort(
+    (a, b) =>
+      (ROLE_ORDER[a.role] ?? 9) - (ROLE_ORDER[b.role] ?? 9) ||
+      (DEPT_ORDER[a.department] ?? 9) - (DEPT_ORDER[b.department] ?? 9) ||
+      a.name.localeCompare(b.name, 'vi')
+  );
   res.json(members.map(serializeMember));
 });
 
@@ -108,7 +126,7 @@ apiRouter.post('/members', requirePresident, async (req: Request, res: Response)
     return res.status(400).json({ error: 'Thiếu thông tin thành viên (tên, vai trò, ban, email)' });
   }
   const dup = await prisma.member.findFirst({ where: { email } });
-  if (dup) return res.status(409).json({ error: `Email ${email} đã có trong danh bạ` });
+  if (dup) return res.status(409).json({ error: `Email ${email} đã có trong danh sách thành viên` });
 
   const activeTerm = await getActiveTerm();
   const member = await prisma.member.create({
@@ -202,7 +220,7 @@ apiRouter.post('/tasks', requirePresidentOrHead, async (req: Request, res: Respo
     return res.status(403).json({ error: 'Chỉ được giao việc cho ban của bạn' });
   }
   const assignee = await prisma.member.findUnique({ where: { id: b.assigneeId } });
-  if (!assignee) return res.status(400).json({ error: 'Người phụ trách không tồn tại trong danh bạ' });
+  if (!assignee) return res.status(400).json({ error: 'Người phụ trách không có trong danh sách thành viên' });
 
   const task = await prisma.task.create({
     data: {

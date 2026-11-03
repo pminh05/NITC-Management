@@ -155,10 +155,10 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
             </div>
             <div>
               <h2 className="text-lg font-bold text-white tracking-tight">
-                Danh Bạ Ban & Danh Sách Thành Viên CLB (Roster)
+                Danh sách thành viên CLB (Roster)
               </h2>
               <p className="text-slate-400">
-                Roster theo từng nhiệm kỳ — import trực tiếp từ file Excel danh bạ của CLB
+                Quản lý thành viên theo từng nhiệm kỳ — import trực tiếp từ file Excel danh bạ của CLB
               </p>
             </div>
           </div>
@@ -246,7 +246,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
               className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
             >
               <UserPlus className="w-3.5 h-3.5" />
-              <span>Thêm Thành Viên Mới</span>
+              <span>Thêm thành viên mới</span>
             </button>
           )}
         </div>
@@ -283,7 +283,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
         {(isAdding || editingId) && (
           <form onSubmit={handleSave} className="p-4 bg-slate-800/80 border-b border-slate-700 space-y-3">
             <div className="flex items-center justify-between font-bold text-white text-sm">
-              <span>{editingId ? 'Chỉnh Sửa Thông Tin Thành Viên' : 'Thêm Thành Viên Mới (vào nhiệm kỳ hiện hành)'}</span>
+              <span>{editingId ? 'Chỉnh Sửa Thông Tin Thành Viên' : 'Thêm thành viên mới (vào nhiệm kỳ hiện hành)'}</span>
               <button
                 type="button"
                 onClick={handleCancelForm}
@@ -412,6 +412,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-950 border-b border-slate-800 text-slate-400 font-bold">
+                  <th className="p-3 w-10 text-center">STT</th>
                   <th className="p-3">Họ và tên</th>
                   <th className="p-3">MSV</th>
                   <th className="p-3">Lớp</th>
@@ -422,10 +423,13 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800 text-slate-300">
-                {filteredMembers.map((m) => {
+                {filteredMembers.map((m, idx) => {
                   const isLeader = m.role === 'Chủ tịch' || m.role === 'Phó Chủ tịch';
                   return (
                     <tr key={m.id} className="hover:bg-slate-800/50 transition">
+                      <td className="p-3 text-center font-mono text-slate-500">
+                        {idx + 1}
+                      </td>
                       <td className="p-3 font-semibold text-white">
                         <div>{m.name}</div>
                         <div className="text-[10px] font-mono text-slate-500" title="Mã định danh trong hệ thống">
@@ -485,7 +489,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                 })}
                 {filteredMembers.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-slate-500">
+                    <td colSpan={8} className="p-8 text-center text-slate-500">
                       Không có thành viên nào trong phạm vi này. Import file Excel danh bạ hoặc thêm thủ công.
                     </td>
                   </tr>

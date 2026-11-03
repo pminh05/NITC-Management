@@ -118,10 +118,10 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={onOpenRosterModal}
                     className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg border border-slate-700 transition cursor-pointer"
-                    title="Danh bạ & Quản lý Ban"
+                    title="Danh sách thành viên & Quản lý ban"
                   >
                     <Users className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="hidden lg:inline">Danh bạ</span>
+                    <span className="hidden lg:inline">Danh sách thành viên</span>
                   </button>
 
                   <button
