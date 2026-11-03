@@ -35,6 +35,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenDataSyncModal,
 }) => {
   const isPresident = authMember.role === 'Chủ tịch';
+  const isLeadership = authMember.role === 'Chủ tịch' || authMember.role === 'Phó Chủ tịch';
 
   // Compute summary counts theo phạm vi dữ liệu mà vai trò được xem
   const totalTasks = tasks.length;
@@ -46,6 +47,8 @@ export const Header: React.FC<HeaderProps> = ({
 
   const roleLabel = isPresident
     ? 'Chào Chủ tịch,'
+    : authMember.role === 'Phó Chủ tịch'
+    ? 'Chào Phó Chủ tịch,'
     : authMember.role === 'Trưởng ban' || authMember.role === 'Phó ban'
     ? `${authMember.role} ${authMember.department},`
     : `Thành viên ${authMember.department},`;
@@ -78,7 +81,7 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Quick Action Buttons */}
             <div className="flex items-center gap-1.5 sm:gap-2">
-              {isPresident && (
+              {isLeadership && (
                 <button
                   onClick={onOpenBBHParser}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-lg shadow-sm transition active:scale-95 cursor-pointer"
@@ -110,7 +113,7 @@ export const Header: React.FC<HeaderProps> = ({
                 )}
               </button>
 
-              {isPresident && (
+              {isLeadership && (
                 <>
                   <button
                     onClick={onOpenRosterModal}
@@ -161,7 +164,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="py-1.5 border-t border-slate-700/70 flex flex-col md:flex-row md:items-center md:justify-between text-xs gap-2">
           <div className="flex items-center gap-2 text-[11px] text-slate-400">
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-slate-800 rounded border border-slate-700">
-              <span>{isPresident ? '👑 Toàn CLB' : `Phạm vi: ${authMember.department}`}</span>
+              <span>{isLeadership ? '👑 Toàn CLB' : `Phạm vi: ${authMember.department}`}</span>
             </span>
             <span className="italic">Đăng nhập bằng tài khoản cá nhân — dữ liệu đồng bộ thời gian thực qua máy chủ</span>
           </div>

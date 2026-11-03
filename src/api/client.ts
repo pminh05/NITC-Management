@@ -55,3 +55,33 @@ export async function api<T>(path: string, opts: ApiOptions = {}): Promise<T> {
   }
   return data as T;
 }
+
+/** Upload multipart (file Excel...) kèm các trường form lân cận */
+export async function apiUpload<T>(
+  path: string,
+  file: File,
+  fields: Record<string, string> = {}
+): Promise<T> {
+  const form = new FormData();
+  form.append('file', file);
+  for (const [k, v] of Object.entries(fields)) {
+    form.append(k, v);
+  }
+  const headers: Record<string, string> = {};
+  const token = getToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`/api${path}`, { method: 'POST', headers, body: form });
+  } catch {
+    throw new ApiError('Không kết nối được máy chủ.', 0);
+  }
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new ApiError(data?.error || `Lỗi máy chủ (${res.status})`, res.status);
+  }
+  return data as T;
+}

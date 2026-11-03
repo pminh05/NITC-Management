@@ -5,7 +5,13 @@ export type Department =
   | 'Đối ngoại'
   | 'Ban Chủ nhiệm';
 
-export type Role = 'Chủ tịch' | 'Trưởng ban' | 'Phó ban' | 'Thành viên';
+export type Role =
+  | 'Chủ tịch'
+  | 'Phó Chủ tịch'
+  | 'Trưởng ban'
+  | 'Phó ban'
+  | 'Thành viên'
+  | 'Cố vấn';
 
 export type VerificationType = 'link_required' | 'report_required';
 
@@ -23,7 +29,28 @@ export interface Member {
   department: Department;
   email: string;
   phone?: string;
+  studentId?: string; // Mã sinh viên (MSV)
+  className?: string; // Lớp (VD: IT67A)
+  birthday?: string; // dd/MM/yyyy
+  status?: string; // active | inactive | alumni
+  termId?: string; // Nhiệm kỳ sở hữu thành viên này
   avatar?: string;
+}
+
+export interface Term {
+  id: string;
+  name: string; // "2025-2026"
+  isActive: boolean;
+  memberCount: number;
+}
+
+export interface ImportSummary {
+  term: string;
+  created: number;
+  updated: number;
+  skipped: number;
+  skippedRows: string[];
+  departments: Record<string, number>;
 }
 
 export interface Task {

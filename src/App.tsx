@@ -3,13 +3,15 @@ import confetti from 'canvas-confetti';
 import {
   Department,
   ExtractedDraftTask,
+  ImportSummary,
   Meeting,
   Member,
   NotificationLog,
   Role,
   Task,
+  Term,
 } from './types';
-import { api, getToken, setToken } from './api/client';
+import { api, apiUpload, getToken, setToken } from './api/client';
 import { Header } from './components/Header';
 import { LoginPage } from './components/LoginPage';
 import { TaskBoard } from './components/TaskBoard';
@@ -43,6 +45,12 @@ export function App() {
   const currentRole = (authMember?.role as Role) || 'Thành viên';
   const currentDepartment = (authMember?.department as Department) || 'Ban Chủ nhiệm';
   const currentUserId = authMember?.id || '';
+  const isLeadership = currentRole === 'Chủ tịch' || currentRole === 'Phó Chủ tịch';
+
+  // ===== 1b. Nhiệm kỳ & roster =====
+  const [terms, setTerms] = useState<Term[]>([]);
+  const [selectedTermId, setSelectedTermId] = useState<string>('active');
+  const [importing, setImporting] = useState(false);
 
   // Boot: khôi phục phiên đăng nhập từ token
   useEffect(() => {
@@ -63,19 +71,24 @@ export function App() {
     boot();
   }, []);
 
-  const loadAllData = useCallback(async (me: Member) => {
+  const loadMembers = useCallback(async (termId: string) => {
+    const query =
+      termId === 'active' ? '' : termId === 'all' ? '?all=1' : `?termId=${encodeURIComponent(termId)}`;
+    const mem = await api<Member[]>(`/members${query}`);
+    setMembers(mem);
+  }, []);
+
+  const loadAllData = useCallback(async (me: Member, termId: string = 'active') => {
     setDataLoading(true);
     try {
-      const [t, m, mem] = await Promise.all([
+      const [t, m] = await Promise.all([
         api<Task[]>('/tasks'),
         api<Meeting[]>('/meetings'),
-        api<Member[]>('/members'),
       ]);
       setTasks(t);
       setMeetings(m);
-      setMembers(mem);
-      // Nhật ký nag: chỉ Chủ tịch xem được
-      if (me.role === 'Chủ tịch') {
+      // Nhật ký nag: chỉ Ban lãnh đạo xem được
+      if (me.role === 'Chủ tịch' || me.role === 'Phó Chủ tịch') {
         try {
           const l = await api<NotificationLog[]>('/logs');
           setLogs(l);
@@ -89,6 +102,20 @@ export function App() {
       setDataLoading(false);
     }
   }, []);
+
+  // Tải terms + members khi đăng nhập hoặc đổi nhiệm kỳ
+  useEffect(() => {
+    if (!authMember) return;
+    (async () => {
+      try {
+        const t = await api<Term[]>('/terms');
+        setTerms(t);
+      } catch {
+        setTerms([]);
+      }
+      await loadMembers(selectedTermId);
+    })();
+  }, [authMember, selectedTermId, loadMembers]);
 
   useEffect(() => {
     if (authMember) {
@@ -307,8 +334,8 @@ export function App() {
   const handleAddMember = async (newMem: Omit<Member, 'id'>) => {
     try {
       const member = await api<Member>('/members', { method: 'POST', body: newMem });
-      setMembers((prev) => [...prev, member]);
-      showToast('Đã thêm thành viên', `${member.name} đã được thêm vào danh bạ (tài khoản: email của họ, mật khẩu mặc định nitc123).`);
+      showToast('Đã thêm thành viên', `${member.name} đã vào nhiệm kỳ hiện hành (tài khoản: email của họ, mật khẩu mặc định nitc123).`);
+      await loadMembers(selectedTermId);
     } catch (e) {
       showError(e);
     }
@@ -316,9 +343,9 @@ export function App() {
 
   const handleUpdateMember = async (id: string, updates: Partial<Member>) => {
     try {
-      const updated = await api<Member>(`/members/${id}`, { method: 'PUT', body: updates });
-      setMembers((prev) => prev.map((m) => (m.id === id ? updated : m)));
+      await api<Member>(`/members/${id}`, { method: 'PUT', body: updates });
       showToast('Cập nhật thành công', 'Đã lưu thông tin thành viên.');
+      await loadMembers(selectedTermId);
     } catch (e) {
       showError(e);
     }
@@ -327,8 +354,48 @@ export function App() {
   const handleDeleteMember = async (id: string) => {
     try {
       await api(`/members/${id}`, { method: 'DELETE' });
-      setMembers((prev) => prev.filter((m) => m.id !== id));
       showToast('Đã xóa thành viên', 'Đã xóa khỏi danh bạ NITC.', 'info');
+      await loadMembers(selectedTermId);
+    } catch (e) {
+      showError(e);
+    }
+  };
+
+  // Import Excel danh bạ nhiệm kỳ mới
+  const handleImportExcel = async (file: File, termName: string): Promise<ImportSummary | void> => {
+    setImporting(true);
+    try {
+      const res = await apiUpload<{ success: boolean; summary: ImportSummary }>(
+        '/members/import',
+        file,
+        { termName }
+      );
+      const s = res.summary;
+      showToast(
+        'Import thành công!',
+        `Nhiệm kỳ ${s.term}: +${s.created} thành viên mới, cập nhật ${s.updated}, bỏ qua ${s.skipped}.`
+      );
+      // Reload terms + về chế độ nhiệm kỳ vừa import để nhìn thấy ngay
+      const t = await api<Term[]>('/terms');
+      setTerms(t);
+      const imported = t.find((x) => x.name === s.term);
+      setSelectedTermId(imported ? imported.id : 'active');
+      return s;
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  // Đặt nhiệm kỳ làm hiện hành
+  const handleActivateTerm = async (termId: string) => {
+    try {
+      const res = await api<{ success: boolean; activeTerm: string }>(`/terms/${termId}/activate`, {
+        method: 'PUT',
+      });
+      const t = await api<Term[]>('/terms');
+      setTerms(t);
+      setSelectedTermId('active');
+      showToast('Đã đổi nhiệm kỳ', `Nhiệm kỳ ${res.activeTerm} giờ là nhiệm kỳ hiện hành.`);
     } catch (e) {
       showError(e);
     }
@@ -460,7 +527,7 @@ export function App() {
               </span>
             </button>
 
-            {currentRole === 'Chủ tịch' && (
+            {isLeadership && (
               <button
                 onClick={() => setIsParserOpen(true)}
                 className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-md text-xs transition cursor-pointer"
@@ -681,7 +748,7 @@ export function App() {
               </p>
             </div>
 
-            {currentRole === 'Chủ tịch' && (
+            {isLeadership && (
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => setIsParserOpen(true)}
@@ -732,7 +799,7 @@ export function App() {
       {/* 5. Modals System */}
 
       {/* Modal 1: BBH Input & AI Parser (chỉ Chủ tịch) */}
-      {currentRole === 'Chủ tịch' && (
+      {isLeadership && (
         <MeetingParserModal
           isOpen={isParserOpen}
           onClose={() => setIsParserOpen(false)}
@@ -742,7 +809,7 @@ export function App() {
       )}
 
       {/* Modal 2: Presidential Filter (Quy tắc Minh, Cảnh báo vắng mặt, Phê duyệt) */}
-      {currentRole === 'Chủ tịch' && (
+      {isLeadership && (
         <PresidentialFilterModal
           isOpen={isFilterOpen}
           onClose={() => setIsFilterOpen(false)}
@@ -798,20 +865,26 @@ export function App() {
         }}
       />
 
-      {/* Modal 7: Roster & Members Manager (chỉ Chủ tịch) */}
-      {currentRole === 'Chủ tịch' && (
+      {/* Modal 7: Roster & Members Manager (Ban lãnh đạo) */}
+      {isLeadership && (
         <RosterManagerModal
           isOpen={isRosterOpen}
           onClose={() => setIsRosterOpen(false)}
           members={members}
+          terms={terms}
+          selectedTermId={selectedTermId}
+          importing={importing}
+          onSelectTerm={setSelectedTermId}
+          onImportExcel={handleImportExcel}
           onAddMember={handleAddMember}
           onUpdateMember={handleUpdateMember}
           onDeleteMember={handleDeleteMember}
+          onActivateTerm={handleActivateTerm}
         />
       )}
 
       {/* Modal 8: Data Storage & Google Sheets Sync (chỉ Chủ tịch) */}
-      {currentRole === 'Chủ tịch' && (
+      {isLeadership && (
         <DataSyncModal
           isOpen={isDataSyncOpen}
           onClose={() => setIsDataSyncOpen(false)}

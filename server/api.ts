@@ -1,41 +1,124 @@
 import { Request, Response, Router } from 'express';
+import multer from 'multer';
 import { prisma } from './db';
 import {
   requireAuth,
   requirePresident,
   requirePresidentOrHead,
   isPresident,
+  isLeadership,
   canManageDepartment,
   canViewTask,
   hashPassword,
 } from './auth';
 import { serializeTask, serializeMeeting, serializeMember, serializeLog } from './serialize';
 import { resetAndSeed, DEFAULT_PASSWORD } from './seed';
+import { importRosterFromExcel, getActiveTerm } from './importExcel';
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 export const apiRouter: Router = Router();
 
 // Lưu ý: mọi route dưới đây đều cần đăng nhập (mounted sau requireAuth trong server.ts)
 
+// ============ TERMS (Nhiệm kỳ) ============
+
+apiRouter.get('/terms', async (_req: Request, res: Response) => {
+  const terms = await prisma.term.findMany({
+    orderBy: { name: 'desc' },
+    include: { _count: { select: { members: true } } },
+  });
+  res.json(
+    terms.map((t) => ({
+      id: t.id,
+      name: t.name,
+      isActive: t.isActive,
+      memberCount: t._count.members,
+    }))
+  );
+});
+
+apiRouter.post('/terms', requirePresident, async (req: Request, res: Response) => {
+  const { name } = req.body || {};
+  if (!name || !/^\d{4}-\d{4}$/.test(String(name).trim())) {
+    return res.status(400).json({ error: 'Tên nhiệm kỳ phải theo định dạng YYYY-YYYY (VD: 2026-2027)' });
+  }
+  const term = await prisma.term.upsert({
+    where: { name: String(name).trim() },
+    update: {},
+    create: { name: String(name).trim() },
+  });
+  return res.status(201).json(term);
+});
+
+apiRouter.put('/terms/:id/activate', requirePresident, async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const term = await prisma.term.findUnique({ where: { id } });
+  if (!term) return res.status(404).json({ error: 'Không tìm thấy nhiệm kỳ' });
+  await prisma.$transaction([
+    prisma.term.updateMany({ where: { isActive: true }, data: { isActive: false } }),
+    prisma.term.update({ where: { id }, data: { isActive: true } }),
+  ]);
+  return res.json({ success: true, activeTerm: term.name });
+});
+
 // ============ MEMBERS (Danh bạ) ============
 
+// Mặc định trả về thành viên nhiệm kỳ hiện hành; ?all=1 để lấy tất cả; ?termId= để lọc
 apiRouter.get('/members', async (req: Request, res: Response) => {
-  const members = await prisma.member.findMany({ orderBy: [{ role: 'asc' }, { name: 'asc' }] });
+  const { termId, all } = req.query;
+  const where: Record<string, unknown> = {};
+  if (termId) {
+    where.termId = String(termId);
+  } else if (!all) {
+    const activeTerm = await prisma.term.findFirst({ where: { isActive: true } });
+    where.termId = activeTerm ? activeTerm.id : undefined;
+  }
+  const members = await prisma.member.findMany({
+    where,
+    orderBy: [{ role: 'asc' }, { name: 'asc' }],
+  });
   res.json(members.map(serializeMember));
 });
 
+/**
+ * POST /members/import — Import file Excel danh bạ (multipart/form-data: file + termName).
+ * Mỗi sheet = 1 ban; upsert theo email; nhiệm kỳ mới được đặt làm hiện hành.
+ */
+apiRouter.post('/members/import', requirePresident, upload.single('file'), async (req: Request, res: Response) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'Vui lòng đính kèm file Excel (.xlsx)' });
+  }
+  const termName = String(req.body?.termName || '').trim();
+  if (!termName) {
+    return res.status(400).json({ error: 'Vui lòng nhập tên nhiệm kỳ (VD: 2025-2026)' });
+  }
+  try {
+    const summary = await importRosterFromExcel(req.file.buffer, termName);
+    return res.json({ success: true, summary });
+  } catch (e: any) {
+    console.error('Excel import error:', e);
+    return res.status(400).json({ error: 'Không đọc được file Excel. Kiểm tra lại định dạng danh bạ NITC.' });
+  }
+});
+
 apiRouter.post('/members', requirePresident, async (req: Request, res: Response) => {
-  const { id, name, role, department, email, phone } = req.body || {};
+  const { id, name, role, department, email, phone, studentId, className } = req.body || {};
   if (!name || !role || !department || !email) {
     return res.status(400).json({ error: 'Thiếu thông tin thành viên (tên, vai trò, ban, email)' });
   }
   const dup = await prisma.member.findFirst({ where: { email } });
   if (dup) return res.status(409).json({ error: `Email ${email} đã có trong danh bạ` });
 
+  const activeTerm = await getActiveTerm();
   const member = await prisma.member.create({
     data: {
       id: id || undefined,
       name, role, department, email,
       phone: phone || null,
+      studentId: studentId || null,
+      className: className || null,
+      termId: activeTerm.id,
     },
   });
   // Tạo tài khoản đăng nhập kèm theo (mật khẩu mặc định)
@@ -47,7 +130,7 @@ apiRouter.post('/members', requirePresident, async (req: Request, res: Response)
 
 apiRouter.put('/members/:id', requirePresident, async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, role, department, email, phone, status } = req.body || {};
+  const { name, role, department, email, phone, status, studentId, className, birthday } = req.body || {};
   const existing = await prisma.member.findUnique({ where: { id } });
   if (!existing) return res.status(404).json({ error: 'Không tìm thấy thành viên' });
 
@@ -59,6 +142,9 @@ apiRouter.put('/members/:id', requirePresident, async (req: Request, res: Respon
       department: department ?? undefined,
       email: email ?? undefined,
       phone: phone !== undefined ? phone || null : undefined,
+      studentId: studentId !== undefined ? studentId || null : undefined,
+      className: className !== undefined ? className || null : undefined,
+      birthday: birthday !== undefined ? birthday || null : undefined,
       status: status ?? undefined,
     },
   });
@@ -181,7 +267,7 @@ apiRouter.put('/tasks/:id', requireAuth, async (req: Request, res: Response) => 
   }
 
   if (action === 'approve') {
-    if (!isPresident(me)) return res.status(403).json({ error: 'Chỉ Chủ tịch được duyệt minh chứng' });
+    if (!isLeadership(me)) return res.status(403).json({ error: 'Chỉ Ban lãnh đạo (Chủ tịch/Phó Chủ tịch) được duyệt minh chứng' });
     const updated = await prisma.task.update({
       where: { id },
       data: {
@@ -196,7 +282,7 @@ apiRouter.put('/tasks/:id', requireAuth, async (req: Request, res: Response) => 
   }
 
   if (action === 'reject') {
-    if (!isPresident(me)) return res.status(403).json({ error: 'Chỉ Chủ tịch được trả lại minh chứng' });
+    if (!isLeadership(me)) return res.status(403).json({ error: 'Chỉ Ban lãnh đạo được trả lại minh chứng' });
     const reason = req.body.reason;
     if (!reason) return res.status(400).json({ error: 'Bắt buộc nhập lý do trả lại' });
     const updated = await prisma.task.update({
@@ -261,7 +347,8 @@ apiRouter.get('/meetings', async (req: Request, res: Response) => {
  * POST /meetings/publish — Ban hành kỳ họp + bộ nhiệm vụ (Presidential Filter → Bảng điều hành).
  * Áp dụng Quy tắc Sticky: mọi việc chưa hoàn thành từ kỳ trước bị đánh dấu lưu chuyển.
  */
-apiRouter.post('/meetings/publish', requirePresident, async (req: Request, res: Response) => {
+apiRouter.post('/meetings/publish', requirePresidentOrHead, async (req: Request, res: Response) => {
+  if (!isLeadership(req.authMember)) return res.status(403).json({ error: 'Chỉ Ban lãnh đạo được ban hành kỳ họp' });
   const me = req.authMember!;
   const { meeting, tasks } = req.body || {};
   if (!meeting?.title || !meeting?.date) {
@@ -326,7 +413,8 @@ apiRouter.post('/meetings/publish', requirePresident, async (req: Request, res: 
 
 // ============ LOGS (Nhật ký Nag) ============
 
-apiRouter.get('/logs', requirePresident, async (req: Request, res: Response) => {
+apiRouter.get('/logs', requirePresidentOrHead, async (req: Request, res: Response) => {
+  if (!isLeadership(req.authMember)) return res.status(403).json({ error: 'Chỉ Ban lãnh đạo được xem nhật ký' });
   const logs = await prisma.notificationLog.findMany({ orderBy: { sentAt: 'desc' }, take: 100 });
   res.json(logs.map(serializeLog));
 });

@@ -122,8 +122,9 @@ export function requirePresident(req: Request, res: Response, next: NextFunction
 
 export function requirePresidentOrHead(req: Request, res: Response, next: NextFunction) {
   const role = req.authMember?.role;
-  if (role !== 'Chủ tịch' && role !== 'Trưởng ban' && role !== 'Phó ban') {
-    return res.status(403).json({ error: 'Chỉ Chủ tịch hoặc Trưởng ban/Phó ban được thao tác này' });
+  const allowed = ['Chủ tịch', 'Phó Chủ tịch', 'Trưởng ban', 'Phó ban'];
+  if (!allowed.includes(role || '')) {
+    return res.status(403).json({ error: 'Chỉ Ban lãnh đạo hoặc Trưởng ban/Phó ban được thao tác này' });
   }
   return next();
 }
@@ -134,9 +135,14 @@ export function isPresident(m?: AuthMember): boolean {
   return m?.role === 'Chủ tịch';
 }
 
+/** Ban lãnh đạo (Chủ tịch + Phó Chủ tịch): quản trị điều hành toàn CLB */
+export function isLeadership(m?: AuthMember): boolean {
+  return m?.role === 'Chủ tịch' || m?.role === 'Phó Chủ tịch';
+}
+
 /** Trưởng ban / Phó ban được quản lý công việc trong phạm vi ban mình */
 export function canManageDepartment(m: AuthMember, department: string): boolean {
-  if (isPresident(m)) return true;
+  if (isLeadership(m)) return true;
   if (m.role === 'Trưởng ban' || m.role === 'Phó ban') {
     return m.department === department;
   }

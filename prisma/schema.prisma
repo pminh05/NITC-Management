@@ -18,20 +18,34 @@ model User {
   updatedAt    DateTime @updatedAt
 }
 
+// Nhiệm kỳ (VD: 2025-2026) — roster thay đổi theo từng nhiệm kỳ
+model Term {
+  id       String   @id @default(cuid())
+  name     String   @unique // "2025-2026"
+  isActive Boolean  @default(false)
+  createdAt DateTime @default(now())
+  members  Member[]
+}
+
 // Thành viên CLB (roster) — tương ứng Member trong src/types.ts
 model Member {
-  id         String        @id // giữ id dạng mem-1... khi import dữ liệu cũ
+  id         String   @id @default(cuid()) // seed demo vẫn set id tường minh (mem-1...)
   name       String
-  role       String // Chủ tịch | Trưởng ban | Phó ban | Thành viên | Cố vấn
+  role       String // Chủ tịch | Phó Chủ tịch | Trưởng ban | Phó ban | Thành viên | Cố vấn
   department String // Học thuật | Truyền thông | Sự kiện | Đối ngoại | Ban Chủ nhiệm
   email      String
   phone      String?
-  status     String        @default("active") // active | inactive | alumni
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  studentId  String? // Mã sinh viên (MSV)
+  className  String? // Lớp (VD: IT67A)
+  birthday   String? // dd/MM/yyyy
+  status     String   @default("active") // active | inactive | alumni
+  termId     String?
+  term       Term?    @relation(fields: [termId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
   user       User?
-  tasks      Task[]        @relation("Assignee")
-  ownedTasks Task[]        @relation("Creator")
+  tasks      Task[]   @relation("Assignee")
+  ownedTasks Task[]   @relation("Creator")
 }
 
 // Biên bản họp (NITC Archive)

@@ -92,7 +92,11 @@ export function serializeMember(m: {
   department: string;
   email: string;
   phone: string | null;
+  studentId: string | null;
+  className: string | null;
+  birthday: string | null;
   status: string;
+  termId: string | null;
 }) {
   return {
     id: m.id,
@@ -101,7 +105,11 @@ export function serializeMember(m: {
     department: m.department,
     email: m.email,
     phone: m.phone ?? undefined,
+    studentId: m.studentId ?? undefined,
+    className: m.className ?? undefined,
+    birthday: m.birthday ?? undefined,
     status: m.status,
+    termId: m.termId ?? undefined,
   };
 }
 
