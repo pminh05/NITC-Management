@@ -56,21 +56,21 @@ export const Header: React.FC<HeaderProps> = ({
   const roleIcon = isPresident ? '👑' : authMember.department.charAt(0);
 
   return (
-    <header className="bg-[#1E293B] border-b border-slate-700 text-white sticky top-0 z-30 shadow-md">
+    <header className="bg-[#10192F] border-b border-slate-700 text-white sticky top-0 z-30 shadow-md">
       {/* Top Banner / Brand Header */}
       <div className="w-full px-4 sm:px-6">
         <div className="flex items-center justify-between h-14">
 
           {/* Logo & Brand */}
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center font-bold text-white shadow-sm shrink-0">
+            <div className="w-8 h-8 bg-[#2C69FF]/100 rounded flex items-center justify-center font-bold text-white shadow-sm shrink-0">
               N
             </div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-white font-bold tracking-tight text-base sm:text-lg uppercase">
                 NITC Command Center
               </h1>
-              <span className="hidden sm:inline-flex bg-orange-500/20 text-orange-400 text-[10px] font-bold px-2 py-0.5 rounded border border-orange-500/30 uppercase tracking-wide">
+              <span className="hidden sm:inline-flex bg-[#2C69FF]/15 text-[#6C9BFF] text-[10px] font-bold px-2 py-0.5 rounded border border-[#2C69FF]/40 uppercase tracking-wide">
                 v3.0 BĐH
               </span>
             </div>
@@ -84,27 +84,27 @@ export const Header: React.FC<HeaderProps> = ({
               {isLeadership && (
                 <button
                   onClick={onOpenBBHParser}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-lg shadow-sm transition active:scale-95 cursor-pointer"
-                  title="Trích xuất biên bản họp tự động với AI Brain"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#2C69FF]/100 hover:bg-[#1F56D6] text-white text-xs font-bold rounded-lg shadow-sm transition active:scale-95 cursor-pointer"
+                  title="Dán biên bản họp — AI tự trích xuất công việc"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span className="hidden md:inline">Nhập BBH (AI)</span>
+                  <span className="hidden md:inline">Nhập biên bản (AI)</span>
                 </button>
               )}
 
               <button
                 onClick={onOpenMeetingHistory}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg border border-slate-700 transition cursor-pointer"
-                title="Kho biên bản họp & Xuất PDF"
+                title="Lưu trữ biên bản họp & Xuất PDF"
               >
                 <FileText className="w-3.5 h-3.5 text-sky-400" />
-                <span className="hidden lg:inline">Kho BBH</span>
+                <span className="hidden lg:inline">Kho biên bản</span>
               </button>
 
               <button
                 onClick={onOpenNagModal}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg border border-slate-700 transition relative cursor-pointer"
-                title="Báo cáo tuần & Nhắc nhở The Nag"
+                title="Nhắc việc quá hạn & Báo cáo tuần"
               >
                 <Bell className="w-3.5 h-3.5 text-amber-400" />
                 <span className="hidden lg:inline">Nhắc việc</span>
@@ -193,7 +193,7 @@ export const Header: React.FC<HeaderProps> = ({
             {stickyCount > 0 && (
               <div className="flex items-center gap-1 bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded border border-purple-500/30 font-semibold" title="Nhiệm vụ chưa xong từ kỳ họp trước">
                 <Pin className="w-3 h-3 text-purple-400 rotate-45" />
-                <span>Sticky: {stickyCount}</span>
+                <span>Lưu chuyển: {stickyCount}</span>
               </div>
             )}
           </div>

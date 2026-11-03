@@ -446,9 +446,9 @@ export function App() {
 
   if (booting) {
     return (
-      <div className="min-h-screen bg-[#1E293B] flex items-center justify-center">
+      <div className="min-h-screen bg-[#10192F] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center font-bold text-white text-xl mx-auto animate-pulse">
+          <div className="w-12 h-12 bg-[#2C69FF]/100 rounded-xl flex items-center justify-center font-bold text-white text-xl mx-auto animate-pulse">
             N
           </div>
           <p className="text-slate-400 text-sm mt-3">Đang khởi động NITC Command Center...</p>
@@ -462,7 +462,7 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F1F5F9] text-slate-900 flex flex-col font-sans antialiased selection:bg-orange-500 selection:text-white">
+    <div className="min-h-screen bg-[#F1F5F9] text-slate-900 flex flex-col font-sans antialiased selection:bg-[#2C69FF]/100 selection:text-white">
 
       {/* Toast Notification */}
       {toastMessage && (
@@ -514,7 +514,7 @@ export function App() {
               }}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition cursor-pointer ${
                 sidebarDeptFilter === 'all' && sidebarStatusFilter === 'all' && !sidebarOnlySticky
-                  ? 'bg-orange-50 text-orange-700 font-bold border border-orange-200/60'
+                  ? 'bg-[#2C69FF]/10 text-[#1E4FC4] font-bold border border-[#2C69FF]/30'
                   : 'text-slate-600 hover:bg-slate-50'
               }`}
             >
@@ -534,9 +534,9 @@ export function App() {
               >
                 <div className="flex items-center gap-2.5">
                   <span>🤖</span>
-                  <span>Duyệt AI Brain</span>
+                  <span>AI đọc biên bản họp</span>
                 </div>
-                <span className="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-bold">
+                <span className="text-[10px] bg-[#2C69FF]/15 text-[#1E4FC4] px-1.5 py-0.5 rounded font-bold">
                   Mới
                 </span>
               </button>
@@ -556,7 +556,7 @@ export function App() {
             >
               <div className="flex items-center gap-2.5">
                 <span>📋</span>
-                <span>Nhiệm vụ 'Dính'</span>
+                <span>Việc lưu chuyển</span>
               </div>
               {stickyCount > 0 && (
                 <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-bold">
@@ -571,7 +571,7 @@ export function App() {
             >
               <div className="flex items-center gap-2.5">
                 <span>🚨</span>
-                <span>Quá hạn (The Nag)</span>
+                <span>Việc quá hạn</span>
               </div>
               {overdueCount > 0 && (
                 <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold animate-pulse">
@@ -632,7 +632,7 @@ export function App() {
               className="w-full py-2 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-slate-900 flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer shadow-sm"
             >
               <span>📤</span>
-              <span>XUẤT PDF BBH</span>
+              <span>Xuất PDF biên bản</span>
             </button>
             <div className="text-[11px] text-slate-400 text-center font-medium">
               CLB CNTT NITC &bull; v3.0
@@ -679,7 +679,7 @@ export function App() {
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-red-500 flex flex-col justify-between">
               <div>
                 <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
-                  <span>Quá hạn (The Nag)</span>
+                  <span>Việc quá hạn</span>
                   {overdueCount > 0 ? (
                     <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold animate-pulse">Cần nhắc</span>
                   ) : (
@@ -708,9 +708,9 @@ export function App() {
               <div>
                 <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
                   <span>Đợi duyệt bằng chứng</span>
-                  <span className="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-bold">Chủ tịch</span>
+                  <span className="text-[10px] bg-[#2C69FF]/15 text-[#1E4FC4] px-1.5 py-0.5 rounded font-bold">Chủ tịch</span>
                 </div>
-                <div className="text-2xl font-bold text-orange-500 mt-1">
+                <div className="text-2xl font-bold text-[#2C69FF] mt-1">
                   {pendingApprovalsCount < 10 ? `0${pendingApprovalsCount}` : pendingApprovalsCount}
                 </div>
               </div>
@@ -721,7 +721,7 @@ export function App() {
                       const firstPending = tasks.find((t) => t.status === 'pending_approval');
                       if (firstPending) handleOpenReviewModal(firstPending);
                     }}
-                    className="text-[11px] font-bold text-orange-600 hover:text-orange-700 underline cursor-pointer"
+                    className="text-[11px] font-bold text-[#1F56D6] hover:text-[#1E4FC4] underline cursor-pointer"
                   >
                     Kiểm tra ngay &rarr;
                   </button>
@@ -736,15 +736,15 @@ export function App() {
           <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-800 text-[10px] font-bold uppercase tracking-wide">
+                <span className="px-2 py-0.5 rounded bg-[#2C69FF]/15 text-[#1E4FC4] text-[10px] font-bold uppercase tracking-wide">
                   Quy Chuẩn Điều Hành NITC
                 </span>
                 <h2 className="text-sm font-bold text-slate-900">
-                  Trích xuất BBH & Giám sát Trách nhiệm Toàn CLB
+                  Tự động hóa từ biên bản họp & Giám sát trách nhiệm toàn CLB
                 </h2>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed max-w-4xl">
-                Tự động hóa toàn trình: <strong className="text-slate-800">BBH &rarr; To-do List</strong> &bull; Thực thi nghiêm ngặt <strong className="text-amber-700">Quy tắc Minh (Không tự ý gán người mơ hồ)</strong> &bull; <strong className="text-red-600">Cảnh báo vắng mặt</strong> &bull; <strong className="text-purple-700">Nhiệm vụ Dính (Sticky Tasks không tự ý mất)</strong> &bull; <strong className="text-emerald-700">Xác minh Bằng chứng (Link/Báo cáo 2 câu)</strong>.
+                Tự động hóa toàn trình: <strong className="text-slate-800">Biên bản họp &rarr; Danh sách việc</strong> &bull; Thực thi nghiêm ngặt <strong className="text-amber-700">Quy tắc Minh (Không tự ý gán người mơ hồ)</strong> &bull; <strong className="text-red-600">Cảnh báo vắng mặt</strong> &bull; <strong className="text-purple-700">Nhiệm vụ Dính (Sticky Tasks không tự ý mất)</strong> &bull; <strong className="text-emerald-700">Xác minh Bằng chứng (Link/Báo cáo 2 câu)</strong>.
               </p>
             </div>
 
@@ -752,10 +752,10 @@ export function App() {
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => setIsParserOpen(true)}
-                  className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-[#2C69FF]/100 hover:bg-[#1F56D6] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>+ Nạp BBH Mới</span>
+                  <span>+ Nhập biên bản mới</span>
                 </button>
               </div>
             )}

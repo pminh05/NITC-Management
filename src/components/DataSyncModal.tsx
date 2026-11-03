@@ -248,7 +248,7 @@ export const DataSyncModal: React.FC<DataSyncModalProps> = ({
             </label>
           </div>
 
-          {/* Card 4: Reset Demo */}
+          {/* Card 4: Khôi phục dữ liệu mẫu */}
           <div className="p-4 bg-slate-950/40 border border-slate-800 rounded-xl flex items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="font-semibold text-slate-300 flex items-center gap-2">
@@ -256,7 +256,7 @@ export const DataSyncModal: React.FC<DataSyncModalProps> = ({
                 <span>Khôi Phục Dữ Liệu Mẫu Ban Đầu (Demo Reset)</span>
               </div>
               <p className="text-slate-500">
-                Thiết lập lại danh bạ NITC chuẩn với các ca thử nghiệm quy tắc "Minh", Sticky tasks và Biên bản mẫu.
+                Đưa hệ thống về bộ dữ liệu mẫu chuẩn để thử nghiệm (danh bạ mẫu, các ca thử quy tắc trùng tên, việc lưu chuyển, biên bản mẫu).
               </p>
             </div>
 
@@ -270,7 +270,7 @@ export const DataSyncModal: React.FC<DataSyncModalProps> = ({
               }}
               className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-amber-500/20 text-slate-300 hover:text-amber-300 border border-slate-700 font-semibold transition shrink-0"
             >
-              Reset Demo
+              Khôi phục dữ liệu mẫu
             </button>
           </div>
 

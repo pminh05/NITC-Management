@@ -130,7 +130,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
               onClick={() => setDept('all')}
               className={`px-3 py-1.5 rounded-lg font-bold transition shrink-0 cursor-pointer ${
                 selectedDept === 'all'
-                  ? 'bg-orange-500 text-white shadow-sm'
+                  ? 'bg-[#2C69FF]/100 text-white shadow-sm'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
@@ -165,7 +165,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 placeholder="Tìm việc hoặc người làm..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-orange-500 transition"
+                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#2C69FF] transition"
               />
             </div>
 
@@ -179,7 +179,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
               title="Chỉ hiển thị các nhiệm vụ chưa hoàn thành từ tuần trước chuyển sang"
             >
               <Pin className="w-3.5 h-3.5 rotate-45" />
-              <span>Sticky ({countSticky})</span>
+              <span>Lưu chuyển ({countSticky})</span>
             </button>
           </div>
         </div>
@@ -264,7 +264,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 onClick={() => setShowQuickAddModal(true)}
                 className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold flex items-center gap-1 transition cursor-pointer shadow-sm"
               >
-                <Plus className="w-3.5 h-3.5 text-orange-400" />
+                <Plus className="w-3.5 h-3.5 text-[#6C9BFF]" />
                 <span>+ Thêm việc nhanh</span>
               </button>
             </div>
@@ -322,7 +322,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
 
             <button
               onClick={onOpenBBHParser}
-              className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+              className="px-4 py-2 rounded-lg bg-[#2C69FF]/100 hover:bg-[#1F56D6] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition cursor-pointer"
             >
               <Sparkles className="w-4 h-4" />
               <span>Nhập Biên bản họp mới</span>
@@ -404,7 +404,7 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="VD: Thiết kế mockup bài đăng..."
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-orange-500"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
               required
             />
           </div>
@@ -414,7 +414,7 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
             <select
               value={assigneeId}
               onChange={(e) => setAssigneeId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-orange-500"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
             >
               {members.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -431,7 +431,7 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
                 type="date"
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-orange-500"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
                 required
               />
             </div>
@@ -441,7 +441,7 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
               <select
                 value={verificationType}
                 onChange={(e) => setVerificationType(e.target.value as any)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-orange-500"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
               >
                 <option value="link_required">Cần Link 🔗</option>
                 <option value="report_required">Cần Báo cáo 📝</option>
@@ -458,7 +458,7 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
               className="rounded bg-slate-100 border-slate-300 text-purple-600 focus:ring-purple-500"
             />
             <label htmlFor="stickyCheck" className="text-slate-700 font-medium cursor-pointer">
-              Đánh dấu là Nhiệm vụ Sticky (Lưu chuyển)
+              Đánh dấu là việc lưu chuyển từ kỳ họp trước
             </label>
           </div>
 
@@ -472,7 +472,7 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-bold shadow-sm transition active:scale-95 cursor-pointer"
+              className="px-4 py-2 rounded-lg bg-[#2C69FF]/100 hover:bg-[#1F56D6] text-white font-bold shadow-sm transition active:scale-95 cursor-pointer"
             >
               Thêm vào Bảng việc
             </button>

@@ -130,7 +130,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         {/* Assignee & Deadline row */}
         <div className="grid grid-cols-2 gap-2 text-xs text-slate-700 mb-3 bg-slate-50 rounded-lg p-2.5 border border-slate-200">
           <div className="flex items-center gap-1.5 truncate">
-            <User className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+            <User className="w-3.5 h-3.5 text-[#2C69FF] shrink-0" />
             <span className="truncate font-semibold text-slate-800" title={task.assigneeName}>
               {task.assigneeName}
             </span>
@@ -186,7 +186,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 href={task.evidenceLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-orange-600 hover:text-orange-700 underline truncate block flex items-center gap-1 font-medium"
+                className="text-[#1F56D6] hover:text-[#1E4FC4] underline truncate block flex items-center gap-1 font-medium"
               >
                 <LinkIcon className="w-3 h-3 shrink-0" />
                 <span className="truncate">{task.evidenceLink}</span>
@@ -231,7 +231,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer ${
                 task.status === 'pending_approval'
                   ? 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-300'
-                  : 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm'
+                  : 'bg-[#2C69FF]/100 hover:bg-[#1F56D6] text-white shadow-sm'
               }`}
             >
               <Send className="w-3 h-3" />
@@ -243,7 +243,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {isPresident && task.status === 'pending_approval' && (
             <button
               onClick={() => onOpenReviewModal(task)}
-              className="px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold flex items-center gap-1 shadow-sm transition active:scale-95 cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-[#2C69FF]/100 hover:bg-[#1F56D6] text-white text-xs font-bold flex items-center gap-1 shadow-sm transition active:scale-95 cursor-pointer"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Duyệt minh chứng</span>

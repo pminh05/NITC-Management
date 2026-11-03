@@ -48,11 +48,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#1E293B] text-white flex items-center justify-center p-4 font-sans antialiased">
+    <div className="min-h-screen bg-[#10192F] text-white flex items-center justify-center p-4 font-sans antialiased">
       <div className="w-full max-w-md">
         {/* Brand */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-orange-500 rounded-xl flex items-center justify-center font-bold text-2xl mx-auto shadow-lg">
+          <div className="w-14 h-14 bg-[#2C69FF]/100 rounded-xl flex items-center justify-center font-bold text-2xl mx-auto shadow-lg">
             N
           </div>
           <h1 className="text-2xl font-bold mt-4 uppercase tracking-tight">NITC Command Center</h1>
@@ -75,7 +75,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="ten.nitc@gmail.com"
-              className="mt-1 w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+              className="mt-1 w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#2C69FF] focus:ring-1 focus:ring-[#2C69FF]"
               autoFocus
             />
           </div>
@@ -89,7 +89,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="mt-1 w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+              className="mt-1 w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#2C69FF] focus:ring-1 focus:ring-[#2C69FF]"
             />
           </div>
 
@@ -102,7 +102,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition active:scale-[0.98] cursor-pointer"
+            className="w-full py-2.5 bg-[#2C69FF]/100 hover:bg-[#1F56D6] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition active:scale-[0.98] cursor-pointer"
           >
             {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
           </button>

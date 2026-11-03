@@ -413,29 +413,34 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
               <thead>
                 <tr className="bg-slate-950 border-b border-slate-800 text-slate-400 font-bold">
                   <th className="p-3">Họ và tên</th>
+                  <th className="p-3">MSV</th>
+                  <th className="p-3">Lớp</th>
                   <th className="p-3">Vai trò</th>
                   <th className="p-3">Ban</th>
-                  <th className="p-3">MSV / Lớp</th>
                   <th className="p-3">Liên hệ</th>
                   <th className="p-3 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800 text-slate-300">
                 {filteredMembers.map((m) => {
-                  const isMinh = m.name.toLowerCase().includes('minh');
                   const isLeader = m.role === 'Chủ tịch' || m.role === 'Phó Chủ tịch';
                   return (
                     <tr key={m.id} className="hover:bg-slate-800/50 transition">
-                      <td className="p-3 font-semibold text-white flex items-center gap-2">
-                        <span>{m.name}</span>
-                        {isMinh && (
-                          <span
-                            className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                            title="Tên này có thể trùng với thành viên khác khi AI xử lý BBH"
-                          >
-                            Tên "Minh"
+                      <td className="p-3 font-semibold text-white">
+                        <div>{m.name}</div>
+                        <div className="text-[10px] font-mono text-slate-500" title="Mã định danh trong hệ thống">
+                          #{m.id.slice(-6)}
+                        </div>
+                      </td>
+                      <td className="p-3 font-mono text-slate-300 whitespace-nowrap" title="Mã sinh viên — dùng để phân biệt khi trùng tên">
+                        {m.studentId || '—'}
+                      </td>
+                      <td className="p-3 whitespace-nowrap">
+                        {m.className ? (
+                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-medium">
+                            {m.className}
                           </span>
-                        )}
+                        ) : '—'}
                       </td>
                       <td className="p-3">
                         <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
@@ -452,14 +457,6 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                       </td>
                       <td className="p-3 text-slate-300 font-medium whitespace-nowrap">
                         {m.department === 'Ban Chủ nhiệm' ? '👑 BCN' : m.department}
-                      </td>
-                      <td className="p-3 font-mono text-slate-400 whitespace-nowrap">
-                        {m.studentId || '—'}
-                        {m.className && (
-                          <span className="ml-1.5 px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px]">
-                            {m.className}
-                          </span>
-                        )}
                       </td>
                       <td className="p-3 font-mono text-slate-400 whitespace-nowrap">
                         <div className="truncate max-w-[180px]" title={m.email}>{m.email}</div>
@@ -488,7 +485,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                 })}
                 {filteredMembers.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-slate-500">
+                    <td colSpan={7} className="p-8 text-center text-slate-500">
                       Không có thành viên nào trong phạm vi này. Import file Excel danh bạ hoặc thêm thủ công.
                     </td>
                   </tr>

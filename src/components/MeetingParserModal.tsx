@@ -99,7 +99,7 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
             </div>
             <div>
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                AI Brain: Nhập & Trích xuất Biên bản họp (BBH)
+                Nhập biên bản họp — AI tự trích xuất công việc
               </h2>
               <p className="text-xs text-slate-400">
                 Tự động quét mục Thảo luận & Kế hoạch, quy đổi ngày tháng và phát hiện gán việc
@@ -123,7 +123,7 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-amber-400" />
               <span className="text-xs font-semibold text-slate-300">
-                Chọn mẫu BBH thực tế của NITC:
+                Chọn mẫu biên bản họp thực tế của NITC:
               </span>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -169,7 +169,7 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-medium text-slate-300">
-                Nội dung toàn văn Biên bản họp (BBH):
+                Nội dung toàn văn biên bản họp:
               </label>
               <span className="text-xs text-slate-400">
                 {bbhText.split('\n').length} dòng | {bbhText.length} ký tự
@@ -191,7 +191,7 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
                 <span>⚠️ Quy tắc "Minh"</span>
               </div>
               <p className="text-slate-400">
-                Nếu BBH ghi tên trùng nhiều người, AI không tự gán mà sẽ hiện cảnh báo để Chủ tịch chọn người chính xác.
+                Nếu biên bản ghi tên trùng nhiều người (VD: tên Minh), AI không tự gán mà sẽ hiện cảnh báo để Chủ tịch chọn người chính xác.
               </p>
             </div>
 
@@ -200,7 +200,7 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
                 <span>🚨 Cảnh báo Vắng mặt</span>
               </div>
               <p className="text-slate-400">
-                Nếu người được giao việc nằm trong danh sách "Vắng" của BBH, hệ thống lập tức báo động đỏ.
+                Nếu người được giao việc nằm trong danh sách vắng họp, hệ thống lập tức báo động đỏ.
               </p>
             </div>
 
@@ -241,7 +241,7 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin text-amber-300" />
-                <span>AI đang quét & phân tích BBH...</span>
+                <span>AI đang quét & phân tích biên bản...</span>
               </>
             ) : (
               <>
