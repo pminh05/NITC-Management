@@ -265,7 +265,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold flex items-center gap-1 transition cursor-pointer shadow-sm"
               >
                 <Plus className="w-3.5 h-3.5 text-[#6C9BFF]" />
-                <span>+ Thêm việc nhanh</span>
+                <span>Thêm việc nhanh</span>
               </button>
             </div>
           )}

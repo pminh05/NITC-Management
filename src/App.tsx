@@ -744,7 +744,7 @@ export function App() {
                 </h2>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed max-w-4xl">
-                Tự động hóa toàn trình: <strong className="text-slate-800">Biên bản họp &rarr; Danh sách việc</strong> &bull; Thực thi nghiêm ngặt <strong className="text-amber-700">Quy tắc Minh (Không tự ý gán người mơ hồ)</strong> &bull; <strong className="text-red-600">Cảnh báo vắng mặt</strong> &bull; <strong className="text-purple-700">Nhiệm vụ Dính (Sticky Tasks không tự ý mất)</strong> &bull; <strong className="text-emerald-700">Xác minh Bằng chứng (Link/Báo cáo 2 câu)</strong>.
+                Tự động hóa toàn trình: <strong className="text-slate-800">Biên bản họp &rarr; Danh sách việc</strong> &bull; Thực thi nghiêm ngặt <strong className="text-amber-700">Quy tắc Minh (Không tự ý gán người mơ hồ)</strong> &bull; <strong className="text-red-600">Cảnh báo vắng mặt</strong> &bull; <strong className="text-purple-700">Việc lưu chuyển (không tự biến mất giữa các kỳ họp)</strong> &bull; <strong className="text-emerald-700">Nghiệm thu minh chứng (Link hoặc báo cáo 2 câu)</strong>.
               </p>
             </div>
 
@@ -755,7 +755,7 @@ export function App() {
                   className="px-4 py-2 rounded-lg bg-[#2C69FF]/100 hover:bg-[#1F56D6] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>+ Nhập biên bản mới</span>
+                  <span>Nhập biên bản mới</span>
                 </button>
               </div>
             )}

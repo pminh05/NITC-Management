@@ -87,7 +87,7 @@ Hệ thống NITC Command Center xin gửi Báo cáo Tổng kết Tiến độ C
 ${deptStats
   .map(
     (d) =>
-      `• Ban ${d.dept}: ${d.completed}/${d.total} việc xong (${d.rate}%) | Nợ/Quá hạn: ${d.overdue} việc`
+      `• Ban ${d.dept}: ${d.completed}/${d.total} việc xong (${d.rate}%) | Quá hạn: ${d.overdue} việc`
   )
   .join('\n')}
 
@@ -107,7 +107,7 @@ ${
 
 Trân trọng,
 Lê Hồng Phúc Minh - Chủ tịch CLB NITC
-Hệ thống NITC Command Center (The Nag Engine)`;
+Hệ thống NITC Command Center`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(sundayEmailContent);
@@ -179,7 +179,7 @@ Hệ thống NITC Command Center (The Nag Engine)`;
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-white tracking-tight">
-                  Nhắc Nhở Tự Động & Báo Cáo Tuần (The Nag)
+                  Nhắc việc quá hạn & Báo cáo tuần
                 </h2>
                 <span className="bg-red-500/20 text-red-300 text-xs px-2.5 py-0.5 rounded-full font-semibold border border-red-500/30">
                   {totalOverdue} Quá hạn
@@ -361,7 +361,7 @@ Hệ thống NITC Command Center (The Nag Engine)`;
                   className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold flex items-center gap-1.5 shadow-md transition active:scale-95 shrink-0"
                 >
                   <Flame className="w-4 h-4" />
-                  <span>1-Click Nhắc Nợ Toàn Bộ ⚡</span>
+                  <span>Nhắc tất cả việc quá hạn ⚡</span>
                 </button>
               )}
             </div>
