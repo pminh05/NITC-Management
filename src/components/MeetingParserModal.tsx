@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { ExtractedDraftTask, Meeting, Member } from '../types';
 import { SAMPLE_BBH_TEMPLATES } from '../data/initialData';
+import { api } from '../api/client';
 
 interface MeetingParserModalProps {
   isOpen: boolean;
@@ -55,22 +56,15 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
     setErrorMsg(null);
 
     try {
-      const response = await fetch('/api/gemini/parse-bbh', {
+      const data = await api<{ meeting: any; tasks: ExtractedDraftTask[] }>('/gemini/parse-bbh', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: {
           bbhText,
           members,
           meetingDate,
-        }),
+        },
       });
 
-      if (!response.ok) {
-        throw new Error('Lỗi máy chủ khi xử lý biên bản họp');
-      }
-
-      const data = await response.json();
-      
       const meetingData: Partial<Meeting> = {
         title: data.meeting?.title || 'Biên bản họp Ban Điều Hành',
         date: data.meeting?.date || meetingDate,

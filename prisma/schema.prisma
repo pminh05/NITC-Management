@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Tài khoản đăng nhập — 1 user map 1 thành viên (memberId), role lấy từ Member.role
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  memberId     String?  @unique
+  member       Member?  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Thành viên CLB (roster) — tương ứng Member trong src/types.ts
+model Member {
+  id         String        @id // giữ id dạng mem-1... khi import dữ liệu cũ
+  name       String
+  role       String // Chủ tịch | Trưởng ban | Phó ban | Thành viên | Cố vấn
+  department String // Học thuật | Truyền thông | Sự kiện | Đối ngoại | Ban Chủ nhiệm
+  email      String
+  phone      String?
+  status     String        @default("active") // active | inactive | alumni
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  user       User?
+  tasks      Task[]        @relation("Assignee")
+  ownedTasks Task[]        @relation("Creator")
+}
+
+// Biên bản họp (NITC Archive)
+model Meeting {
+  id               String   @id @default(cuid())
+  title            String
+  date             String // YYYY-MM-DD
+  time             String?
+  location         String?
+  chairperson      String
+  secretary        String
+  attendees        String // JSON array string — giữ tương thích frontend
+  absentees        String // JSON array string
+  discussionSummary String
+  actionPlan       String
+  rawContent       String
+  createdAt        DateTime @default(now())
+  tasks            Task[]
+}
+
+// Nhiệm vụ
+model Task {
+  id                  String    @id @default(cuid())
+  title               String
+  description         String?
+  assigneeId          String
+  assigneeName        String
+  department          String
+  deadline            String // YYYY-MM-DD
+  status              String // in_progress | pending_approval | completed | overdue
+  verificationType    String // link_required | report_required
+  evidenceLink        String?
+  evidenceReport      String?
+  evidenceSubmittedAt String?
+  approvalNote        String?
+  rejectedReason      String?
+  sourceMeetingId     String?
+  priority            String? // high | medium | normal
+  isSticky            Boolean   @default(false)
+  stickyWeeksCount    Int?
+  createdById         String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  assignee            Member    @relation("Assignee", fields: [assigneeId], references: [id])
+  creator             Member?   @relation("Creator", fields: [createdById], references: [id])
+  sourceMeeting       Meeting?  @relation(fields: [sourceMeetingId], references: [id])
+}
+
+// Nhật ký thông báo/nhắc việc (Nag Engine)
+model NotificationLog {
+  id            String   @id @default(cuid())
+  type          String // weekly_summary | overdue_nag | task_assigned | evidence_approved | evidence_rejected
+  recipientName String
+  recipientEmail String
+  department    String?
+  subject       String
+  content       String
+  sentAt        DateTime @default(now())
+  status        String // sent | queued | failed
+  taskCount     Int?
+}
+
+// Cấu hình hệ thống (key-value) — dùng cho G5 Settings
+model Setting {
+  key   String @id
+  value String // JSON string
+}

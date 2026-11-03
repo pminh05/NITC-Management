@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import {
   Department,
@@ -9,13 +9,9 @@ import {
   Role,
   Task,
 } from './types';
-import {
-  INITIAL_MEMBERS,
-  INITIAL_MEETINGS,
-  INITIAL_TASKS,
-  INITIAL_LOGS,
-} from './data/initialData';
+import { api, getToken, setToken } from './api/client';
 import { Header } from './components/Header';
+import { LoginPage } from './components/LoginPage';
 import { TaskBoard } from './components/TaskBoard';
 import { MeetingParserModal } from './components/MeetingParserModal';
 import { PresidentialFilterModal } from './components/PresidentialFilterModal';
@@ -27,98 +23,89 @@ import { RosterManagerModal } from './components/RosterManagerModal';
 import { DataSyncModal } from './components/DataSyncModal';
 import {
   Sparkles,
-  Shield,
-  Layers,
-  AlertTriangle,
   Pin,
-  Clock,
   CheckCircle2,
-  FileText,
-  Mail,
-  Users,
 } from 'lucide-react';
 
-const STORAGE_KEYS = {
-  TASKS: 'nitc_tasks_v2',
-  MEETINGS: 'nitc_meetings_v2',
-  MEMBERS: 'nitc_members_v2',
-  LOGS: 'nitc_logs_v2',
-  ROLE: 'nitc_current_role_v2',
-  DEPT: 'nitc_current_dept_v2',
-};
-
 export function App() {
-  // 1. Core State
-  const [tasks, setTasks] = useState<Task[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.TASKS);
-    return saved ? JSON.parse(saved) : INITIAL_TASKS;
-  });
+  // ===== 0. Auth state (đăng nhập thật qua JWT) =====
+  const [authMember, setAuthMember] = useState<Member | null>(null);
+  const [booting, setBooting] = useState(true);
 
-  const [meetings, setMeetings] = useState<Meeting[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.MEETINGS);
-    return saved ? JSON.parse(saved) : INITIAL_MEETINGS;
-  });
+  // ===== 1. Core State (nguồn sự thật: server, không còn localStorage) =====
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [logs, setLogs] = useState<NotificationLog[]>([]);
+  const [dataLoading, setDataLoading] = useState(false);
 
-  const [members, setMembers] = useState<Member[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.MEMBERS);
-    return saved ? JSON.parse(saved) : INITIAL_MEMBERS;
-  });
+  // Vai trò hiện tại suy ra từ tài khoản đăng nhập
+  const currentRole = (authMember?.role as Role) || 'Thành viên';
+  const currentDepartment = (authMember?.department as Department) || 'Ban Chủ nhiệm';
+  const currentUserId = authMember?.id || '';
 
-  const [logs, setLogs] = useState<NotificationLog[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.LOGS);
-    return saved ? JSON.parse(saved) : INITIAL_LOGS;
-  });
-
-  // Current logged in persona
-  const [currentRole, setCurrentRole] = useState<Role>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.ROLE);
-    return (saved as Role) || 'Chủ tịch';
-  });
-
-  const [currentDepartment, setCurrentDepartment] = useState<Department>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.DEPT);
-    return (saved as Department) || 'Ban Chủ nhiệm';
-  });
-
-  const [currentUserId, setCurrentUserId] = useState<string>('mem-1');
-
-  // Sync state to LocalStorage
+  // Boot: khôi phục phiên đăng nhập từ token
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
-  }, [tasks]);
+    const boot = async () => {
+      if (!getToken()) {
+        setBooting(false);
+        return;
+      }
+      try {
+        const res = await api<{ member: Member }>('/auth/me');
+        setAuthMember(res.member);
+      } catch {
+        setToken(null);
+      } finally {
+        setBooting(false);
+      }
+    };
+    boot();
+  }, []);
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.MEETINGS, JSON.stringify(meetings));
-  }, [meetings]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(members));
-  }, [members]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(logs));
-  }, [logs]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.ROLE, currentRole);
-  }, [currentRole]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.DEPT, currentDepartment);
-  }, [currentDepartment]);
-
-  // Update current user ID based on role & dept
-  useEffect(() => {
-    if (currentRole === 'Chủ tịch') {
-      const pres = members.find((m) => m.role === 'Chủ tịch');
-      if (pres) setCurrentUserId(pres.id);
-    } else {
-      const officer = members.find((m) => m.department === currentDepartment && m.role === 'Trưởng ban');
-      if (officer) setCurrentUserId(officer.id);
+  const loadAllData = useCallback(async (me: Member) => {
+    setDataLoading(true);
+    try {
+      const [t, m, mem] = await Promise.all([
+        api<Task[]>('/tasks'),
+        api<Meeting[]>('/meetings'),
+        api<Member[]>('/members'),
+      ]);
+      setTasks(t);
+      setMeetings(m);
+      setMembers(mem);
+      // Nhật ký nag: chỉ Chủ tịch xem được
+      if (me.role === 'Chủ tịch') {
+        try {
+          const l = await api<NotificationLog[]>('/logs');
+          setLogs(l);
+        } catch {
+          setLogs([]);
+        }
+      } else {
+        setLogs([]);
+      }
+    } finally {
+      setDataLoading(false);
     }
-  }, [currentRole, currentDepartment, members]);
+  }, []);
 
-  // 2. Modals Control State
+  useEffect(() => {
+    if (authMember) {
+      loadAllData(authMember);
+    }
+  }, [authMember, loadAllData]);
+
+  const handleLogout = () => {
+    setToken(null);
+    setAuthMember(null);
+    setTasks([]);
+    setMeetings([]);
+    setMembers([]);
+    setLogs([]);
+  };
+
+  // ===== 2. Modals Control State =====
   const [isParserOpen, setIsParserOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
@@ -139,7 +126,12 @@ export function App() {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  // 3. Flow Handlers:
+  const showError = (e: any) => {
+    showToast('Có lỗi xảy ra', e?.message || 'Không thực hiện được thao tác', 'warn');
+  };
+
+  // ===== 3. Flow Handlers =====
+
   // Step 1 -> Step 2: AI Parser finished parsing BBH
   const handleParserSuccess = (
     meetingData: Partial<Meeting>,
@@ -152,62 +144,45 @@ export function App() {
     setIsFilterOpen(true);
   };
 
-  // Step 2 -> Step 3: President approved tasks from Presidential Filter
-  const handlePublishTasks = (
+  // Step 2 -> Step 3: President publishes tasks from Presidential Filter
+  const handlePublishTasks = async (
     finalMeeting: Meeting,
     finalTasks: ExtractedDraftTask[]
   ) => {
-    // Convert approved draft tasks to official tasks
-    const newTasks: Task[] = finalTasks.map((d, index) => ({
-      id: `task_${Date.now()}_${index}`,
-      title: d.title,
-      department: d.suggestedDepartment,
-      assigneeName: d.suggestedAssigneeName || d.rawAssigneeText || 'Chưa gán',
-      assigneeId: d.suggestedAssigneeId || 'mem-1',
-      deadline: d.suggestedDeadline,
-      status: 'in_progress',
-      verificationType: d.verificationType,
-      isSticky: false,
-      priority: d.priority || 'medium',
-      sourceMeetingId: finalMeeting.id,
-      sourceMeetingTitle: finalMeeting.title,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }));
-
-    // Apply "Sticky Task" Rule:
-    // Any existing incomplete tasks from previous meetings are carried forward and tagged as sticky
-    const updatedExistingTasks = tasks.map((t) => {
-      if (t.status !== 'completed') {
-        return {
-          ...t,
-          isSticky: true,
-        };
-      }
-      return t;
-    });
-
-    setMeetings([finalMeeting, ...meetings]);
-    setTasks([...newTasks, ...updatedExistingTasks]);
-    setIsFilterOpen(false);
-    setParsedMeetingData(null);
-    setParsedDraftTasks([]);
-
-    // Fire celebratory confetti!
     try {
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
+      const res = await api<{ meeting: Meeting; tasks: Task[] }>('/meetings/publish', {
+        method: 'POST',
+        body: {
+          meeting: {
+            ...finalMeeting,
+            rawContent: finalMeeting.rawContent || '',
+          },
+          tasks: finalTasks,
+        },
       });
-    } catch {
-      // ignore
-    }
 
-    showToast(
-      'Xuất bản việc thành công!',
-      `Đã chuyển giao ${newTasks.length} nhiệm vụ từ "${finalMeeting.title}" vào Bảng điều hành.`
-    );
+      setMeetings([res.meeting, ...meetings]);
+      // Tải lại danh sách việc để cập nhật cả Sticky tasks cũ
+      const freshTasks = await api<Task[]>('/tasks');
+      setTasks(freshTasks);
+
+      setIsFilterOpen(false);
+      setParsedMeetingData(null);
+      setParsedDraftTasks([]);
+
+      try {
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      } catch {
+        // ignore
+      }
+
+      showToast(
+        'Xuất bản việc thành công!',
+        `Đã chuyển giao ${res.tasks.length} nhiệm vụ từ "${res.meeting.title}" vào Bảng điều hành.`
+      );
+    } catch (e) {
+      showError(e);
+    }
   };
 
   // Step 3: Evidence Submission by Member / Trưởng ban
@@ -216,30 +191,23 @@ export function App() {
     setIsSubmitOpen(true);
   };
 
-  const handleEvidenceSubmit = (taskId: string, evidenceData: { link?: string; report?: string }) => {
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id === taskId) {
-          return {
-            ...t,
-            evidenceLink: evidenceData.link || t.evidenceLink,
-            evidenceReport: evidenceData.report || t.evidenceReport,
-            evidenceSubmittedAt: new Date().toISOString(),
-            status: 'pending_approval',
-            updatedAt: new Date().toISOString(),
-          };
-        }
-        return t;
-      })
-    );
-    setIsSubmitOpen(false);
-    setSelectedTask(null);
-
-    showToast(
-      'Đã gửi minh chứng!',
-      'Nhiệm vụ đã chuyển sang trạng thái "Chờ duyệt". Chủ tịch sẽ tiến hành nghiệm thu.',
-      'info'
-    );
+  const handleEvidenceSubmit = async (taskId: string, evidenceData: { link?: string; report?: string }) => {
+    try {
+      const updated = await api<Task>(`/tasks/${taskId}`, {
+        method: 'PUT',
+        body: { action: 'submit_evidence', ...evidenceData },
+      });
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
+      setIsSubmitOpen(false);
+      setSelectedTask(null);
+      showToast(
+        'Đã gửi minh chứng!',
+        'Nhiệm vụ đã chuyển sang trạng thái "Chờ duyệt". Chủ tịch sẽ tiến hành nghiệm thu.',
+        'info'
+      );
+    } catch (e) {
+      showError(e);
+    }
   };
 
   // Step 4: Evidence Review by President
@@ -248,150 +216,151 @@ export function App() {
     setIsReviewOpen(true);
   };
 
-  const handleApproveEvidence = (taskId: string, approvalNote?: string) => {
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id === taskId) {
-          return {
-            ...t,
-            status: 'completed',
-            approvalNote: approvalNote || 'Chủ tịch đã duyệt hoàn thành.',
-            rejectedReason: undefined,
-            updatedAt: new Date().toISOString(),
-          };
-        }
-        return t;
-      })
-    );
-    setIsReviewOpen(false);
-    setSelectedTask(null);
-
+  const handleApproveEvidence = async (taskId: string, approvalNote?: string) => {
     try {
-      confetti({
-        particleCount: 60,
-        spread: 60,
-        origin: { y: 0.7 },
+      const updated = await api<Task>(`/tasks/${taskId}`, {
+        method: 'PUT',
+        body: { action: 'approve', note: approvalNote },
       });
-    } catch {
-      // ignore
-    }
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
+      setIsReviewOpen(false);
+      setSelectedTask(null);
 
-    showToast('Đã duyệt hoàn thành!', 'Nhiệm vụ đã được nghiệm thu và đánh dấu Hoàn thành ✅');
+      try {
+        confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
+      } catch {
+        // ignore
+      }
+      showToast('Đã duyệt hoàn thành!', 'Nhiệm vụ đã được nghiệm thu và đánh dấu Hoàn thành ✅');
+    } catch (e) {
+      showError(e);
+    }
   };
 
-  const handleRejectEvidence = (taskId: string, rejectReason: string) => {
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id === taskId) {
-          return {
-            ...t,
-            status: 'in_progress',
-            rejectedReason: rejectReason,
-            updatedAt: new Date().toISOString(),
-          };
-        }
-        return t;
-      })
-    );
-    setIsReviewOpen(false);
-    setSelectedTask(null);
-
-    showToast(
-      'Đã yêu cầu nộp lại!',
-      'Nhiệm vụ đã được trả về cho thành viên kèm ghi chú chỉnh sửa.',
-      'warn'
-    );
+  const handleRejectEvidence = async (taskId: string, rejectReason: string) => {
+    try {
+      const updated = await api<Task>(`/tasks/${taskId}`, {
+        method: 'PUT',
+        body: { action: 'reject', reason: rejectReason },
+      });
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
+      setIsReviewOpen(false);
+      setSelectedTask(null);
+      showToast(
+        'Đã yêu cầu nộp lại!',
+        'Nhiệm vụ đã được trả về cho thành viên kèm ghi chú chỉnh sửa.',
+        'warn'
+      );
+    } catch (e) {
+      showError(e);
+    }
   };
 
   // Quick 1-click approve for president
-  const handleQuickApprove = (taskId: string) => {
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id === taskId) {
-          return {
-            ...t,
-            status: 'completed',
-            approvalNote: 'Chủ tịch duyệt nhanh hoàn thành.',
-            updatedAt: new Date().toISOString(),
-          };
-        }
-        return t;
-      })
-    );
-    showToast('Duyệt nhanh!', 'Đã đánh dấu hoàn thành nhiệm vụ.');
+  const handleQuickApprove = async (taskId: string) => {
+    try {
+      const updated = await api<Task>(`/tasks/${taskId}`, {
+        method: 'PUT',
+        body: { action: 'approve', note: 'Chủ tịch duyệt nhanh hoàn thành.' },
+      });
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
+      showToast('Duyệt nhanh!', 'Đã đánh dấu hoàn thành nhiệm vụ.');
+    } catch (e) {
+      showError(e);
+    }
   };
 
   // Delete Task
-  const handleDeleteTask = (taskId: string) => {
-    if (confirm('Bạn có chắc chắn muốn xóa nhiệm vụ này?')) {
+  const handleDeleteTask = async (taskId: string) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa nhiệm vụ này?')) return;
+    try {
+      await api(`/tasks/${taskId}`, { method: 'DELETE' });
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
       showToast('Đã xóa', 'Nhiệm vụ đã được xóa khỏi hệ thống.', 'info');
+    } catch (e) {
+      showError(e);
     }
   };
 
   // Manual Quick Add Task
-  const handleAddNewManualTask = (newTaskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newTask: Task = {
-      ...newTaskData,
-      id: `task_manual_${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setTasks([newTask, ...tasks]);
-    showToast('Đã thêm việc', `Đã giao "${newTask.title}" cho ${newTask.assigneeName}.`);
+  const handleAddNewManualTask = async (newTaskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const created = await api<Task>('/tasks', { method: 'POST', body: newTaskData });
+      setTasks((prev) => [created, ...prev]);
+      showToast('Đã thêm việc', `Đã giao "${created.title}" cho ${created.assigneeName}.`);
+    } catch (e) {
+      showError(e);
+    }
   };
 
   // The Nag / Notification
-  const handleSendNotification = (logData: Omit<NotificationLog, 'id' | 'sentAt'>) => {
-    const newLog: NotificationLog = {
-      ...logData,
-      id: `log_${Date.now()}`,
-      sentAt: new Date().toISOString(),
-    };
-    setLogs([newLog, ...logs]);
+  const handleSendNotification = async (logData: Omit<NotificationLog, 'id' | 'sentAt'>) => {
+    try {
+      const created = await api<NotificationLog>('/logs', { method: 'POST', body: logData });
+      setLogs((prev) => [created, ...prev]);
+    } catch (e) {
+      showError(e);
+    }
   };
 
   // Roster Management
-  const handleAddMember = (newMem: Omit<Member, 'id'>) => {
-    const member: Member = {
-      ...newMem,
-      id: `m_${Date.now()}`,
-    };
-    setMembers([...members, member]);
-    showToast('Đã thêm thành viên', `Thành viên ${member.name} đã được thêm vào danh bạ.`);
+  const handleAddMember = async (newMem: Omit<Member, 'id'>) => {
+    try {
+      const member = await api<Member>('/members', { method: 'POST', body: newMem });
+      setMembers((prev) => [...prev, member]);
+      showToast('Đã thêm thành viên', `${member.name} đã được thêm vào danh bạ (tài khoản: email của họ, mật khẩu mặc định nitc123).`);
+    } catch (e) {
+      showError(e);
+    }
   };
 
-  const handleUpdateMember = (id: string, updates: Partial<Member>) => {
-    setMembers(members.map((m) => (m.id === id ? { ...m, ...updates } : m)));
-    showToast('Cập nhật thành công', 'Đã lưu thông tin thành viên.');
+  const handleUpdateMember = async (id: string, updates: Partial<Member>) => {
+    try {
+      const updated = await api<Member>(`/members/${id}`, { method: 'PUT', body: updates });
+      setMembers((prev) => prev.map((m) => (m.id === id ? updated : m)));
+      showToast('Cập nhật thành công', 'Đã lưu thông tin thành viên.');
+    } catch (e) {
+      showError(e);
+    }
   };
 
-  const handleDeleteMember = (id: string) => {
-    setMembers(members.filter((m) => m.id !== id));
-    showToast('Đã xóa thành viên', 'Đã xóa khỏi danh bạ NITC.', 'info');
+  const handleDeleteMember = async (id: string) => {
+    try {
+      await api(`/members/${id}`, { method: 'DELETE' });
+      setMembers((prev) => prev.filter((m) => m.id !== id));
+      showToast('Đã xóa thành viên', 'Đã xóa khỏi danh bạ NITC.', 'info');
+    } catch (e) {
+      showError(e);
+    }
   };
 
   // Data Sync & Reset
-  const handleImportAllData = (data: {
+  const handleImportAllData = async (data: {
     tasks?: Task[];
     meetings?: Meeting[];
     members?: Member[];
     logs?: NotificationLog[];
   }) => {
-    if (data.tasks) setTasks(data.tasks);
-    if (data.meetings) setMeetings(data.meetings);
-    if (data.members) setMembers(data.members);
-    if (data.logs) setLogs(data.logs);
+    try {
+      await api('/admin/import', { method: 'POST', body: data });
+      await loadAllData(authMember!);
+      showToast('Đồng bộ thành công', 'Dữ liệu đã được ghi vào cơ sở dữ liệu trung tâm.');
+    } catch (e) {
+      showError(e);
+    }
   };
 
-  const handleResetToDemo = () => {
-    setTasks(INITIAL_TASKS);
-    setMeetings(INITIAL_MEETINGS);
-    setMembers(INITIAL_MEMBERS);
-    setLogs(INITIAL_LOGS);
+  const handleResetToDemo = async () => {
+    try {
+      await api('/admin/reset', { method: 'POST' });
+      await loadAllData(authMember!);
+      showToast('Đã reset', 'Hệ thống đã về dữ liệu demo chuẩn.', 'info');
+    } catch (e) {
+      showError(e);
+    }
   };
 
-  // Stats for the KPI cards
+  // ===== 4. Stats for the KPI cards =====
   const totalTasksCount = tasks.length;
   const inProgressCount = tasks.filter((t) => t.status === 'in_progress').length;
   const inProgressPct = totalTasksCount > 0 ? Math.round((inProgressCount / totalTasksCount) * 100) : 0;
@@ -406,9 +375,28 @@ export function App() {
   const [sidebarStatusFilter, setSidebarStatusFilter] = useState<string>('all');
   const [sidebarOnlySticky, setSidebarOnlySticky] = useState<boolean>(false);
 
+  // ===== Render =====
+
+  if (booting) {
+    return (
+      <div className="min-h-screen bg-[#1E293B] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center font-bold text-white text-xl mx-auto animate-pulse">
+            N
+          </div>
+          <p className="text-slate-400 text-sm mt-3">Đang khởi động NITC Command Center...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!authMember) {
+    return <LoginPage onLogin={(m) => setAuthMember(m)} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#F1F5F9] text-slate-900 flex flex-col font-sans antialiased selection:bg-orange-500 selection:text-white">
-      
+
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300">
@@ -432,14 +420,8 @@ export function App() {
 
       {/* 1. Global Navigation Header */}
       <Header
-        currentRole={currentRole}
-        currentDepartment={currentDepartment}
-        currentUserId={currentUserId}
-        onRoleChange={(role, dept, userId) => {
-          setCurrentRole(role);
-          setCurrentDepartment(dept);
-          setCurrentUserId(userId);
-        }}
+        authMember={authMember}
+        onLogout={handleLogout}
         tasks={tasks}
         onOpenBBHParser={() => setIsParserOpen(true)}
         onOpenMeetingHistory={() => setIsMeetingHistoryOpen(true)}
@@ -450,7 +432,7 @@ export function App() {
 
       {/* 2. High Density Dashboard Layout: Sidebar + Main Area */}
       <div className="flex flex-1 w-full overflow-x-hidden">
-        
+
         {/* High Density Desktop Sidebar */}
         <aside className="w-60 bg-white border-r border-slate-200 hidden lg:flex flex-col shrink-0">
           <div className="p-4 space-y-1">
@@ -474,22 +456,24 @@ export function App() {
                 <span>Tổng quan</span>
               </div>
               <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono">
-                {totalTasksCount}
+                {dataLoading ? '...' : totalTasksCount}
               </span>
             </button>
 
-            <button
-              onClick={() => setIsParserOpen(true)}
-              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-md text-xs transition cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5">
-                <span>🤖</span>
-                <span>Duyệt AI Brain</span>
-              </div>
-              <span className="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-bold">
-                Mới
-              </span>
-            </button>
+            {currentRole === 'Chủ tịch' && (
+              <button
+                onClick={() => setIsParserOpen(true)}
+                className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-md text-xs transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span>🤖</span>
+                  <span>Duyệt AI Brain</span>
+                </div>
+                <span className="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-bold">
+                  Mới
+                </span>
+              </button>
+            )}
 
             <button
               onClick={() => {
@@ -534,7 +518,7 @@ export function App() {
             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">
               Ban Điều Hành
             </div>
-            
+
             {(['Học thuật', 'Truyền thông', 'Sự kiện', 'Đối ngoại', 'Ban Chủ nhiệm'] as Department[]).map((dept) => {
               const count = tasks.filter((t) => t.department === dept).length;
               const isSelected = sidebarDeptFilter === dept;
@@ -584,14 +568,14 @@ export function App() {
               <span>XUẤT PDF BBH</span>
             </button>
             <div className="text-[11px] text-slate-400 text-center font-medium">
-              CLB CNTT NITC &bull; v2.6
+              CLB CNTT NITC &bull; v3.0
             </div>
           </div>
         </aside>
 
         {/* Main Content Pane */}
         <main className="flex-1 flex flex-col p-4 sm:p-6 gap-5 max-w-full overflow-x-hidden">
-          
+
           {/* Top 4 KPI Metric Cards (High Density) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
             {/* Card 1: Total Tasks */}
@@ -599,7 +583,9 @@ export function App() {
               <div>
                 <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
                   <span>Tổng nhiệm vụ</span>
-                  <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold">Toàn CLB</span>
+                  <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold">
+                    {currentRole === 'Chủ tịch' ? 'Toàn CLB' : currentDepartment}
+                  </span>
                 </div>
                 <div className="text-2xl font-bold text-slate-900 mt-1">{totalTasksCount}</div>
               </div>
@@ -695,15 +681,17 @@ export function App() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={() => setIsParserOpen(true)}
-                className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>+ Nạp BBH Mới</span>
-              </button>
-            </div>
+            {currentRole === 'Chủ tịch' && (
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setIsParserOpen(true)}
+                  className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>+ Nạp BBH Mới</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* 3. Task Management Board */}
@@ -733,33 +721,37 @@ export function App() {
       {/* 4. Footer */}
       <footer className="border-t border-slate-200 bg-white py-3 text-center text-xs text-slate-500">
         <div className="w-full px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>NITC Command Center &copy; 2026 CLB Công Nghệ Thông Tin NITC &bull; Chủ tịch Lê Hồng Phúc Minh</span>
+          <span>NITC Command Center &copy; 2026 CLB Công Nghệ Thông Tin NITC</span>
           <div className="flex items-center gap-4 text-[11px] text-slate-400">
-            <span className="text-emerald-600 font-medium">● AI Engine Active</span>
-            <span>Phiên bản v2.6 Enterprise</span>
+            <span className="text-emerald-600 font-medium">● Server + AI Engine Active</span>
+            <span>Phiên bản v3.0 Multi-user</span>
           </div>
         </div>
       </footer>
 
       {/* 5. Modals System */}
 
-      {/* Modal 1: BBH Input & AI Parser */}
-      <MeetingParserModal
-        isOpen={isParserOpen}
-        onClose={() => setIsParserOpen(false)}
-        members={members}
-        onExtractionSuccess={handleParserSuccess}
-      />
+      {/* Modal 1: BBH Input & AI Parser (chỉ Chủ tịch) */}
+      {currentRole === 'Chủ tịch' && (
+        <MeetingParserModal
+          isOpen={isParserOpen}
+          onClose={() => setIsParserOpen(false)}
+          members={members}
+          onExtractionSuccess={handleParserSuccess}
+        />
+      )}
 
       {/* Modal 2: Presidential Filter (Quy tắc Minh, Cảnh báo vắng mặt, Phê duyệt) */}
-      <PresidentialFilterModal
-        isOpen={isFilterOpen}
-        onClose={() => setIsFilterOpen(false)}
-        meetingData={parsedMeetingData || {}}
-        draftTasks={parsedDraftTasks}
-        members={members}
-        onPublishTasks={handlePublishTasks}
-      />
+      {currentRole === 'Chủ tịch' && (
+        <PresidentialFilterModal
+          isOpen={isFilterOpen}
+          onClose={() => setIsFilterOpen(false)}
+          meetingData={parsedMeetingData || {}}
+          draftTasks={parsedDraftTasks}
+          members={members}
+          onPublishTasks={handlePublishTasks}
+        />
+      )}
 
       {/* Modal 3: Evidence Submission (Link URL vs 2-Sentence Report) */}
       <EvidenceSubmitModal
@@ -806,27 +798,31 @@ export function App() {
         }}
       />
 
-      {/* Modal 7: Roster & Members Manager */}
-      <RosterManagerModal
-        isOpen={isRosterOpen}
-        onClose={() => setIsRosterOpen(false)}
-        members={members}
-        onAddMember={handleAddMember}
-        onUpdateMember={handleUpdateMember}
-        onDeleteMember={handleDeleteMember}
-      />
+      {/* Modal 7: Roster & Members Manager (chỉ Chủ tịch) */}
+      {currentRole === 'Chủ tịch' && (
+        <RosterManagerModal
+          isOpen={isRosterOpen}
+          onClose={() => setIsRosterOpen(false)}
+          members={members}
+          onAddMember={handleAddMember}
+          onUpdateMember={handleUpdateMember}
+          onDeleteMember={handleDeleteMember}
+        />
+      )}
 
-      {/* Modal 8: Data Storage & Google Sheets Sync */}
-      <DataSyncModal
-        isOpen={isDataSyncOpen}
-        onClose={() => setIsDataSyncOpen(false)}
-        tasks={tasks}
-        meetings={meetings}
-        members={members}
-        logs={logs}
-        onImportAllData={handleImportAllData}
-        onResetToDemo={handleResetToDemo}
-      />
+      {/* Modal 8: Data Storage & Google Sheets Sync (chỉ Chủ tịch) */}
+      {currentRole === 'Chủ tịch' && (
+        <DataSyncModal
+          isOpen={isDataSyncOpen}
+          onClose={() => setIsDataSyncOpen(false)}
+          tasks={tasks}
+          meetings={meetings}
+          members={members}
+          logs={logs}
+          onImportAllData={handleImportAllData}
+          onResetToDemo={handleResetToDemo}
+        />
+      )}
 
     </div>
   );
