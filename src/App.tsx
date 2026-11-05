@@ -47,7 +47,7 @@ export function App() {
   const currentRole = (authMember?.role as Role) || 'Thành viên';
   const currentDepartment = (authMember?.department as Department) || 'Ban Chủ nhiệm';
   const currentUserId = authMember?.id || '';
-  const isLeadership = currentRole === 'Chủ tịch' || currentRole === 'Phó Chủ tịch';
+  const isLeadership = currentRole === 'Chủ nhiệm' || currentRole === 'Phó Chủ nhiệm';
   // Ban quản lý được họp riêng & ban hành việc của ban mình
   const canManageMeetings = isLeadership || currentRole === 'Trưởng ban' || currentRole === 'Phó ban';
 
@@ -137,7 +137,7 @@ export function App() {
       setTasks(t);
       setMeetings(m);
       // Nhật ký nag: chỉ Ban lãnh đạo xem được
-      if (me.role === 'Chủ tịch' || me.role === 'Phó Chủ tịch') {
+      if (me.role === 'Chủ nhiệm' || me.role === 'Phó Chủ nhiệm') {
         try {
           const l = await api<NotificationLog[]>('/logs');
           setLogs(l);
@@ -301,7 +301,7 @@ export function App() {
       setSelectedTask(null);
       showToast(
         'Đã gửi minh chứng!',
-        'Nhiệm vụ đã chuyển sang trạng thái "Chờ duyệt". Chủ tịch sẽ tiến hành nghiệm thu.',
+        'Nhiệm vụ đã chuyển sang trạng thái "Chờ duyệt". Chủ nhiệm sẽ tiến hành nghiệm thu.',
         'info'
       );
     } catch (e) {
@@ -360,7 +360,7 @@ export function App() {
     try {
       const updated = await api<Task>(`/tasks/${taskId}`, {
         method: 'PUT',
-        body: { action: 'approve', note: 'Chủ tịch duyệt nhanh hoàn thành.' },
+        body: { action: 'approve', note: 'Chủ nhiệm duyệt nhanh hoàn thành.' },
       });
       setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
       showToast('Duyệt nhanh!', 'Đã đánh dấu hoàn thành nhiệm vụ.');
@@ -703,7 +703,7 @@ export function App() {
                 <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
                   <span>Tổng nhiệm vụ</span>
                   <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold">
-                    {currentRole === 'Chủ tịch' ? 'Toàn CLB' : currentDepartment}
+                    {currentRole === 'Chủ nhiệm' ? 'Toàn CLB' : currentDepartment}
                   </span>
                 </div>
                 <div className="text-2xl font-bold text-slate-900 mt-1">{totalTasksCount}</div>
@@ -739,7 +739,7 @@ export function App() {
                   )}
                 </div>
                 <div className="text-2xl font-bold text-red-600 mt-1">
-                  {overdueCount < 10 ? `0${overdueCount}` : overdueCount}
+                  {overdueCount}
                 </div>
               </div>
               <div className="mt-2 flex items-center justify-between text-[10px]">
@@ -760,10 +760,10 @@ export function App() {
               <div>
                 <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
                   <span>Đợi duyệt bằng chứng</span>
-                  <span className="text-[10px] bg-[#2C69FF]/15 text-[#1E4FC4] px-1.5 py-0.5 rounded font-bold">Chủ tịch</span>
+                  <span className="text-[10px] bg-[#2C69FF]/15 text-[#1E4FC4] px-1.5 py-0.5 rounded font-bold">Chủ nhiệm</span>
                 </div>
                 <div className="text-2xl font-bold text-[#2C69FF] mt-1">
-                  {pendingApprovalsCount < 10 ? `0${pendingApprovalsCount}` : pendingApprovalsCount}
+                  {pendingApprovalsCount}
                 </div>
               </div>
               <div className="mt-2">
@@ -934,7 +934,7 @@ export function App() {
         />
       )}
 
-      {/* Modal 8: Data Storage & Google Sheets Sync (chỉ Chủ tịch) */}
+      {/* Modal 8: Data Storage & Google Sheets Sync (chỉ Chủ nhiệm) */}
       {isLeadership && (
         <DataSyncModal
           isOpen={isDataSyncOpen}

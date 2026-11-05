@@ -121,10 +121,10 @@ export async function notify(input: NotifyInput): Promise<void> {
   }
 }
 
-/** Gửi thông báo cho cả Ban lãnh đạo (Chủ tịch + Phó Chủ tịch) */
+/** Gửi thông báo cho cả Ban lãnh đạo (Chủ nhiệm + Phó Chủ nhiệm) */
 export async function notifyLeadership(input: Omit<NotifyInput, 'memberId'>): Promise<void> {
   const leaders = await prisma.member.findMany({
-    where: { role: { in: ['Chủ tịch', 'Phó Chủ tịch'] }, status: 'active' },
+    where: { role: { in: ['Chủ nhiệm', 'Phó Chủ nhiệm'] }, status: 'active' },
   });
   for (const leader of leaders) {
     await notify({ ...input, memberId: leader.id, dedupeKey: input.dedupeKey ? `${input.dedupeKey}:${leader.id}` : undefined });

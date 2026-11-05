@@ -48,8 +48,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenRosterModal,
   onOpenDataSyncModal,
 }) => {
-  const isPresident = authMember.role === 'Chủ tịch';
-  const isLeadership = authMember.role === 'Chủ tịch' || authMember.role === 'Phó Chủ tịch';
+  const isPresident = authMember.role === 'Chủ nhiệm';
+  const isLeadership = authMember.role === 'Chủ nhiệm' || authMember.role === 'Phó Chủ nhiệm';
   // Trưởng/Phó ban được đọc biên bản & họp riêng ban mình
   const canManageMeetings = isLeadership || authMember.role === 'Trưởng ban' || authMember.role === 'Phó ban';
 
@@ -61,9 +61,9 @@ export const Header: React.FC<HeaderProps> = ({
   const completionRate = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
 
   const roleLabel = isPresident
-    ? 'Chào Chủ tịch,'
-    : authMember.role === 'Phó Chủ tịch'
-    ? 'Chào Phó Chủ tịch,'
+    ? 'Chào Chủ nhiệm,'
+    : authMember.role === 'Phó Chủ nhiệm'
+    ? 'Chào Phó Chủ nhiệm,'
     : authMember.role === 'Trưởng ban' || authMember.role === 'Phó ban'
     ? `${authMember.role} ${authMember.department},`
     : `Thành viên ${authMember.department},`;

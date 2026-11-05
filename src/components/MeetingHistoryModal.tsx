@@ -226,7 +226,7 @@ export const MeetingHistoryModal: React.FC<MeetingHistoryModalProps> = ({
                   {/* General details */}
                   <div className="space-y-1.5 text-xs text-slate-800 font-sans">
                     <p><strong>1. Thời gian:</strong> Ngày {formatDateVN(selectedMeeting.date)}</p>
-                    <p><strong>2. Thành phần chủ trì:</strong> {selectedMeeting.chairperson} (Chủ tịch CLB)</p>
+                    <p><strong>2. Thành phần chủ trì:</strong> {selectedMeeting.chairperson} (Chủ nhiệm CLB)</p>
                     <p><strong>3. Thư ký cuộc họp:</strong> {selectedMeeting.secretary || 'Nguyễn Thị Ngọc Ánh'}</p>
                     <p><strong>4. Thành phần tham dự:</strong></p>
                     <p className="pl-4 text-slate-700">• Có mặt: {selectedMeeting.attendees?.join(', ') || 'Đầy đủ Ban Điều Hành'}</p>

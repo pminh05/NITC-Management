@@ -79,7 +79,7 @@ Hệ thống NITC Command Center xin gửi Báo cáo Tổng kết Tiến độ C
 - Tổng số nhiệm vụ: ${totalTasks}
 - Đã hoàn thành: ${totalCompleted} việc (${totalTasks > 0 ? Math.round((totalCompleted / totalTasks) * 100) : 0}%)
 - Đang triển khai: ${tasks.filter((t) => t.status === 'in_progress').length} việc
-- Chờ Chủ tịch duyệt: ${tasks.filter((t) => t.status === 'pending_approval').length} việc
+- Chờ Chủ nhiệm duyệt: ${tasks.filter((t) => t.status === 'pending_approval').length} việc
 - Quá hạn / Còn nợ: ${totalOverdue} việc
 - Nhiệm vụ Sticky (lưu chuyển từ kỳ trước chưa xong): ${totalSticky} việc
 
@@ -103,10 +103,10 @@ ${
     : 'Không có công việc nào quá hạn. Toàn đội làm việc rất xuất sắc!'
 }
 
-Đề nghị các Trưởng ban chủ động đôn đốc thành viên nộp link minh chứng / báo cáo để Chủ tịch phê duyệt trước phiên họp tuần tới.
+Đề nghị các Trưởng ban chủ động đôn đốc thành viên nộp link minh chứng / báo cáo để Chủ nhiệm phê duyệt trước phiên họp tuần tới.
 
 Trân trọng,
-Lê Hồng Phúc Minh - Chủ tịch CLB NITC
+Lê Hồng Phúc Minh - Chủ nhiệm CLB NITC
 Hệ thống NITC Command Center`;
 
   const handleCopy = () => {
@@ -138,7 +138,7 @@ Hệ thống NITC Command Center`;
     const email = member?.email || `${task.assigneeName.toLowerCase().replace(/\s+/g, '')}@nitc.vn`;
 
     const subject = `🚨 [NITC NHẮC VIỆC QUÁ HẠN] Công việc "${task.title}" đã quá hạn!`;
-    const content = `Chào ${task.assigneeName},\n\nHệ thống NITC Command Center nhận thấy công việc "${task.title}" của bạn đã quá hạn từ ngày ${formatDateVN(task.deadline)}.\n\nVui lòng truy cập hệ thống để nộp ${task.verificationType === 'link_required' ? 'Link sản phẩm (Figma/Sheet/Doc)' : 'Báo cáo ngắn 2 câu'} ngay hôm nay để Chủ tịch phê duyệt.\n\nTrân trọng,\nChủ tịch NITC.`;
+    const content = `Chào ${task.assigneeName},\n\nHệ thống NITC Command Center nhận thấy công việc "${task.title}" của bạn đã quá hạn từ ngày ${formatDateVN(task.deadline)}.\n\nVui lòng truy cập hệ thống để nộp ${task.verificationType === 'link_required' ? 'Link sản phẩm (Figma/Sheet/Doc)' : 'Báo cáo ngắn 2 câu'} ngay hôm nay để Chủ nhiệm phê duyệt.\n\nTrân trọng,\nChủ nhiệm NITC.`;
 
     onSendNotification({
       type: 'overdue_nag',

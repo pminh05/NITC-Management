@@ -233,7 +233,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
           </div>
 
           {/* Giao việc nhanh: Ban lãnh đạo + Trưởng/Phó ban */}
-          {['Chủ tịch', 'Phó Chủ tịch', 'Trưởng ban', 'Phó ban'].includes(currentRole) && (
+          {['Chủ nhiệm', 'Phó Chủ nhiệm', 'Trưởng ban', 'Phó ban'].includes(currentRole) && (
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowQuickAddModal(true)}

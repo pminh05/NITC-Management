@@ -29,7 +29,7 @@ export const EvidenceReviewModal: React.FC<EvidenceReviewModalProps> = ({
   onApprove,
   onReject,
 }) => {
-  const [approvalNote, setApprovalNote] = useState('Chủ tịch đã duyệt: Làm rất tốt, đúng tiến độ!');
+  const [approvalNote, setApprovalNote] = useState('Chủ nhiệm đã duyệt: Làm rất tốt, đúng tiến độ!');
   const [rejectReason, setRejectReason] = useState('');
   const [isRejecting, setIsRejecting] = useState(false);
 
@@ -64,7 +64,7 @@ export const EvidenceReviewModal: React.FC<EvidenceReviewModalProps> = ({
                 Duyệt Bằng Chứng Hoàn Thành
               </h3>
               <p className="text-xs text-slate-400">
-                Quyền hạn Chủ tịch &bull; Xác minh tính trách nhiệm
+                Quyền hạn Chủ nhiệm &bull; Xác minh tính trách nhiệm
               </p>
             </div>
           </div>
@@ -138,7 +138,7 @@ export const EvidenceReviewModal: React.FC<EvidenceReviewModalProps> = ({
             <div>
               <label className="block text-slate-300 font-semibold mb-1 flex items-center gap-1.5">
                 <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Lời phê của Chủ tịch (Ghi chú duyệt hoàn thành):</span>
+                <span>Lời phê của Chủ nhiệm (Ghi chú duyệt hoàn thành):</span>
               </label>
               <input
                 type="text"

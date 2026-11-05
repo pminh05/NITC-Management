@@ -40,7 +40,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onQuickApprove,
 }) => {
   const daysInfo = getDaysRemaining(task.deadline);
-  const isPresident = currentRole === 'Chủ tịch';
+  const isPresident = currentRole === 'Chủ nhiệm';
   
   // Can this user submit evidence?
   // President can submit or test, or if user is the assigned department / person
@@ -174,7 +174,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             <div className="flex items-center justify-between text-[11px] text-slate-500">
               <span className="font-semibold text-slate-700">Minh chứng đã nộp:</span>
               {task.status === 'pending_approval' && (
-                <span className="text-amber-700 font-bold">Chờ Chủ tịch duyệt</span>
+                <span className="text-amber-700 font-bold">Chờ Chủ nhiệm duyệt</span>
               )}
             </div>
 
@@ -236,7 +236,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             </button>
           )}
 
-          {/* Chủ tịch Review / Approve Action */}
+          {/* Chủ nhiệm Review / Approve Action */}
           {isPresident && task.status === 'pending_approval' && (
             <button
               onClick={() => onOpenReviewModal(task)}

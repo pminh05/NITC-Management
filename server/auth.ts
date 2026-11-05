@@ -114,15 +114,15 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 }
 
 export function requirePresident(req: Request, res: Response, next: NextFunction) {
-  if (req.authMember?.role !== 'Chủ tịch') {
-    return res.status(403).json({ error: 'Chỉ Chủ tịch mới được thực hiện thao tác này' });
+  if (req.authMember?.role !== 'Chủ nhiệm') {
+    return res.status(403).json({ error: 'Chỉ Chủ nhiệm mới được thực hiện thao tác này' });
   }
   return next();
 }
 
 export function requirePresidentOrHead(req: Request, res: Response, next: NextFunction) {
   const role = req.authMember?.role;
-  const allowed = ['Chủ tịch', 'Phó Chủ tịch', 'Trưởng ban', 'Phó ban'];
+  const allowed = ['Chủ nhiệm', 'Phó Chủ nhiệm', 'Trưởng ban', 'Phó ban'];
   if (!allowed.includes(role || '')) {
     return res.status(403).json({ error: 'Chỉ Ban lãnh đạo hoặc Trưởng ban/Phó ban được thao tác này' });
   }
@@ -132,12 +132,12 @@ export function requirePresidentOrHead(req: Request, res: Response, next: NextFu
 // ----- Quyền nghiệp vụ -----
 
 export function isPresident(m?: AuthMember): boolean {
-  return m?.role === 'Chủ tịch';
+  return m?.role === 'Chủ nhiệm';
 }
 
-/** Ban lãnh đạo (Chủ tịch + Phó Chủ tịch): quản trị điều hành toàn CLB */
+/** Ban lãnh đạo (Chủ nhiệm + Phó Chủ nhiệm): quản trị điều hành toàn CLB */
 export function isLeadership(m?: AuthMember): boolean {
-  return m?.role === 'Chủ tịch' || m?.role === 'Phó Chủ tịch';
+  return m?.role === 'Chủ nhiệm' || m?.role === 'Phó Chủ nhiệm';
 }
 
 /** Trưởng ban / Phó ban được quản lý công việc trong phạm vi ban mình */

@@ -38,9 +38,9 @@ function sheetNameToDepartment(sheetName: string): string {
 export function normalizeRole(raw: string, department: string): string {
   const s = stripAccents(String(raw || '').toLowerCase().trim());
   if (!s) return 'Thành viên';
-  if (s.includes('chu nhiem') && !s.includes('pho')) return 'Chủ tịch';
-  if (s.includes('chu tich') && !s.includes('pho')) return 'Chủ tịch';
-  if ((s.includes('pho chu nhiem') || s.includes('pho chu tich'))) return 'Phó Chủ tịch';
+  if (s.includes('chu nhiem') && !s.includes('pho')) return 'Chủ nhiệm';
+  if (s.includes('chu tich') && !s.includes('pho')) return 'Chủ nhiệm';
+  if ((s.includes('pho chu nhiem') || s.includes('pho chu tich'))) return 'Phó Chủ nhiệm';
   if (s.includes('truong ban') || s.includes('truong ban')) return 'Trưởng ban';
   if (s.includes('pho ban')) return 'Phó ban';
   if (s.includes('co van')) return 'Cố vấn';

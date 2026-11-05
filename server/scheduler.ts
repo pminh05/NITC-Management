@@ -29,7 +29,7 @@ export async function scanDeadlines(): Promise<{ tomorrow: number; today: number
   const tomorrow = todayStr(new Date(Date.now() + 86400000));
 
   // Đồng bộ trạng thái DB: việc trễ hạn đánh dấu 'overdue' (pending_approval vẫn giữ
-  // vì đang chờ Chủ tịch nghiệm thu, không phải lỗi của người làm)
+  // vì đang chờ Chủ nhiệm nghiệm thu, không phải lỗi của người làm)
   await prisma.task.updateMany({
     where: { deadline: { lt: today }, status: 'in_progress' },
     data: { status: 'overdue' },
@@ -89,7 +89,7 @@ export async function scanDeadlines(): Promise<{ tomorrow: number; today: number
           memberId,
           type: 'overdue',
           title: `🚨 Quá hạn ${daysOverdue} ngày`,
-          body: `"${task.title}" đã trễ hạn từ ${task.deadline} (ban ${task.department}). Cần nộp minh chứng hoặc báo Chủ tịch gia hạn.`,
+          body: `"${task.title}" đã trễ hạn từ ${task.deadline} (ban ${task.department}). Cần nộp minh chứng hoặc báo Chủ nhiệm gia hạn.`,
           taskId: task.id,
           dedupeKey: `overdue:${task.id}:${memberId}:${today}`,
         });
@@ -167,7 +167,7 @@ export async function weeklyReport(): Promise<void> {
 
   if (process.env.EMAIL_ENABLED === 'true') {
     const leaders = await prisma.member.findMany({
-      where: { role: { in: ['Chủ tịch', 'Phó Chủ tịch'] }, status: 'active' },
+      where: { role: { in: ['Chủ nhiệm', 'Phó Chủ nhiệm'] }, status: 'active' },
     });
     for (const l of leaders) {
       if ((await getPref(l.id)) !== 'in_app') {

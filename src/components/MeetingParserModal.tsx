@@ -193,7 +193,7 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
                 <span>⚠️ Quy tắc "Minh"</span>
               </div>
               <p className="text-slate-400">
-                Nếu biên bản ghi tên trùng nhiều người (VD: tên Minh), AI không tự gán mà sẽ hiện cảnh báo để Chủ tịch chọn người chính xác.
+                Nếu biên bản ghi tên trùng nhiều người (VD: tên Minh), AI không tự gán mà sẽ hiện cảnh báo để Chủ nhiệm chọn người chính xác.
               </p>
             </div>
 
@@ -248,7 +248,7 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
             ) : (
               <>
                 <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>Phân tích & Chuyển sang Bộ lọc Chủ tịch</span>
+                <span>Phân tích & Chuyển sang Bộ lọc Chủ nhiệm</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}

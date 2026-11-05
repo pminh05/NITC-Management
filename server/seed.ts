@@ -16,7 +16,7 @@ export async function seedIfEmpty(): Promise<boolean> {
   return true;
 }
 
-/** Wipe + seed lại (dùng cho "Reset Demo" của Chủ tịch) */
+/** Wipe + seed lại (dùng cho "Reset Demo" của Chủ nhiệm) */
 export async function resetAndSeed(): Promise<void> {
   await prisma.$transaction([
     prisma.user.deleteMany(),

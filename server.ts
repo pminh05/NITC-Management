@@ -60,7 +60,7 @@ app.get('/api/notifications/stream', async (req, res) => {
 // AI BBH Parser: Ban lãnh đạo + Trưởng/Phó ban (họp riêng ban)
 app.post('/api/gemini/parse-bbh', requireAuth, (req, res, next) => {
   const role = req.authMember?.role;
-  if (!['Chủ tịch', 'Phó Chủ tịch', 'Trưởng ban', 'Phó ban'].includes(role || '')) {
+  if (!['Chủ nhiệm', 'Phó Chủ nhiệm', 'Trưởng ban', 'Phó ban'].includes(role || '')) {
     return res.status(403).json({ error: 'Chỉ Ban lãnh đạo hoặc Trưởng ban/Phó ban được đọc biên bản họp' });
   }
   return next();

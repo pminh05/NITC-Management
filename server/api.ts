@@ -139,8 +139,8 @@ apiRouter.get('/members', async (req: Request, res: Response) => {
   }
   const members = await prisma.member.findMany({ where });
   const ROLE_ORDER: Record<string, number> = {
-    'Chủ tịch': 0,
-    'Phó Chủ tịch': 1,
+    'Chủ nhiệm': 0,
+    'Phó Chủ nhiệm': 1,
     'Trưởng ban': 2,
     'Phó ban': 3,
     'Thành viên': 4,
@@ -240,8 +240,8 @@ apiRouter.delete('/members/:id', requirePresident, async (req: Request, res: Res
   const { id } = req.params;
   const existing = await prisma.member.findUnique({ where: { id }, include: { tasks: { select: { id: true } } } });
   if (!existing) return res.status(404).json({ error: 'Không tìm thấy thành viên' });
-  if (existing.role === 'Chủ tịch') {
-    return res.status(403).json({ error: 'Không thể xóa Chủ tịch CLB' });
+  if (existing.role === 'Chủ nhiệm') {
+    return res.status(403).json({ error: 'Không thể xóa Chủ nhiệm CLB' });
   }
   if (existing.tasks.length > 0) {
     return res.status(409).json({
@@ -330,9 +330,9 @@ apiRouter.post('/tasks', requirePresidentOrHead, async (req: Request, res: Respo
 
 /**
  * PUT /tasks/:id — hành động tường minh theo `action`:
- *  - submit_evidence: người được giao / cùng ban / Chủ tịch
- *  - approve / reject: Chủ tịch
- *  - update: sửa thông tin (Chủ tịch, hoặc Trưởng/Phó ban trong ban mình)
+ *  - submit_evidence: người được giao / cùng ban / Chủ nhiệm
+ *  - approve / reject: Chủ nhiệm
+ *  - update: sửa thông tin (Chủ nhiệm, hoặc Trưởng/Phó ban trong ban mình)
  */
 apiRouter.put('/tasks/:id', requireAuth, async (req: Request, res: Response) => {
   const me = req.authMember!;
@@ -349,7 +349,7 @@ apiRouter.put('/tasks/:id', requireAuth, async (req: Request, res: Response) => 
     let alsoAssignee = false;
     try { alsoAssignee = task.assigneeIds ? (JSON.parse(task.assigneeIds) as string[]).includes(me.id) : false; } catch {}
     const canSubmit = isPresident(me) || me.department === task.department || me.id === task.assigneeId || alsoAssignee;
-    if (!canSubmit) return res.status(403).json({ error: 'Chỉ người được giao / cùng ban / Chủ tịch được nộp minh chứng' });
+    if (!canSubmit) return res.status(403).json({ error: 'Chỉ người được giao / cùng ban / Chủ nhiệm được nộp minh chứng' });
     const link = req.body.link || null;
     const report = req.body.report || null;
     if (task.verificationType === 'link_required' && !link) {
@@ -380,12 +380,12 @@ apiRouter.put('/tasks/:id', requireAuth, async (req: Request, res: Response) => 
   }
 
   if (action === 'approve') {
-    if (!isLeadership(me)) return res.status(403).json({ error: 'Chỉ Ban lãnh đạo (Chủ tịch/Phó Chủ tịch) được duyệt minh chứng' });
+    if (!isLeadership(me)) return res.status(403).json({ error: 'Chỉ Ban lãnh đạo (Chủ nhiệm/Phó Chủ nhiệm) được duyệt minh chứng' });
     const updated = await prisma.task.update({
       where: { id },
       data: {
         status: 'completed',
-        approvalNote: req.body.note || 'Chủ tịch đã duyệt hoàn thành.',
+        approvalNote: req.body.note || 'Chủ nhiệm đã duyệt hoàn thành.',
         rejectedReason: null,
         updatedAt: now,
       },

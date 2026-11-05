@@ -139,7 +139,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
   );
 
   const departments: Department[] = ['Học thuật', 'Truyền thông', 'Sự kiện', 'Đối ngoại', 'Ban Chủ nhiệm'];
-  const roles: Role[] = ['Chủ tịch', 'Phó Chủ tịch', 'Trưởng ban', 'Phó ban', 'Thành viên', 'Cố vấn'];
+  const roles: Role[] = ['Chủ nhiệm', 'Phó Chủ nhiệm', 'Trưởng ban', 'Phó ban', 'Thành viên', 'Cố vấn'];
 
   const activeTerm = terms.find((t) => t.isActive);
 
@@ -424,7 +424,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
               </thead>
               <tbody className="divide-y divide-slate-800 text-slate-300">
                 {filteredMembers.map((m, idx) => {
-                  const isLeader = m.role === 'Chủ tịch' || m.role === 'Phó Chủ tịch';
+                  const isLeader = m.role === 'Chủ nhiệm' || m.role === 'Phó Chủ nhiệm';
                   return (
                     <tr key={m.id} className="hover:bg-slate-800/50 transition">
                       <td className="p-3 text-center font-mono text-slate-500">
@@ -474,7 +474,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
-                        {m.role !== 'Chủ tịch' && (
+                        {m.role !== 'Chủ nhiệm' && (
                           <button
                             onClick={() => onDeleteMember(m.id)}
                             className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"

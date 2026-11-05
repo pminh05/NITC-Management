@@ -6,8 +6,8 @@ export type Department =
   | 'Ban Chủ nhiệm';
 
 export type Role =
-  | 'Chủ tịch'
-  | 'Phó Chủ tịch'
+  | 'Chủ nhiệm'
+  | 'Phó Chủ nhiệm'
   | 'Trưởng ban'
   | 'Phó ban'
   | 'Thành viên'

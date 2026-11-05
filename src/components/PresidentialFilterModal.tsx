@@ -138,7 +138,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
       warningMessages: [],
       approved: true,
       priority: 'high',
-      reasoning: 'Chủ tịch bổ sung thủ công',
+      reasoning: 'Chủ nhiệm bổ sung thủ công',
     };
     setTasks((prev) => [...prev, newTask]);
   };
@@ -374,7 +374,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                       <span>⚠️ QUY TẮC "MINH": Phát hiện tên "Minh" trùng với nhiều thành viên!</span>
                     </div>
                     <p className="text-amber-200/90">
-                      BBH ghi: <em>"{task.rawAssigneeText}"</em>. AI không được tự đoán. Chủ tịch vui lòng chọn chính xác người phụ trách:
+                      BBH ghi: <em>"{task.rawAssigneeText}"</em>. AI không được tự đoán. Chủ nhiệm vui lòng chọn chính xác người phụ trách:
                     </p>
                     <div className="flex flex-wrap gap-2 pt-1">
                       {task.ambiguityMatches.length > 0 ? (
