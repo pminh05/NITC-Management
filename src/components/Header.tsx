@@ -4,7 +4,6 @@ import {
   Users,
   Sparkles,
   Database,
-  Pin,
   CheckCircle2,
   AlertTriangle,
   Clock,
@@ -50,12 +49,13 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const isPresident = authMember.role === 'Chủ tịch';
   const isLeadership = authMember.role === 'Chủ tịch' || authMember.role === 'Phó Chủ tịch';
+  // Trưởng/Phó ban được đọc biên bản & họp riêng ban mình
+  const canManageMeetings = isLeadership || authMember.role === 'Trưởng ban' || authMember.role === 'Phó ban';
 
   // Compute summary counts theo phạm vi dữ liệu mà vai trò được xem
   const totalTasks = tasks.length;
   const pendingCount = tasks.filter((t) => t.status === 'pending_approval').length;
   const overdueCount = tasks.filter((t) => t.status === 'overdue').length;
-  const stickyCount = tasks.filter((t) => t.isSticky && t.status !== 'completed').length;
   const completedCount = tasks.filter((t) => t.status === 'completed').length;
   const completionRate = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
 
@@ -95,7 +95,7 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Quick Action Buttons */}
             <div className="flex items-center gap-1.5 sm:gap-2">
-              {isLeadership && (
+              {canManageMeetings && (
                 <button
                   onClick={onOpenBBHParser}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#2C69FF]/100 hover:bg-[#1F56D6] text-white text-xs font-bold rounded-lg shadow-sm transition active:scale-95 cursor-pointer"
@@ -202,12 +202,6 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             )}
 
-            {stickyCount > 0 && (
-              <div className="flex items-center gap-1 bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded border border-purple-500/30 font-semibold" title="Nhiệm vụ chưa xong từ kỳ họp trước">
-                <Pin className="w-3 h-3 text-purple-400 rotate-45" />
-                <span>Lưu chuyển: {stickyCount}</span>
-              </div>
-            )}
           </div>
         </div>
       </div>

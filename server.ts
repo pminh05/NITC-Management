@@ -57,8 +57,14 @@ app.get('/api/notifications/stream', async (req, res) => {
   });
 });
 
-// AI BBH Parser (cần đăng nhập — chỉ Ban điều hành dùng được từ UI)
-app.post('/api/gemini/parse-bbh', requireAuth, parseBBHHandler);
+// AI BBH Parser: Ban lãnh đạo + Trưởng/Phó ban (họp riêng ban)
+app.post('/api/gemini/parse-bbh', requireAuth, (req, res, next) => {
+  const role = req.authMember?.role;
+  if (!['Chủ tịch', 'Phó Chủ tịch', 'Trưởng ban', 'Phó ban'].includes(role || '')) {
+    return res.status(403).json({ error: 'Chỉ Ban lãnh đạo hoặc Trưởng ban/Phó ban được đọc biên bản họp' });
+  }
+  return next();
+}, parseBBHHandler);
 
 // Reminder / Nag log placeholder (giữ tương thích cũ; log thật giờ qua /api/logs)
 app.post('/api/nag/send-reminders', requireAuth, (req, res) => {

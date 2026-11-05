@@ -86,17 +86,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             >
               {task.department}
             </span>
-
-            {/* Sticky Task Rule Indicator */}
-            {task.isSticky && task.status !== 'completed' && (
-              <span
-                className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1"
-                title="Quy tắc Sticky: Công việc chưa xong từ kỳ họp trước tự động chuyển sang tuần này"
-              >
-                <Pin className="w-3 h-3 rotate-45 text-purple-600" />
-                <span>Nhiệm vụ lưu chuyển</span>
-              </span>
-            )}
           </div>
 
           {/* Status Badge */}

@@ -54,6 +54,7 @@ model Member {
 model Meeting {
   id               String   @id @default(cuid())
   title            String
+  department       String   @default("Ban Chủ nhiệm") // "Ban Chủ nhiệm" = họp toàn CLB; còn lại = họp riêng ban
   date             String // YYYY-MM-DD
   time             String?
   location         String?

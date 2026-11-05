@@ -52,6 +52,7 @@ export function serializeTask(t: {
 export function serializeMeeting(m: {
   id: string;
   title: string;
+  department: string;
   date: string;
   time: string | null;
   location: string | null;
@@ -75,6 +76,7 @@ export function serializeMeeting(m: {
   return {
     id: m.id,
     title: m.title,
+    department: m.department,
     date: m.date,
     time: m.time ?? undefined,
     location: m.location ?? undefined,

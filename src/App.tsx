@@ -47,6 +47,8 @@ export function App() {
   const currentDepartment = (authMember?.department as Department) || 'Ban Chủ nhiệm';
   const currentUserId = authMember?.id || '';
   const isLeadership = currentRole === 'Chủ tịch' || currentRole === 'Phó Chủ tịch';
+  // Ban quản lý được họp riêng & ban hành việc của ban mình
+  const canManageMeetings = isLeadership || currentRole === 'Trưởng ban' || currentRole === 'Phó ban';
 
   // ===== 1b. Nhiệm kỳ & roster =====
   const [terms, setTerms] = useState<Term[]>([]);
@@ -502,14 +504,12 @@ export function App() {
   const inProgressPct = totalTasksCount > 0 ? Math.round((inProgressCount / totalTasksCount) * 100) : 0;
   const pendingApprovalsCount = tasks.filter((t) => t.status === 'pending_approval').length;
   const overdueCount = tasks.filter((t) => t.status === 'overdue').length;
-  const stickyCount = tasks.filter((t) => t.isSticky && t.status !== 'completed').length;
   const completedCount = tasks.filter((t) => t.status === 'completed').length;
   const completionRate = totalTasksCount > 0 ? Math.round((completedCount / totalTasksCount) * 100) : 0;
 
   // Selected quick filter from sidebar
   const [sidebarDeptFilter, setSidebarDeptFilter] = useState<string>('all');
   const [sidebarStatusFilter, setSidebarStatusFilter] = useState<string>('all');
-  const [sidebarOnlySticky, setSidebarOnlySticky] = useState<boolean>(false);
 
   // ===== Render =====
 
@@ -586,10 +586,9 @@ export function App() {
               onClick={() => {
                 setSidebarDeptFilter('all');
                 setSidebarStatusFilter('all');
-                setSidebarOnlySticky(false);
               }}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition cursor-pointer ${
-                sidebarDeptFilter === 'all' && sidebarStatusFilter === 'all' && !sidebarOnlySticky
+                sidebarDeptFilter === 'all' && sidebarStatusFilter === 'all'
                   ? 'bg-[#2C69FF]/10 text-[#1E4FC4] font-bold border border-[#2C69FF]/30'
                   : 'text-slate-600 hover:bg-slate-50'
               }`}
@@ -603,7 +602,7 @@ export function App() {
               </span>
             </button>
 
-            {isLeadership && (
+            {canManageMeetings && (
               <button
                 onClick={() => setIsParserOpen(true)}
                 className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-md text-xs transition cursor-pointer"
@@ -617,29 +616,6 @@ export function App() {
                 </span>
               </button>
             )}
-
-            <button
-              onClick={() => {
-                setSidebarOnlySticky(true);
-                setSidebarDeptFilter('all');
-                setSidebarStatusFilter('all');
-              }}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs transition cursor-pointer ${
-                sidebarOnlySticky
-                  ? 'bg-purple-50 text-purple-700 font-bold border border-purple-200/60'
-                  : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span>📋</span>
-                <span>Việc lưu chuyển</span>
-              </div>
-              {stickyCount > 0 && (
-                <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-bold">
-                  {stickyCount}
-                </span>
-              )}
-            </button>
 
             <button
               onClick={() => setIsNagOpen(true)}
@@ -681,7 +657,6 @@ export function App() {
                   key={dept}
                   onClick={() => {
                     setSidebarDeptFilter(dept);
-                    setSidebarOnlySticky(false);
                     setSidebarStatusFilter('all');
                   }}
                   className={`w-full flex items-center justify-between px-3 py-1.5 rounded-md text-xs transition cursor-pointer ${
@@ -820,11 +795,11 @@ export function App() {
                 </h2>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed max-w-4xl">
-                Tự động hóa toàn trình: <strong className="text-slate-800">Biên bản họp &rarr; Danh sách việc</strong> &bull; Thực thi nghiêm ngặt <strong className="text-amber-700">Quy tắc Minh (Không tự ý gán người mơ hồ)</strong> &bull; <strong className="text-red-600">Cảnh báo vắng mặt</strong> &bull; <strong className="text-purple-700">Việc lưu chuyển (không tự biến mất giữa các kỳ họp)</strong> &bull; <strong className="text-emerald-700">Nghiệm thu minh chứng (Link hoặc báo cáo 2 câu)</strong>.
+                Tự động hóa toàn trình: <strong className="text-slate-800">Biên bản họp &rarr; Danh sách việc</strong> &bull; Thực thi nghiêm ngặt <strong className="text-amber-700">Quy tắc Minh (Không tự ý gán người mơ hồ)</strong> &bull; <strong className="text-red-600">Cảnh báo vắng mặt</strong> &bull;<strong className="text-emerald-700">Nghiệm thu minh chứng (Link hoặc báo cáo 2 câu)</strong>.
               </p>
             </div>
 
-            {isLeadership && (
+            {canManageMeetings && (
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => setIsParserOpen(true)}
@@ -846,10 +821,8 @@ export function App() {
             currentUserId={currentUserId}
             selectedDeptProp={sidebarDeptFilter}
             selectedStatusProp={sidebarStatusFilter}
-            onlyStickyProp={sidebarOnlySticky}
             onSelectDeptFilter={setSidebarDeptFilter}
             onSelectStatusFilter={setSidebarStatusFilter}
-            onSelectStickyFilter={setSidebarOnlySticky}
             onOpenSubmitModal={handleOpenSubmitModal}
             onOpenReviewModal={handleOpenReviewModal}
             onDeleteTask={handleDeleteTask}
@@ -874,8 +847,8 @@ export function App() {
 
       {/* 5. Modals System */}
 
-      {/* Modal 1: BBH Input & AI Parser (chỉ Chủ tịch) */}
-      {isLeadership && (
+      {/* Modal 1: BBH Input & AI Parser (Ban lãnh đạo + Trưởng/Phó ban họp riêng) */}
+      {canManageMeetings && (
         <MeetingParserModal
           isOpen={isParserOpen}
           onClose={() => setIsParserOpen(false)}
@@ -884,14 +857,15 @@ export function App() {
         />
       )}
 
-      {/* Modal 2: Presidential Filter (Quy tắc Minh, Cảnh báo vắng mặt, Phê duyệt) */}
-      {isLeadership && (
+      {/* Modal 2: Presidential Filter (Quy tắc trùng tên, Cảnh báo vắng mặt, Phê duyệt) */}
+      {canManageMeetings && (
         <PresidentialFilterModal
           isOpen={isFilterOpen}
           onClose={() => setIsFilterOpen(false)}
           meetingData={parsedMeetingData || {}}
           draftTasks={parsedDraftTasks}
           members={members}
+          authMember={authMember!}
           onPublishTasks={handlePublishTasks}
         />
       )}

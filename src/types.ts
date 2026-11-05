@@ -127,6 +127,7 @@ export interface DraftParseResult {
 export interface Meeting {
   id: string;
   title: string;
+  department?: string; // "Ban Chủ nhiệm" = toàn CLB; còn lại = họp riêng ban
   date: string; // YYYY-MM-DD
   time?: string;
   location?: string;

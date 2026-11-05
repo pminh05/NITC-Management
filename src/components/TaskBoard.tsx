@@ -3,7 +3,6 @@ import {
   Filter,
   Search,
   Plus,
-  Pin,
   Clock,
   CheckCircle2,
   AlertTriangle,
@@ -22,10 +21,8 @@ interface TaskBoardProps {
   currentUserId: string;
   selectedDeptProp?: string;
   selectedStatusProp?: string;
-  onlyStickyProp?: boolean;
   onSelectDeptFilter?: (dept: string) => void;
   onSelectStatusFilter?: (status: string) => void;
-  onSelectStickyFilter?: (sticky: boolean) => void;
   onOpenSubmitModal: (task: Task) => void;
   onOpenReviewModal: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
@@ -42,10 +39,8 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
   currentUserId,
   selectedDeptProp,
   selectedStatusProp,
-  onlyStickyProp,
   onSelectDeptFilter,
   onSelectStatusFilter,
-  onSelectStickyFilter,
   onOpenSubmitModal,
   onOpenReviewModal,
   onDeleteTask,
@@ -55,13 +50,12 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
 }) => {
   const [internalDept, setInternalDept] = useState<string>('all');
   const [internalStatus, setInternalStatus] = useState<string>('all');
-  const [internalSticky, setInternalSticky] = useState<boolean>(false);
+
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showQuickAddModal, setShowQuickAddModal] = useState<boolean>(false);
 
   const selectedDept = selectedDeptProp !== undefined ? selectedDeptProp : internalDept;
   const selectedStatus = selectedStatusProp !== undefined ? selectedStatusProp : internalStatus;
-  const onlySticky = onlyStickyProp !== undefined ? onlyStickyProp : internalSticky;
 
   const setDept = (dept: string) => {
     if (onSelectDeptFilter) onSelectDeptFilter(dept);
@@ -73,10 +67,6 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
     setInternalStatus(status);
   };
 
-  const setSticky = (val: boolean) => {
-    if (onSelectStickyFilter) onSelectStickyFilter(val);
-    setInternalSticky(val);
-  };
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
@@ -89,10 +79,6 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
       if (selectedStatus !== 'all' && task.status !== selectedStatus) {
         return false;
       }
-      // Sticky filter
-      if (onlySticky && (!task.isSticky || task.status === 'completed')) {
-        return false;
-      }
       // Search query
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
@@ -103,7 +89,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
       }
       return true;
     }).sort((a, b) => a.deadline.localeCompare(b.deadline)); // việc sắp đến hạn nhất lên đầu
-  }, [tasks, selectedDept, selectedStatus, onlySticky, searchQuery]);
+  }, [tasks, selectedDept, selectedStatus, searchQuery]);
 
   // Counts for tabs
   const countAll = tasks.length;
@@ -111,7 +97,6 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
   const countPending = tasks.filter((t) => t.status === 'pending_approval').length;
   const countOverdue = tasks.filter((t) => t.status === 'overdue').length;
   const countCompleted = tasks.filter((t) => t.status === 'completed').length;
-  const countSticky = tasks.filter((t) => t.isSticky && t.status !== 'completed').length;
 
   const departments: Department[] = ['Học thuật', 'Truyền thông', 'Sự kiện', 'Đối ngoại', 'Ban Chủ nhiệm'];
 
@@ -169,18 +154,6 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
               />
             </div>
 
-            <button
-              onClick={() => setSticky(!onlySticky)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shrink-0 cursor-pointer ${
-                onlySticky
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
-              }`}
-              title="Chỉ hiển thị các nhiệm vụ chưa hoàn thành từ tuần trước chuyển sang"
-            >
-              <Pin className="w-3.5 h-3.5 rotate-45" />
-              <span>Lưu chuyển ({countSticky})</span>
-            </button>
           </div>
         </div>
 
@@ -257,8 +230,8 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
             </button>
           </div>
 
-          {/* President Action Buttons */}
-          {currentRole === 'Chủ tịch' && (
+          {/* Giao việc nhanh: Ban lãnh đạo + Trưởng/Phó ban */}
+          {['Chủ tịch', 'Phó Chủ tịch', 'Trưởng ban', 'Phó ban'].includes(currentRole) && (
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowQuickAddModal(true)}
@@ -306,13 +279,12 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
           </div>
 
           <div className="flex items-center justify-center gap-3 pt-2">
-            {(searchQuery || selectedStatus !== 'all' || selectedDept !== 'all' || onlySticky) && (
+            {(searchQuery || selectedStatus !== 'all' || selectedDept !== 'all') && (
               <button
                 onClick={() => {
                   setDept('all');
                   setStatus('all');
                   setSearchQuery('');
-                  setSticky(false);
                 }}
                 className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer"
               >
@@ -373,7 +345,6 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
     new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0]
   );
   const [verificationType, setVerificationType] = useState<'link_required' | 'report_required'>('link_required');
-  const [isSticky, setIsSticky] = useState(false);
 
   if (!isOpen) return null;
 
@@ -393,7 +364,6 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
       deadline,
       status: 'in_progress',
       verificationType,
-      isSticky,
       priority: 'high',
       sourceMeetingTitle: 'Giao việc phát sinh trực tiếp',
     });
@@ -489,19 +459,6 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
                 <option value="report_required">Cần Báo cáo 📝</option>
               </select>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2 pt-1">
-            <input
-              type="checkbox"
-              id="stickyCheck"
-              checked={isSticky}
-              onChange={(e) => setIsSticky(e.target.checked)}
-              className="rounded bg-slate-100 border-slate-300 text-purple-600 focus:ring-purple-500"
-            />
-            <label htmlFor="stickyCheck" className="text-slate-700 font-medium cursor-pointer">
-              Đánh dấu là việc lưu chuyển từ kỳ họp trước
-            </label>
           </div>
 
           <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">

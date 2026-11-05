@@ -135,6 +135,16 @@ export const MeetingHistoryModal: React.FC<MeetingHistoryModalProps> = ({
                       {m.title}
                     </h4>
 
+                    <div className="mb-2">
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                        (m.department || 'Ban Chủ nhiệm') === 'Ban Chủ nhiệm'
+                          ? 'bg-[#2C69FF]/15 text-[#8FB2FF] border border-[#2C69FF]/30'
+                          : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                      }`}>
+                        {(m.department || 'Ban Chủ nhiệm') === 'Ban Chủ nhiệm' ? '🌐 Toàn CLB' : `🔒 Riêng ban ${m.department}`}
+                      </span>
+                    </div>
+
                     <div className="flex items-center justify-between text-[11px] text-slate-400">
                       <span>Chủ trì: {m.chairperson}</span>
                       <span className="text-emerald-400 font-semibold">

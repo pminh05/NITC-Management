@@ -24,6 +24,7 @@ interface PresidentialFilterModalProps {
   meetingData: Partial<Meeting>;
   draftTasks: ExtractedDraftTask[];
   members: Member[];
+  authMember: Member;
   onPublishTasks: (
     finalMeeting: Meeting,
     finalTasks: ExtractedDraftTask[]
@@ -36,14 +37,31 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
   meetingData,
   draftTasks: initialDraftTasks,
   members,
+  authMember,
   onPublishTasks,
 }) => {
+  // Trưởng ban/Phó ban: kỳ họp riêng của ban mình — khóa phân ban, người trong ban
+  const isDeptHead = authMember.role === 'Trưởng ban' || authMember.role === 'Phó ban';
+  const allowedDepartments: Department[] = isDeptHead
+    ? [authMember.department]
+    : ['Học thuật', 'Truyền thông', 'Sự kiện', 'Đối ngoại', 'Ban Chủ nhiệm'];
   const [tasks, setTasks] = useState<ExtractedDraftTask[]>(initialDraftTasks);
   const [meeting, setMeeting] = useState<Partial<Meeting>>(meetingData);
+  const [crossDeptRemoved, setCrossDeptRemoved] = useState(0);
 
   // Sync when initial draft tasks change
   React.useEffect(() => {
-    setTasks(initialDraftTasks);
+    if (isDeptHead) {
+      // Họp riêng ban: chỉ giữ việc thuộc ban mình, việc ngoài ban do BĐH xử lý ở kỳ họp toàn CLB
+      const kept = initialDraftTasks.filter(
+        (t) => t.suggestedDepartment === authMember.department || t.hasAmbiguity
+      );
+      const removedCount = initialDraftTasks.length - kept.length;
+      setTasks(kept.map((t) => ({ ...t, suggestedDepartment: authMember.department })));
+      setCrossDeptRemoved(removedCount);
+    } else {
+      setTasks(initialDraftTasks);
+    }
   }, [initialDraftTasks]);
 
   React.useEffect(() => {
@@ -150,7 +168,6 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
     onPublishTasks(finalMeeting, tasks);
   };
 
-  const departments: Department[] = ['Học thuật', 'Truyền thông', 'Sự kiện', 'Đối ngoại', 'Ban Chủ nhiệm'];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
@@ -227,6 +244,13 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
           )}
         </div>
 
+        {crossDeptRemoved > 0 && (
+          <div className="mx-4 mt-3 p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-200 text-xs">
+            ⚠️ Đã ẩn <strong>{crossDeptRemoved}</strong> công việc thuộc ban khác khỏi kỳ họp riêng này.
+            Những việc đó do Ban Điều hành xử lý ở kỳ họp toàn CLB.
+          </div>
+        )}
+
         {/* Task Review List */}
         <div className="p-6 overflow-y-auto space-y-4 flex-1 text-slate-200">
           
@@ -262,7 +286,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                       }
                       className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs font-semibold text-sky-400 focus:outline-none"
                     >
-                      {departments.map((dept) => (
+                      {allowedDepartments.map((dept) => (
                         <option key={dept} value={dept}>
                           Ban {dept}
                         </option>

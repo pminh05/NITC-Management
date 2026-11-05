@@ -451,8 +451,13 @@ apiRouter.delete('/tasks/:id', requirePresident, async (req: Request, res: Respo
 // ============ MEETINGS (Kho BBH) ============
 
 apiRouter.get('/meetings', async (req: Request, res: Response) => {
+  const me = req.authMember!;
   const meetings = await prisma.meeting.findMany({ orderBy: { createdAt: 'desc' } });
-  res.json(meetings.map(serializeMeeting));
+  // Thành viên/Trưởng ban: chỉ thấy kỳ họp toàn CLB + kỳ họp riêng của ban mình
+  const visible = isLeadership(me)
+    ? meetings
+    : meetings.filter((m) => m.department === 'Ban Chủ nhiệm' || m.department === me.department);
+  res.json(visible.map(serializeMeeting));
 });
 
 /**
@@ -460,8 +465,8 @@ apiRouter.get('/meetings', async (req: Request, res: Response) => {
  * Áp dụng Quy tắc Sticky: mọi việc chưa hoàn thành từ kỳ trước bị đánh dấu lưu chuyển.
  */
 apiRouter.post('/meetings/publish', requirePresidentOrHead, async (req: Request, res: Response) => {
-  if (!isLeadership(req.authMember)) return res.status(403).json({ error: 'Chỉ Ban lãnh đạo được ban hành kỳ họp' });
   const me = req.authMember!;
+  const isDeptHead = me.role === 'Trưởng ban' || me.role === 'Phó ban';
   const { meeting, tasks } = req.body || {};
   if (!meeting?.title || !meeting?.date) {
     return res.status(400).json({ error: 'Thiếu thông tin kỳ họp' });
@@ -470,11 +475,21 @@ apiRouter.post('/meetings/publish', requirePresidentOrHead, async (req: Request,
     return res.status(400).json({ error: 'Không có nhiệm vụ nào để ban hành' });
   }
 
+  // Trưởng ban/Phó ban: chỉ được họp riêng & ban hành việc trong phạm vi ban mình
+  const meetingDepartment = isDeptHead ? me.department : (meeting.department || 'Ban Chủ nhiệm');
+  if (isDeptHead) {
+    const crossDept = tasks.filter((t: any) => t.suggestedDepartment !== me.department);
+    if (crossDept.length > 0) {
+      return res.status(403).json({ error: `Bạn chỉ được ban hành việc thuộc ban ${me.department}. Có ${crossDept.length} việc thuộc ban khác.` });
+    }
+  }
+
   const created = await prisma.$transaction(async (tx) => {
     const m = await tx.meeting.create({
       data: {
         id: meeting.id || undefined,
         title: meeting.title,
+        department: meetingDepartment,
         date: meeting.date,
         time: meeting.time || null,
         location: meeting.location || null,
@@ -520,12 +535,7 @@ apiRouter.post('/meetings/publish', requirePresidentOrHead, async (req: Request,
       });
       newTasks.push(serializeTask(task));
     }
-    // Việc cũ chưa xong bị đánh dấu Sticky (thu thập để thông báo SAU khi commit)
-    const stickyTasks = await tx.task.findMany({
-      where: { isSticky: true, status: { not: 'completed' } },
-      select: { id: true, assigneeId: true, title: true },
-    });
-    return { meeting: serializeMeeting(m), tasks: newTasks, stickyTasks };
+    return { meeting: serializeMeeting(m), tasks: newTasks };
   });
 
   // --- Sau khi commit: gửi thông báo (ngoài transaction, tránh deadlock SQLite) ---
@@ -539,20 +549,10 @@ apiRouter.post('/meetings/publish', requirePresidentOrHead, async (req: Request,
       dedupeKey: `task_assigned:${t.id}`,
     });
   }
-  for (const st of created.stickyTasks) {
-    await notify({
-      memberId: st.assigneeId,
-      type: 'sticky_carried',
-      title: '📎 Việc còn lưu chuyển sang kỳ mới',
-      body: `"${st.title}" chưa hoàn thành từ kỳ họp trước — tiếp tục đôn đốc trong kỳ này.`,
-      taskId: st.id,
-      dedupeKey: `sticky:${st.id}:${created.meeting.id}`,
-    });
-  }
   await notifyLeadership({
     type: 'task_assigned',
     title: '✅ Đã ban hành kỳ họp mới',
-    body: `"${created.meeting.title}": ${created.tasks.length} việc đã lên bảng điều hành, ${created.stickyTasks.length} việc cũ lưu chuyển.`,
+    body: `"${created.meeting.title}" (${created.meeting.department}): ${created.tasks.length} việc đã lên bảng điều hành.`,
     dedupeKey: `published:${created.meeting.id}`,
   });
 
