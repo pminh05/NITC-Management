@@ -14,7 +14,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { Meeting, Task } from '../types';
-import { formatDateVN } from '../utils/dateUtils';
+import { formatDateVN, isTaskOverdue } from '../utils/dateUtils';
 import { exportMeetingToPdf } from '../utils/pdfExport';
 
 interface MeetingHistoryModalProps {

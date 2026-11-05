@@ -11,6 +11,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { Department, Role, Task, Member } from '../types';
+import { isTaskOverdue } from '../utils/dateUtils';
 import { TaskCard } from './TaskCard';
 
 interface TaskBoardProps {

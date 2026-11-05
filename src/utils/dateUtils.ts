@@ -1,3 +1,18 @@
+/** Hôm nay theo chuẩn YYYY-MM-DD (so khớp trực tiếp với trường deadline) */
+export function todayISO(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Việc quá hạn = deadline đã trễ HÔM NAY và chưa hoàn thành.
+ * Dựa theo ngày (không phụ thuộc task.status) để luôn đúng — kể cả khi
+ * status chưa được cron cập nhật.
+ */
+export function isTaskOverdue(task: { deadline: string; status: string }): boolean {
+  return task.status !== 'completed' && task.deadline < todayISO();
+}
+
 export function formatDateVN(dateStr?: string): string {
   if (!dateStr) return '';
   const date = new Date(dateStr);

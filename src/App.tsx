@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import confetti from 'canvas-confetti';
+import { isTaskOverdue } from './utils/dateUtils';
 import {
   Department,
   ExtractedDraftTask,
@@ -503,7 +504,7 @@ export function App() {
   const inProgressCount = tasks.filter((t) => t.status === 'in_progress').length;
   const inProgressPct = totalTasksCount > 0 ? Math.round((inProgressCount / totalTasksCount) * 100) : 0;
   const pendingApprovalsCount = tasks.filter((t) => t.status === 'pending_approval').length;
-  const overdueCount = tasks.filter((t) => t.status === 'overdue').length;
+  const overdueCount = tasks.filter(isTaskOverdue).length;
   const completedCount = tasks.filter((t) => t.status === 'completed').length;
   const completionRate = totalTasksCount > 0 ? Math.round((completedCount / totalTasksCount) * 100) : 0;
 

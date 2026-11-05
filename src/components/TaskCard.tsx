@@ -16,7 +16,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { Department, Role, Task } from '../types';
-import { formatDateVN, getDaysRemaining } from '../utils/dateUtils';
+import { formatDateVN, getDaysRemaining, isTaskOverdue } from '../utils/dateUtils';
 
 interface TaskCardProps {
   task: Task;

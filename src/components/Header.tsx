@@ -10,6 +10,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { AppNotification, Member, Task } from '../types';
+import { isTaskOverdue } from '../utils/dateUtils';
 import { NotificationBell } from './NotificationBell';
 
 interface HeaderProps {
@@ -55,7 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
   // Compute summary counts theo phạm vi dữ liệu mà vai trò được xem
   const totalTasks = tasks.length;
   const pendingCount = tasks.filter((t) => t.status === 'pending_approval').length;
-  const overdueCount = tasks.filter((t) => t.status === 'overdue').length;
+  const overdueCount = tasks.filter(isTaskOverdue).length;
   const completedCount = tasks.filter((t) => t.status === 'completed').length;
   const completionRate = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
 

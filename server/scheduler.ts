@@ -28,6 +28,13 @@ export async function scanDeadlines(): Promise<{ tomorrow: number; today: number
   const today = todayStr();
   const tomorrow = todayStr(new Date(Date.now() + 86400000));
 
+  // Đồng bộ trạng thái DB: việc trễ hạn đánh dấu 'overdue' (pending_approval vẫn giữ
+  // vì đang chờ Chủ tịch nghiệm thu, không phải lỗi của người làm)
+  await prisma.task.updateMany({
+    where: { deadline: { lt: today }, status: 'in_progress' },
+    data: { status: 'overdue' },
+  });
+
   const openTasks = await prisma.task.findMany({
     where: { status: { not: 'completed' } },
     include: { assignee: true },
