@@ -11,6 +11,15 @@ function getAIClient(): OpenAI | null {
   return aiClient;
 }
 
+// Bỏ dấu tiếng Việt để so khớp tiêu đề mục (dùng trong heuristic parser)
+function stripAccents(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
+}
+
 // Helper for heuristic fallback date calculation
 function calculateFallbackDate(baseDateStr: string, relativeText: string): string {
   const base = new Date(baseDateStr || new Date().toISOString().split('T')[0]);
@@ -124,6 +133,11 @@ function fallbackParseBBH(bbhText: string, members: any[], meetingDateStr: strin
       currentSection = 'action';
       continue;
     }
+    // Mục "Kế hoạch sắp tới" (template thật) — các việc sắp tới cũng là đầu việc
+    if (stripAccents(lower).includes('ke hoach sap toi')) {
+      currentSection = 'action';
+      continue;
+    }
 
     if (lower.includes('3. nội dung thảo luận') || lower.includes('thảo luận:')) {
       currentSection = 'discussion';
@@ -141,8 +155,20 @@ function fallbackParseBBH(bbhText: string, members: any[], meetingDateStr: strin
     }
   }
 
-  // Parse action lines into draft tasks
-  const rawTasks = actionLines.length > 0 ? actionLines : lines.filter(l => /^\d+[\.\)]/.test(l));
+  // Parse action lines into draft tasks (bỏ nhãn mục trống / dòng rác của template)
+  const junkPatterns = [
+    /^chung:?\s*$/i,
+    /^tưng việc:?\s*$/i,
+    /^all:?\s*$/i,
+    /^ban (học thuật|truyền thông|sự kiện|đối ngoại):?\s*$/i,
+  ];
+  const cleanedActionLines = actionLines.filter((l) => {
+    const stripped = l.replace(/^[#\-\*\d\.\s]+/, '').trim();
+    if (!stripped) return false;
+    if (junkPatterns.some((re) => re.test(stripped))) return false;
+    return true;
+  });
+  const rawTasks = cleanedActionLines.length > 0 ? cleanedActionLines : lines.filter(l => /^\d+[\.\)]/.test(l));
 
   const extractedTasks = rawTasks.map((taskLine, idx) => {
     const cleanLine = taskLine.replace(/^\d+[\.\)]\s*/, '').trim();
@@ -301,7 +327,7 @@ export async function parseBBHHandler(req: Request, res: Response) {
   const ai = getAIClient();
 
   if (!ai) {
-    console.log('Using local intelligent parser (No Gemini API Key provided)');
+    console.log('Using local heuristic parser (No OPENAI_API_KEY provided)');
     const fallbackResult = fallbackParseBBH(bbhText, memberList, meetingDate);
     return res.json(fallbackResult);
   }
