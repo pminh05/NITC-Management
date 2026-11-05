@@ -285,12 +285,25 @@ apiRouter.post('/tasks', requirePresidentOrHead, async (req: Request, res: Respo
   const assignee = await prisma.member.findUnique({ where: { id: b.assigneeId } });
   if (!assignee) return res.status(400).json({ error: 'Người phụ trách không có trong danh sách thành viên' });
 
+  // Đa phụ trách: assigneeIds (nếu có) — người đầu tiên là phụ trách chính
+  const ids: string[] = Array.isArray(b.assigneeIds) && b.assigneeIds.length > 0
+    ? Array.from(new Set([b.assigneeId, ...b.assigneeIds.filter((x: any) => typeof x === 'string')]))
+    : [b.assigneeId];
+  for (const id of ids) {
+    const m = await prisma.member.findUnique({ where: { id } });
+    if (!m) return res.status(400).json({ error: `Người phụ trách ${id} không có trong danh sách` });
+    if (m.department !== b.department) {
+      return res.status(400).json({ error: `Người phụ trách ${m.name} không thuộc ban ${b.department}` });
+    }
+  }
+
   const task = await prisma.task.create({
     data: {
       title: b.title,
       description: b.description || null,
       assigneeId: b.assigneeId,
       assigneeName: assignee.name,
+      assigneeIds: JSON.stringify(ids),
       department: b.department,
       deadline: b.deadline,
       status: b.status || 'in_progress',
@@ -302,14 +315,16 @@ apiRouter.post('/tasks', requirePresidentOrHead, async (req: Request, res: Respo
     },
     include: { sourceMeeting: { select: { id: true, title: true } } },
   });
-  await notify({
-    memberId: task.assigneeId,
-    type: 'task_assigned',
-    title: '📌 Bạn được giao việc mới',
-    body: `"${task.title}" — hạn chót ${task.deadline}. Xem chi tiết trong Bảng điều hành.`,
-    taskId: task.id,
-    dedupeKey: `task_assigned:${task.id}`,
-  });
+  for (const memberId of ids) {
+    await notify({
+      memberId,
+      type: 'task_assigned',
+      title: ids.length > 1 ? '📌 Công việc nhóm — bạn được giao cùng' : '📌 Bạn được giao việc mới',
+      body: `"${task.title}" — hạn chót ${task.deadline}${ids.length > 1 ? ` (cùng ${ids.length - 1} người khác)` : ''}. Xem chi tiết trong Bảng điều hành.`,
+      taskId: task.id,
+      dedupeKey: `task_assigned:${task.id}:${memberId}`,
+    });
+  }
   return res.status(201).json(serializeTask(task));
 });
 
@@ -331,7 +346,9 @@ apiRouter.put('/tasks/:id', requireAuth, async (req: Request, res: Response) => 
   const now = new Date();
 
   if (action === 'submit_evidence') {
-    const canSubmit = isPresident(me) || me.department === task.department || me.id === task.assigneeId;
+    let alsoAssignee = false;
+    try { alsoAssignee = task.assigneeIds ? (JSON.parse(task.assigneeIds) as string[]).includes(me.id) : false; } catch {}
+    const canSubmit = isPresident(me) || me.department === task.department || me.id === task.assigneeId || alsoAssignee;
     if (!canSubmit) return res.status(403).json({ error: 'Chỉ người được giao / cùng ban / Chủ tịch được nộp minh chứng' });
     const link = req.body.link || null;
     const report = req.body.report || null;
@@ -484,6 +501,27 @@ apiRouter.post('/meetings/publish', requirePresidentOrHead, async (req: Request,
     }
   }
 
+  // Kiểm tra đa phụ trách TRƯỚC khi vào transaction (không trả res trong tx)
+  const normalizedTasks = [];
+  for (const t of tasks) {
+    const rawIds: string[] = Array.isArray(t.suggestedAssigneeIds) && t.suggestedAssigneeIds.length > 0
+      ? Array.from(new Set(t.suggestedAssigneeIds.filter((x: any) => typeof x === 'string')))
+      : t.suggestedAssigneeId ? [t.suggestedAssigneeId] : [];
+    if (rawIds.length === 0) {
+      return res.status(400).json({ error: `Việc "${t.title}" chưa có người phụ trách` });
+    }
+    let primaryName = '';
+    for (const id of rawIds) {
+      const mem = await prisma.member.findUnique({ where: { id } });
+      if (!mem) return res.status(400).json({ error: `Người phụ trách không có trong danh sách (id: ${id})` });
+      if (mem.department !== t.suggestedDepartment) {
+        return res.status(400).json({ error: `Người phụ trách ${mem.name} không thuộc ban ${t.suggestedDepartment}` });
+      }
+      if (id === rawIds[0]) primaryName = mem.name;
+    }
+    normalizedTasks.push({ ...t, ids: rawIds, primaryName });
+  }
+
   const created = await prisma.$transaction(async (tx) => {
     const m = await tx.meeting.create({
       data: {
@@ -505,23 +543,15 @@ apiRouter.post('/meetings/publish', requirePresidentOrHead, async (req: Request,
       },
     });
 
-    // Sticky: việc chưa xong từ các kỳ trước → lưu chuyển
-    await tx.task.updateMany({
-      where: { status: { not: 'completed' } },
-      data: { isSticky: true },
-    });
-
     const newTasks = [];
-    for (const t of tasks) {
-      const assignee = t.suggestedAssigneeId
-        ? await tx.member.findUnique({ where: { id: t.suggestedAssigneeId } })
-        : null;
+    for (const t of normalizedTasks) {
       const task = await tx.task.create({
         data: {
           title: t.title,
           description: t.description || null,
-          assigneeId: t.suggestedAssigneeId || 'mem-1',
-          assigneeName: assignee?.name || t.suggestedAssigneeName || t.rawAssigneeText || 'Chưa gán',
+          assigneeId: t.ids[0],
+          assigneeName: t.primaryName || 'Chưa gán',
+          assigneeIds: JSON.stringify(t.ids),
           department: t.suggestedDepartment,
           deadline: t.suggestedDeadline,
           status: 'in_progress',
@@ -540,14 +570,17 @@ apiRouter.post('/meetings/publish', requirePresidentOrHead, async (req: Request,
 
   // --- Sau khi commit: gửi thông báo (ngoài transaction, tránh deadlock SQLite) ---
   for (const t of created.tasks) {
-    await notify({
-      memberId: t.assigneeId,
-      type: 'task_assigned',
-      title: '📌 Bạn được giao việc mới từ biên bản họp',
-      body: `"${t.title}" — hạn chót ${t.deadline} (nguồn: "${created.meeting.title}").`,
-      taskId: t.id,
-      dedupeKey: `task_assigned:${t.id}`,
-    });
+    const memberIds = t.assigneeIds?.length ? t.assigneeIds : [t.assigneeId];
+    for (const memberId of memberIds) {
+      await notify({
+        memberId,
+        type: 'task_assigned',
+        title: memberIds.length > 1 ? '📌 Công việc nhóm — bạn được giao cùng' : '📌 Bạn được giao việc mới từ biên bản họp',
+        body: `"${t.title}" — hạn chót ${t.deadline} (nguồn: "${created.meeting.title}").`,
+        taskId: t.id,
+        dedupeKey: `task_assigned:${t.id}:${memberId}`,
+      });
+    }
   }
   await notifyLeadership({
     type: 'task_assigned',

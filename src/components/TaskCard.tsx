@@ -123,6 +123,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             <span className="truncate font-semibold text-slate-800" title={task.assigneeName}>
               {task.assigneeName}
             </span>
+            {(task.assigneeIds?.length || 0) > 1 && (
+              <span
+                className="px-1.5 py-0.5 rounded bg-[#2C69FF]/10 text-[#1E4FC4] text-[10px] font-bold shrink-0"
+                title={`Công việc nhóm: ${task.assigneeIds.length} người cùng phụ trách`}
+              >
+                +{task.assigneeIds.length - 1}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5 justify-end">

@@ -11,22 +11,6 @@ function getAIClient(): OpenAI | null {
   return aiClient;
 }
 
-/**
- * Chặn deadline quá khứ: mọi ngày trễ hơn hôm nay được đẩy sang lần xuất hiện
- * kế tiếp (giữ ngày/tháng, tăng năm). AI/heuristic có thể hiểu nhầm năm —
- * hệ thống không bao giờ chấp nhận việc "quá hạn 386 ngày" ngay từ khi ban hành.
- */
-export function normalizeFutureDeadline(dateStr: string, todayIso: string): string {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-  let d = dateStr;
-  let guard = 0;
-  while (d < todayIso && guard < 12) {
-    d = `${Number(d.slice(0, 4)) + 1}${d.slice(4)}`;
-    guard++;
-  }
-  return d;
-}
-
 // Bỏ dấu tiếng Việt để so khớp tiêu đề mục (dùng trong heuristic parser)
 function stripAccents(s: string): string {
   return s
@@ -198,10 +182,7 @@ function fallbackParseBBH(bbhText: string, members: any[], meetingDateStr: strin
       cleanTitle = cleanLine.replace(/(?:deadline|hạn chót|thời hạn|hạn)[:\s]+[^.]+/i, '').trim();
     }
 
-    const calculatedDeadline = normalizeFutureDeadline(
-      calculateFallbackDate(date, rawDeadline),
-      new Date().toISOString().split('T')[0]
-    );
+    const calculatedDeadline = calculateFallbackDate(date, rawDeadline);
 
     // Check verification type
     const lowerClean = cleanTitle.toLowerCase();
@@ -420,13 +401,11 @@ Trả về JSON theo cấu trúc trên.`;
 
     const parsedJson = JSON.parse(response.choices[0]?.message?.content?.trim() || '{}');
 
-    // Post-process tasks: đảm bảo ID + chặn deadline quá khứ
-    const todayIso = new Date().toISOString().split('T')[0];
+    // Post-process tasks: đảm bảo ID + tính nhất quán
     if (parsedJson.tasks && Array.isArray(parsedJson.tasks)) {
       parsedJson.tasks = parsedJson.tasks.map((t: any, idx: number) => ({
         ...t,
         tempId: t.tempId || `draft-${Date.now()}-${idx}`,
-        suggestedDeadline: normalizeFutureDeadline(t.suggestedDeadline, todayIso),
         approved: true,
         priority: t.priority || 'high',
         warningMessages: t.warningMessages || [],

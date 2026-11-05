@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Department, Role, Task, Member } from '../types';
 import { isTaskOverdue } from '../utils/dateUtils';
+import { AssigneeMultiSelect } from './AssigneeMultiSelect';
 import { TaskCard } from './TaskCard';
 
 interface TaskBoardProps {
@@ -339,9 +340,10 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
   const [description, setDescription] = useState('');
   const [dept, setDept] = useState<Department>('Học thuật');
   const deptMembers = members.filter((m) => m.department === dept);
-  const [assigneeId, setAssigneeId] = useState(
-    (deptMembers.find((m) => m.role === 'Trưởng ban') || deptMembers[0])?.id || ''
-  );
+  const [assigneeIds, setAssigneeIds] = useState<string[]>(() => {
+    const head = deptMembers.find((m) => m.role === 'Trưởng ban') || deptMembers[0];
+    return head ? [head.id] : [];
+  });
   const [deadline, setDeadline] = useState(
     new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0]
   );
@@ -353,12 +355,16 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
     e.preventDefault();
     if (!title.trim()) return;
 
-    const member = members.find((m) => m.id === assigneeId);
-    if (!member) return;
+    const member = members.find((m) => m.id === assigneeIds[0]);
+    if (!member) {
+      alert('Vui lòng chọn ít nhất một người phụ trách');
+      return;
+    }
 
     onAdd({
       title: title.trim(),
       description: description.trim() || undefined,
+      assigneeIds,
       assigneeId: member.id,
       assigneeName: member.name,
       department: dept,
@@ -397,7 +403,7 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
                   setDept(nextDept);
                   const nextMembers = members.filter((m) => m.department === nextDept);
                   const head = nextMembers.find((m) => m.role === 'Trưởng ban') || nextMembers[0];
-                  setAssigneeId(head?.id || '');
+                  setAssigneeIds(head ? [head.id] : []);
                 }}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
               >
@@ -408,19 +414,11 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
             </div>
             <div>
               <label className="block text-slate-700 font-semibold mb-1">Người phụ trách:</label>
-              <select
-                value={assigneeId}
-                onChange={(e) => setAssigneeId(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
-              >
-                {members
-                  .filter((m) => m.department === dept)
-                  .map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name} ({m.role})
-                    </option>
-                  ))}
-              </select>
+              <AssigneeMultiSelect
+                members={deptMembers}
+                selectedIds={assigneeIds}
+                onChange={setAssigneeIds}
+              />
             </div>
           </div>
 

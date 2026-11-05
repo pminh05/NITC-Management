@@ -149,8 +149,19 @@ export function canManageDepartment(m: AuthMember, department: string): boolean 
   return false;
 }
 
-/** Thành viên thấy: việc của ban mình + việc giao cho chính mình */
-export function canViewTask(m: AuthMember, task: { department: string; assigneeId: string }): boolean {
+/** Thành viên thấy: việc của ban mình + việc giao cho chính mình (kể cả đa phụ trách) */
+export function canViewTask(
+  m: AuthMember,
+  task: { department: string; assigneeId: string; assigneeIds?: string | null }
+): boolean {
   if (isPresident(m)) return true;
-  return task.department === m.department || task.assigneeId === m.id;
+  if (task.department === m.department || task.assigneeId === m.id) return true;
+  if (task.assigneeIds) {
+    try {
+      return (JSON.parse(task.assigneeIds) as string[]).includes(m.id);
+    } catch {
+      return false;
+    }
+  }
+  return false;
 }

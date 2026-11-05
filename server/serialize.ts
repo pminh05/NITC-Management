@@ -1,12 +1,17 @@
 // Chuyển đổi giữa representation CSDL (Prisma) và shape JSON mà frontend đang dùng
 // (giữ nguyên kiểu dữ liệu của src/types.ts để UI ít phải sửa)
 
+function parseIds(raw: string | null): string[] {
+  try { return raw ? JSON.parse(raw) : []; } catch { return []; }
+}
+
 export function serializeTask(t: {
   id: string;
   title: string;
   description: string | null;
   assigneeId: string;
   assigneeName: string;
+  assigneeIds: string;
   department: string;
   deadline: string;
   status: string;
@@ -30,6 +35,7 @@ export function serializeTask(t: {
     description: t.description ?? undefined,
     assigneeId: t.assigneeId,
     assigneeName: t.assigneeName,
+    assigneeIds: parseIds(t.assigneeIds),
     department: t.department,
     deadline: t.deadline,
     status: t.status,

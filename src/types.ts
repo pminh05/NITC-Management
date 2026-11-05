@@ -67,8 +67,9 @@ export interface Task {
   id: string;
   title: string;
   description?: string;
-  assigneeId: string;
+  assigneeId: string; // phụ trách chính (người đầu tiên)
   assigneeName: string;
+  assigneeIds?: string[]; // giao nhiều người / cả ban
   department: Department;
   deadline: string; // YYYY-MM-DD
   status: TaskStatus;
@@ -94,6 +95,7 @@ export interface ExtractedDraftTask {
   rawAssigneeText: string;
   suggestedAssigneeId?: string;
   suggestedAssigneeName?: string;
+  suggestedAssigneeIds?: string[]; // giao nhiều người / cả ban
   suggestedDepartment: Department;
   rawDeadlinetext: string;
   suggestedDeadline: string; // YYYY-MM-DD

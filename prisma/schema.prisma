@@ -101,8 +101,9 @@ model Task {
   id                  String    @id @default(cuid())
   title               String
   description         String?
-  assigneeId          String
+  assigneeId          String // người phụ trách chính (người đầu tiên được chọn)
   assigneeName        String
+  assigneeIds         String @default("[]") // JSON array — có thể giao nhiều người / cả ban
   department          String
   deadline            String // YYYY-MM-DD
   status              String // in_progress | pending_approval | completed | overdue
