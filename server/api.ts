@@ -504,6 +504,7 @@ apiRouter.post('/meetings/publish', requirePresidentOrHead, async (req: Request,
       const task = await tx.task.create({
         data: {
           title: t.title,
+          description: t.description || null,
           assigneeId: t.suggestedAssigneeId || 'mem-1',
           assigneeName: assignee?.name || t.suggestedAssigneeName || t.rawAssigneeText || 'Chưa gán',
           department: t.suggestedDepartment,

@@ -58,6 +58,15 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
         if (t.tempId !== tempId) return t;
         const updated = { ...t, ...updates };
 
+        // Đổi ban: nếu người đang chọn không thuộc ban mới thì bỏ chọn (chỉ gán người trong ban)
+        if (updates.suggestedDepartment && updates.suggestedDepartment !== t.suggestedDepartment) {
+          const currentAssignee = members.find((m) => m.id === updated.suggestedAssigneeId);
+          if (!currentAssignee || currentAssignee.department !== updates.suggestedDepartment) {
+            updated.suggestedAssigneeId = '';
+            updated.suggestedAssigneeName = '';
+          }
+        }
+
         // If assignee changed, re-check absentee and clear ambiguity flag if manually resolved
         if (updates.suggestedAssigneeId) {
           const selectedMember = members.find((m) => m.id === updates.suggestedAssigneeId);
@@ -308,7 +317,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                 </div>
 
                 {/* Task Title Edit */}
-                <div className="mb-3">
+                <div className="mb-3 space-y-2">
                   <input
                     type="text"
                     value={task.title}
@@ -317,6 +326,15 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                     }
                     className="w-full px-3 py-1.5 bg-slate-950/70 border border-slate-700 rounded-lg text-sm text-white font-medium focus:outline-none focus:border-indigo-500"
                     placeholder="Tên đầu việc..."
+                  />
+                  <textarea
+                    value={task.description || ''}
+                    onChange={(e) =>
+                      handleUpdateTask(task.tempId, { description: e.target.value })
+                    }
+                    rows={2}
+                    className="w-full px-3 py-1.5 bg-slate-950/70 border border-slate-700 rounded-lg text-xs text-slate-300 focus:outline-none focus:border-indigo-500 resize-none"
+                    placeholder="Mô tả chi tiết công việc (không bắt buộc — AI tự điền nếu biên bản ghi rõ)..."
                   />
                 </div>
 
@@ -414,12 +432,17 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                       }`}
                     >
                       <option value="">-- Chưa chọn người phụ trách --</option>
-                      {members.map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.name} ({m.department} - {m.role})
-                        </option>
-                      ))}
+                      {members
+                        .filter((m) => m.department === task.suggestedDepartment)
+                        .map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name} ({m.role})
+                          </option>
+                        ))}
                     </select>
+                    <p className="text-[10px] text-slate-500 mt-0.5">
+                      Chỉ hiển thị thành viên thuộc ban {task.suggestedDepartment}.
+                    </p>
                   </div>
 
                   {/* Deadline */}

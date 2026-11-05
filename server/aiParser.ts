@@ -1,15 +1,12 @@
 import { Request, Response } from 'express';
-import { GoogleGenAI, Type } from '@google/genai';
+import OpenAI from 'openai';
 
-// AI BBH Parser (Gemini) — giữ nguyên logic prompt & quy tắc nghiệp vụ NITC từ MVP
+// AI BBH Parser (OpenAI — structured JSON output) + fallback heuristic theo quy tắc nghiệp vụ NITC
 
-let aiClient: GoogleGenAI | null = null;
-function getAIClient(): GoogleGenAI | null {
-  if (!aiClient && process.env.GEMINI_API_KEY) {
-    aiClient = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY,
-      httpOptions: { headers: { 'User-Agent': 'aistudio-build' } },
-    });
+let aiClient: OpenAI | null = null;
+function getAIClient(): OpenAI | null {
+  if (!aiClient && process.env.OPENAI_API_KEY) {
+    aiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   }
   return aiClient;
 }
@@ -348,6 +345,7 @@ QUY TẮC TRÍCH XUẤT BẮT BUỘC:
    - actionPlan: nội dung mục IV "DEADLINES" nguyên văn
 
 2. CÔNG VIỆC (tasks) — lấy từ TOÀN BỘ biên bản, ưu tiên mục IV DEADLINES, kế đến "Kế hoạch sắp tới" và các việc phát sinh trong "Thảo luận" có mốc thời gian (ký hiệu "dl", "deadline", "trước ngày...", "tuần sau"...):
+   - description: mô tả ngắn 1-2 câu làm rõ việc (bối cảnh/yêu cầu kèm theo trong biên bản); chuỗi rỗng nếu biên bản không ghi rõ.
    - LOGIC DEADLINE: quy đổi mọi thời gian tương đối ("tuần sau", "thứ 3 tới", "3 ngày nữa", "cuối tuần") thành YYYY-MM-DD dựa vào ngày họp. Nếu chỉ ghi "dl 17/9" -> ngày 17 tháng 9 theo năm của ngày họp. Không có mốc -> suggestedDeadline = ngày họp + 5 ngày.
    - PHÂN LOẠI BAN: "Ban Truyền thông làm..." -> suggestedDepartment = "Truyền thông" + suggestedAssigneeId/Name = Trưởng ban Truyền thông trong Roster. Tương tự 4 ban. "BCN/Ban chủ nhiệm/Chủ nhiệm" -> Ban Chủ nhiệm.
    - TÊN CÁ NHÂN: ghi tên cụ thể có trong Roster -> gán đúng người đó (đúng ban của họ).
@@ -356,83 +354,26 @@ QUY TẮC TRÍCH XUẤT BẮT BUỘC:
    - LOẠI XÁC MINH: "link_required" cho sản phẩm cụ thể (thiết kế, poster, form, sheet, slide, đề thi, bài đăng fanpage, video); "report_required" cho việc hành động (gặp gỡ, liên hệ, mua đồ, xin giấy tờ, trực bàn).
    - priority: "high" nếu trong mục IV DEADLINES hoặc ảnh hưởng sự kiện lớn; "medium"/"normal" còn lại.
 
-Trả về JSON đúng schema.`;
+CẤU TRÚC JSON PHẢI TRẢ VỀ (đúng từng tên trường):
+{"meeting": {"title": str, "date": "YYYY-MM-DD", "chairperson": str, "secretary": str, "attendees": [str], "absentees": [str], "latecomers": [str], "objectives": str, "discussionSummary": str, "actionPlan": str},
+ "tasks": [{"title": str, "description": str, "rawAssigneeText": str, "suggestedAssigneeId": str, "suggestedAssigneeName": str, "suggestedDepartment": str, "rawDeadlinetext": str, "suggestedDeadline": "YYYY-MM-DD", "verificationType": "link_required" | "report_required", "hasAmbiguity": bool, "ambiguityMatches": [{"id": str, "name": str, "department": str, "role": str}], "isAbsentee": bool, "warningMessages": [str], "priority": "high" | "medium" | "normal", "reasoning": str}]}
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.7-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            meeting: {
-              type: Type.OBJECT,
-              properties: {
-                title: { type: Type.STRING },
-                date: { type: Type.STRING, description: 'YYYY-MM-DD' },
-                chairperson: { type: Type.STRING },
-                secretary: { type: Type.STRING },
-                attendees: { type: Type.ARRAY, items: { type: Type.STRING } },
-                absentees: { type: Type.ARRAY, items: { type: Type.STRING } },
-                latecomers: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Người đi muộn (mục Muộn ở phần Thành phần tham gia)' },
-                objectives: { type: Type.STRING, description: 'Mục tiêu buổi họp (mục II)' },
-                discussionSummary: { type: Type.STRING },
-                actionPlan: { type: Type.STRING },
-              },
-              required: ['title', 'date', 'chairperson', 'attendees', 'absentees'],
-            },
-            tasks: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  tempId: { type: Type.STRING },
-                  title: { type: Type.STRING },
-                  rawAssigneeText: { type: Type.STRING },
-                  suggestedAssigneeId: { type: Type.STRING },
-                  suggestedAssigneeName: { type: Type.STRING },
-                  suggestedDepartment: { type: Type.STRING },
-                  rawDeadlinetext: { type: Type.STRING },
-                  suggestedDeadline: { type: Type.STRING, description: 'YYYY-MM-DD' },
-                  verificationType: { type: Type.STRING, description: 'link_required or report_required' },
-                  hasAmbiguity: { type: Type.BOOLEAN },
-                  ambiguityMatches: {
-                    type: Type.ARRAY,
-                    items: {
-                      type: Type.OBJECT,
-                      properties: {
-                        id: { type: Type.STRING },
-                        name: { type: Type.STRING },
-                        department: { type: Type.STRING },
-                        role: { type: Type.STRING },
-                      },
-                      required: ['id', 'name', 'department', 'role'],
-                    },
-                  },
-                  isAbsentee: { type: Type.BOOLEAN },
-                  warningMessages: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  priority: { type: Type.STRING, description: 'high, medium, or normal' },
-                  reasoning: { type: Type.STRING },
-                },
-                required: [
-                  'title',
-                  'rawAssigneeText',
-                  'suggestedDepartment',
-                  'suggestedDeadline',
-                  'verificationType',
-                  'hasAmbiguity',
-                  'isAbsentee',
-                ],
-              },
-            },
-          },
-          required: ['meeting', 'tasks'],
+Trả về JSON theo cấu trúc trên.`;
+
+    const response = await ai.chat.completions.create({
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      response_format: { type: 'json_object' },
+      messages: [
+        {
+          role: 'system',
+          content:
+            'Bạn là trợ lý điều hành CLB NITC. Luôn trả về DUY NHẤT một object JSON hợp lệ đúng cấu trúc được yêu cầu, không thêm văn bản nào khác.',
         },
-      },
+        { role: 'user', content: prompt },
+      ],
     });
 
-    const parsedJson = JSON.parse(response.text?.trim() || '{}');
+    const parsedJson = JSON.parse(response.choices[0]?.message?.content?.trim() || '{}');
 
     // Post-process tasks to ensure IDs and integrity
     if (parsedJson.tasks && Array.isArray(parsedJson.tasks)) {

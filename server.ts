@@ -5,7 +5,7 @@ import { createServer as createViteServer } from 'vite';
 import jwt from 'jsonwebtoken';
 import { loginHandler, meHandler, requireAuth } from './server/auth';
 import { apiRouter } from './server/api';
-import { parseBBHHandler } from './server/gemini';
+import { parseBBHHandler } from './server/aiParser';
 import { seedIfEmpty } from './server/seed';
 import { subscribeMember } from './server/notifications';
 import { startScheduler } from './server/scheduler';

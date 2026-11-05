@@ -102,7 +102,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
         if (!matchTitle && !matchAssignee && !matchDept) return false;
       }
       return true;
-    });
+    }).sort((a, b) => a.deadline.localeCompare(b.deadline)); // việc sắp đến hạn nhất lên đầu
   }, [tasks, selectedDept, selectedStatus, onlySticky, searchQuery]);
 
   // Counts for tabs
@@ -361,8 +361,14 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
   members,
   onAdd,
 }) => {
+  const departments: Department[] = ['Học thuật', 'Truyền thông', 'Sự kiện', 'Đối ngoại', 'Ban Chủ nhiệm'];
   const [title, setTitle] = useState('');
-  const [assigneeId, setAssigneeId] = useState(members[1]?.id || members[0]?.id || '');
+  const [description, setDescription] = useState('');
+  const [dept, setDept] = useState<Department>('Học thuật');
+  const deptMembers = members.filter((m) => m.department === dept);
+  const [assigneeId, setAssigneeId] = useState(
+    (deptMembers.find((m) => m.role === 'Trưởng ban') || deptMembers[0])?.id || ''
+  );
   const [deadline, setDeadline] = useState(
     new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0]
   );
@@ -380,9 +386,10 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
 
     onAdd({
       title: title.trim(),
+      description: description.trim() || undefined,
       assigneeId: member.id,
       assigneeName: member.name,
-      department: member.department,
+      department: dept,
       deadline,
       status: 'in_progress',
       verificationType,
@@ -409,19 +416,54 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
             />
           </div>
 
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-slate-700 font-semibold mb-1">Ban phụ trách:</label>
+              <select
+                value={dept}
+                onChange={(e) => {
+                  const nextDept = e.target.value as Department;
+                  setDept(nextDept);
+                  const nextMembers = members.filter((m) => m.department === nextDept);
+                  const head = nextMembers.find((m) => m.role === 'Trưởng ban') || nextMembers[0];
+                  setAssigneeId(head?.id || '');
+                }}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
+              >
+                {departments.map((d) => (
+                  <option key={d} value={d}>Ban {d}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-slate-700 font-semibold mb-1">Người phụ trách:</label>
+              <select
+                value={assigneeId}
+                onChange={(e) => setAssigneeId(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
+              >
+                {members
+                  .filter((m) => m.department === dept)
+                  .map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} ({m.role})
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+
           <div>
-            <label className="block text-slate-700 font-semibold mb-1">Người phụ trách:</label>
-            <select
-              value={assigneeId}
-              onChange={(e) => setAssigneeId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
-            >
-              {members.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name} ({m.department} - {m.role})
-                </option>
-              ))}
-            </select>
+            <label className="block text-slate-700 font-semibold mb-1">
+              Mô tả công việc <span className="text-slate-400 font-normal">(không bắt buộc)</span>:
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+              placeholder="VD: Thiết kế trên Canva theo bộ màu NITC, gửi link duyệt..."
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#2C69FF] resize-none"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-2">

@@ -90,6 +90,7 @@ export interface Task {
 export interface ExtractedDraftTask {
   tempId: string;
   title: string;
+  description?: string;
   rawAssigneeText: string;
   suggestedAssigneeId?: string;
   suggestedAssigneeName?: string;
