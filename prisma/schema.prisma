@@ -46,6 +46,8 @@ model Member {
   user       User?
   tasks      Task[]   @relation("Assignee")
   ownedTasks Task[]   @relation("Creator")
+  notifications    Notification[]
+  notificationPref NotificationPref?
 }
 
 // Biên bản họp (NITC Archive)
@@ -59,11 +61,38 @@ model Meeting {
   secretary        String
   attendees        String // JSON array string — giữ tương thích frontend
   absentees        String // JSON array string
+  latecomers       String  @default("[]") // JSON array string — thành viên đi muộn (mục I.3 BBH thật)
+  objectives       String  @default("") // Mục tiêu buổi họp (mục II BBH thật)
   discussionSummary String
   actionPlan       String
   rawContent       String
   createdAt        DateTime @default(now())
   tasks            Task[]
+}
+
+// Thông báo cá nhân (Trung tâm thông báo G2)
+model Notification {
+  id        String    @id @default(cuid())
+  memberId  String
+  member    Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  type      String // task_assigned | deadline_tomorrow | deadline_today | overdue | evidence_submitted | evidence_approved | evidence_rejected | sticky_carried | weekly_summary | broadcast
+  title     String
+  body      String?
+  taskId    String?
+  dedupeKey String? // chống sinh trùng (type:taskId:ngày)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@unique([dedupeKey])
+  @@index([memberId, readAt])
+}
+
+// Cài đặt nhận thông báo của từng thành viên
+model NotificationPref {
+  memberId String  @id
+  member   Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  channel  String  @default("in_app") // in_app | in_app_email | digest
+  updatedAt DateTime @updatedAt
 }
 
 // Nhiệm vụ

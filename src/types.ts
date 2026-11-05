@@ -44,6 +44,16 @@ export interface Term {
   memberCount: number;
 }
 
+export interface AppNotification {
+  id: string;
+  type: 'task_assigned' | 'deadline_tomorrow' | 'deadline_today' | 'overdue' | 'evidence_submitted' | 'evidence_approved' | 'evidence_rejected' | 'sticky_carried' | 'weekly_summary' | 'broadcast';
+  title: string;
+  body?: string;
+  taskId?: string;
+  readAt?: string;
+  createdAt: string;
+}
+
 export interface ImportSummary {
   term: string;
   created: number;
@@ -123,6 +133,8 @@ export interface Meeting {
   secretary: string;
   attendees: string[];
   absentees: string[];
+  latecomers?: string[];
+  objectives?: string;
   discussionSummary: string;
   actionPlan: string;
   rawContent: string;

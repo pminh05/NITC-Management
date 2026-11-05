@@ -12,6 +12,7 @@ import {
   Term,
 } from './types';
 import { api, apiUpload, getToken, setToken } from './api/client';
+import { AppNotification } from './types';
 import { Header } from './components/Header';
 import { LoginPage } from './components/LoginPage';
 import { TaskBoard } from './components/TaskBoard';
@@ -52,6 +53,11 @@ export function App() {
   const [selectedTermId, setSelectedTermId] = useState<string>('active');
   const [importing, setImporting] = useState(false);
 
+  // ===== 1c. Trung tâm thông báo =====
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationChannel, setNotificationChannel] = useState('in_app');
+
   // Boot: khôi phục phiên đăng nhập từ token
   useEffect(() => {
     const boot = async () => {
@@ -69,6 +75,46 @@ export function App() {
       }
     };
     boot();
+  }, []);
+
+  const refreshNotifications = useCallback(async () => {
+    try {
+      const res = await api<{ items: AppNotification[]; unread: number }>('/notifications');
+      setNotifications(res.items);
+      setUnreadCount(res.unread);
+    } catch {
+      // im lặng — polling sẽ thử lại
+    }
+  }, []);
+
+  const loadNotificationPrefs = useCallback(async () => {
+    try {
+      const res = await api<{ channel: string }>('/notifications/prefs');
+      setNotificationChannel(res.channel);
+    } catch {
+      // mặc định in_app
+    }
+  }, []);
+
+  const handleMarkRead = useCallback(async (id: string) => {
+    const target = notifications.find((n) => n.id === id);
+    if (target && !target.readAt) {
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n)));
+      setUnreadCount((c) => Math.max(0, c - 1));
+    }
+    await api(`/notifications/${id}/read`, { method: 'POST' }).catch(() => {});
+  }, [notifications]);
+
+  const handleMarkAllRead = useCallback(async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, readAt: n.readAt || new Date().toISOString() })));
+    setUnreadCount(0);
+    await api('/notifications/read-all', { method: 'POST' }).catch(() => {});
+  }, []);
+
+  const handleChangeNotificationChannel = useCallback(async (channel: string) => {
+    setNotificationChannel(channel);
+    await api('/notifications/prefs', { method: 'PUT', body: { channel } }).catch(() => {});
+    showToast('Đã lưu cài đặt', 'Kênh nhận thông báo của bạn đã được cập nhật.', 'info');
   }, []);
 
   const loadMembers = useCallback(async (termId: string) => {
@@ -116,6 +162,29 @@ export function App() {
       await loadMembers(selectedTermId);
     })();
   }, [authMember, selectedTermId, loadMembers]);
+
+  // Trung tâm thông báo: tải ban đầu + SSE realtime + polling dự phòng 45s
+  useEffect(() => {
+    if (!authMember) return;
+    refreshNotifications();
+    loadNotificationPrefs();
+
+    const token = getToken();
+    let es: EventSource | null = null;
+    if (token) {
+      try {
+        es = new EventSource(`/api/notifications/stream?token=${encodeURIComponent(token)}`);
+        es.onmessage = () => refreshNotifications(); // có sự kiện mới → tải lại danh sách
+      } catch {
+        // SSE lỗi → polling lo phần còn lại
+      }
+    }
+    const poll = setInterval(refreshNotifications, 45000);
+    return () => {
+      es?.close();
+      clearInterval(poll);
+    };
+  }, [authMember, refreshNotifications, loadNotificationPrefs]);
 
   useEffect(() => {
     if (authMember) {
@@ -490,6 +559,13 @@ export function App() {
         authMember={authMember}
         onLogout={handleLogout}
         tasks={tasks}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        notificationChannel={notificationChannel}
+        onRefreshNotifications={refreshNotifications}
+        onMarkAllRead={handleMarkAllRead}
+        onMarkRead={handleMarkRead}
+        onChangeNotificationChannel={handleChangeNotificationChannel}
         onOpenBBHParser={() => setIsParserOpen(true)}
         onOpenMeetingHistory={() => setIsMeetingHistoryOpen(true)}
         onOpenNagModal={() => setIsNagOpen(true)}

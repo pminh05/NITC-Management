@@ -2,13 +2,18 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
+import jwt from 'jsonwebtoken';
 import { loginHandler, meHandler, requireAuth } from './server/auth';
 import { apiRouter } from './server/api';
 import { parseBBHHandler } from './server/gemini';
 import { seedIfEmpty } from './server/seed';
+import { subscribeMember } from './server/notifications';
+import { startScheduler } from './server/scheduler';
+import { prisma } from './server/db';
 
 const app = express();
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
+const JWT_SECRET = process.env.JWT_SECRET || 'nitc-command-center-dev-secret-change-in-production';
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -21,7 +26,38 @@ app.get('/api/health', (_req, res) => {
 app.post('/api/auth/login', loginHandler);
 app.get('/api/auth/me', requireAuth, meHandler);
 
-// AI BBH Parser (cần đăng nhập — chỉ Chủ tịch/BĐH mới dùng được từ UI)
+// SSE stream thông báo realtime — EventSource không gửi được header, xác thực qua ?token=
+app.get('/api/notifications/stream', async (req, res) => {
+  const token = String(req.query.token || '');
+  let memberId: string;
+  try {
+    const payload = jwt.verify(token, JWT_SECRET) as { sub: string };
+    const user = await prisma.user.findUnique({ where: { id: payload.sub }, include: { member: true } });
+    if (!user?.member) throw new Error('no member');
+    memberId = user.member.id;
+  } catch {
+    return res.status(401).json({ error: 'Token không hợp lệ' });
+  }
+
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  });
+  res.write(`data: ${JSON.stringify({ hello: true })}\n\n`);
+
+  const unsubscribe = subscribeMember(memberId, (data) => {
+    res.write(`data: ${data}\n\n`);
+  });
+  // Heartbeat 25s giữ kết nối sống
+  const heartbeat = setInterval(() => res.write(': ping\n\n'), 25000);
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    unsubscribe();
+  });
+});
+
+// AI BBH Parser (cần đăng nhập — chỉ Ban điều hành dùng được từ UI)
 app.post('/api/gemini/parse-bbh', requireAuth, parseBBHHandler);
 
 // Reminder / Nag log placeholder (giữ tương thích cũ; log thật giờ qua /api/logs)
@@ -70,6 +106,9 @@ async function startServer() {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`NITC Command Center Server (v3 backend) running on http://localhost:${PORT}`);
   });
+
+  // Cron: quét deadline 6h · digest 20h · báo cáo tuần Chủ Nhật 21h
+  startScheduler();
 }
 
 startServer();

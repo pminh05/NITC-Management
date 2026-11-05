@@ -66,6 +66,7 @@ function fallbackParseBBH(bbhText: string, members: any[], meetingDateStr: strin
   let secretary = 'Nguyễn Thị Ngọc Ánh';
   const attendees: string[] = [];
   const absentees: string[] = [];
+  const latecomers: string[] = [];
   const discussionLines: string[] = [];
   const actionLines: string[] = [];
 
@@ -95,6 +96,17 @@ function fallbackParseBBH(bbhText: string, members: any[], meetingDateStr: strin
     if (lower.includes('vắng mặt:') || lower.includes('vang mat:') || lower.includes('vắng:')) {
       const names = line.split(':')[1]?.split(/[,;]/).map((n) => n.trim()).filter(Boolean) || [];
       absentees.push(...names);
+    }
+    // Template BBH thật NITC: mục "Muộn: 1 (Thanh Tú)"
+    if (lower.includes('muộn:')) {
+      const raw = line.split(':')[1] || '';
+      const names = raw.match(/\(([^)]+)\)/)?.[1]?.split(/[,;]/).map((n) => n.trim()).filter(Boolean) || [];
+      latecomers.push(...names);
+    }
+    // Mục "DEADLINES" (template thật) cũng là khu vực công việc
+    if (lower.includes('deadlines')) {
+      currentSection = 'action';
+      continue;
     }
 
     if (lower.includes('3. nội dung thảo luận') || lower.includes('thảo luận:')) {
@@ -283,47 +295,49 @@ export async function parseBBHHandler(req: Request, res: Response) {
       .map((m: any) => `- ID: ${m.id} | Họ tên: ${m.name} | Ban: ${m.department} | Vai trò: ${m.role}`)
       .join('\n');
 
-    const prompt = `Bạn là Trợ lý AI Điều hành cao cấp dành riêng cho Chủ tịch CLB NITC (NITC Command Center).
-Hãy phân tích văn bản Biên bản họp (BBH) sau đây theo các quy tắc nghiệp vụ nghiêm ngặt của NITC:
+    const prompt = `Bạn là Trợ lý AI Điều hành cao cấp của NITC Command Center — hệ thống quản trị CLB Công nghệ thông tin ĐH Kinh tế Quốc dân.
+Phân tích Biên bản họp (BBH) dưới đây theo đúng cấu trúc chuẩn NITC (4 mục I-IV) và quy tắc nghiệp vụ nghiêm ngặt.
 
-DANH SÁCH THÀNH VIÊN CLB NITC HIỆN TẠI (ROSTER):
+DANH SÁCH THÀNH VIÊN HIỆN TẠI (ROSTER — gồm Chủ nhiệm, Phó Chủ nhiệm, Trưởng ban, Phó ban, Thành viên):
 ${memberContext}
 
-NGÀY HỌP MẶC ĐỊNH (nếu trong BBH không ghi rõ khác): ${meetingDate || new Date().toISOString().split('T')[0]}
+NGÀY HỌP MẶC ĐỊNH (nếu biên bản không ghi rõ): ${meetingDate || new Date().toISOString().split('T')[0]}
 
-VĂN BẢN BIÊN BẢN HỌP CẦN TRÍCH XUẤT:
+VĂN BẢN BIÊN BẢN HỌP:
 """
 ${bbhText}
 """
 
-QUY TẮC BẮT BUỘC KHI TRÍCH XUẤT:
-1. TRÍCH XUẤT THÔNG TIN HỌP:
-   - Tiêu đề biên bản họp (title)
-   - Ngày họp chính xác (date: YYYY-MM-DD)
-   - Người chủ trì (chairperson)
-   - Thư ký (secretary)
-   - Danh sách người có mặt (attendees: string[])
-   - Danh sách người vắng mặt (absentees: string[])
-   - Tóm tắt phần Thảo luận (discussionSummary)
-   - Kế hoạch tổng thể (actionPlan)
+CẤU TRÚC BBH CHUẨN NITC:
+- Mục I: THỜI GIAN, ĐỊA ĐIỂM, THÀNH PHẦN THAM GIA (Có mặt/Tổng — Vắng — Muộn)
+- Mục II: MỤC TIÊU BUỔI HỌP
+- Mục III: NỘI DUNG CHÍNH (Báo cáo từng ban — Thảo luận — Kế hoạch sắp tới)
+- Mục IV: DEADLINES (các đầu việc kèm hạn chót)
+- Cuối: Người lập biên bản (= thư ký)
 
-2. TRÍCH XUẤT CÔNG VIỆC (ACTION ITEMS / TASKS):
-   - Trích xuất toàn bộ công việc từ mục "Thảo luận" và "Kế hoạch & Phân công".
-   - LOGIC NGÀY THÁNG (DEADLINE):
-     Dựa vào Ngày họp của BBH để quy đổi mọi từ chỉ thời gian tương đối ("Tuần sau", "Thứ Hai tới", "Thứ Sáu tuần này", "3 ngày sau họp", "Ngày mai", "Chủ Nhật") thành ngày cụ thể định dạng YYYY-MM-DD (ISO).
-   - PHÂN LOẠI BAN VÀ TRƯỞNG BAN:
-     Nếu BBH ghi "Ban Truyền thông làm..." -> Tự động gán suggestedDepartment là "Truyền thông", và suggestedAssigneeId/Name là Trưởng ban Truyền thông trong Roster.
-     Tương tự cho Ban Sự kiện, Ban Học thuật, Ban Đối ngoại.
-   - QUY TẮC "MINH" (TRÙNG TÊN / AMBIGUITY):
-     Nếu BBH chỉ ghi "Minh" hoặc tên trùng với nhiều người trong Roster (VD: có Lê Hồng Phúc Minh, Nguyễn Đức Minh, Trần Quang Minh, Hoàng Nhật Minh...), AI KHÔNG ĐƯỢC TỰ Ý GÁN!
-     Phải đặt: hasAmbiguity = true, liệt kê danh sách ambiguityMatches chứa các thành viên trùng tên, và để suggestedAssigneeId = "".
-   - CẢNH BÁO VẮNG MẶT (ABSENTEE WARNING):
-     Nếu người được phân công việc nằm trong danh sách VẮNG MẶT của BBH, phải đặt isAbsentee = true và thêm thông báo cảnh báo đỏ rõ ràng.
-   - LOẠI XÁC MINH (VERIFICATION TYPE):
-     + "link_required" nếu công việc cần sản phẩm cụ thể: Thiết kế Canva/Figma, Banner, Form đăng ký, Bộ ảnh, Slide, Đề thi, Google Sheet/Doc, Bài viết Fanpage.
-     + "report_required" nếu công việc mang tính hành động thực địa: Gặp thầy cố vấn, Khảo sát hội trường, Mua đồ, Liên hệ đối tác/diễn giả, Họp ban con.
+QUY TẮC TRÍCH XUẤT BẮT BUỘC:
+1. THÔNG TIN HỌP (meeting):
+   - title: tiêu đề/loại biên bản (VD: "BBH BCN tuần 45", hoặc tự đặt ngắn gọn nếu không có)
+   - date: ngày họp chuẩn YYYY-MM-DD (quy đổi từ "Thứ Hai 3/11/2026" theo tuần thực tế)
+   - chairperson: người chủ trì (thường là Chủ nhiệm/Phó Chủ nhiệm — so khớp Roster)
+   - secretary: "Người lập biên bản" cuối biên bản
+   - attendees: tên có mặt (mục "Có mặt"/"Tổng")
+   - absentees: mục "Vắng"
+   - latecomers: mục "Muộn" (VD: "Muộn: 1 (Thanh Tú)" -> ["Thanh Tú"]) — rỗng nếu không ghi
+   - objectives: nội dung mục II "MỤC TIÊU BUỔI HỌP" (tóm tắt 1-3 câu nếu dài)
+   - discussionSummary: tóm tắt mục III (Báo cáo từng ban + Thảo luận + Kế hoạch sắp tới)
+   - actionPlan: nội dung mục IV "DEADLINES" nguyên văn
 
-Hãy trả về kết quả dưới dạng JSON theo đúng schema.`;
+2. CÔNG VIỆC (tasks) — lấy từ TOÀN BỘ biên bản, ưu tiên mục IV DEADLINES, kế đến "Kế hoạch sắp tới" và các việc phát sinh trong "Thảo luận" có mốc thời gian (ký hiệu "dl", "deadline", "trước ngày...", "tuần sau"...):
+   - LOGIC DEADLINE: quy đổi mọi thời gian tương đối ("tuần sau", "thứ 3 tới", "3 ngày nữa", "cuối tuần") thành YYYY-MM-DD dựa vào ngày họp. Nếu chỉ ghi "dl 17/9" -> ngày 17 tháng 9 theo năm của ngày họp. Không có mốc -> suggestedDeadline = ngày họp + 5 ngày.
+   - PHÂN LOẠI BAN: "Ban Truyền thông làm..." -> suggestedDepartment = "Truyền thông" + suggestedAssigneeId/Name = Trưởng ban Truyền thông trong Roster. Tương tự 4 ban. "BCN/Ban chủ nhiệm/Chủ nhiệm" -> Ban Chủ nhiệm.
+   - TÊN CÁ NHÂN: ghi tên cụ thể có trong Roster -> gán đúng người đó (đúng ban của họ).
+   - QUY TẮC TRÙNG TÊN (vd nhiều người tên "Minh"): nếu không xác định được người cụ thể -> hasAmbiguity = true, liệt kê ambiguityMatches các ứng viên trùng tên, suggestedAssigneeId = "" — KHÔNG TỰ Ý GÁN.
+   - CẢNH BÁO VẮNG MẶT: người được giao nằm trong mục "Vắng" -> isAbsentee = true + warningMessages.
+   - LOẠI XÁC MINH: "link_required" cho sản phẩm cụ thể (thiết kế, poster, form, sheet, slide, đề thi, bài đăng fanpage, video); "report_required" cho việc hành động (gặp gỡ, liên hệ, mua đồ, xin giấy tờ, trực bàn).
+   - priority: "high" nếu trong mục IV DEADLINES hoặc ảnh hưởng sự kiện lớn; "medium"/"normal" còn lại.
+
+Trả về JSON đúng schema.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3.7-flash',
@@ -342,6 +356,8 @@ Hãy trả về kết quả dưới dạng JSON theo đúng schema.`;
                 secretary: { type: Type.STRING },
                 attendees: { type: Type.ARRAY, items: { type: Type.STRING } },
                 absentees: { type: Type.ARRAY, items: { type: Type.STRING } },
+                latecomers: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Người đi muộn (mục Muộn ở phần Thành phần tham gia)' },
+                objectives: { type: Type.STRING, description: 'Mục tiêu buổi họp (mục II)' },
                 discussionSummary: { type: Type.STRING },
                 actionPlan: { type: Type.STRING },
               },

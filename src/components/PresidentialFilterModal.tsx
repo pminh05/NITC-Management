@@ -201,6 +201,21 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
               </span>
             </div>
           )}
+
+          {meeting.latecomers && meeting.latecomers.length > 0 && (
+            <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-300 px-2.5 py-1 rounded-lg border border-amber-500/20">
+              <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span>
+                <strong>Đi muộn:</strong> {meeting.latecomers.join(', ')}
+              </span>
+            </div>
+          )}
+
+          {meeting.objectives && (
+            <div className="text-xs text-slate-300 bg-slate-800/50 px-2.5 py-1.5 rounded-lg border border-slate-700">
+              <strong className="text-slate-200">Mục tiêu buổi họp:</strong> {meeting.objectives}
+            </div>
+          )}
         </div>
 
         {/* Task Review List */}

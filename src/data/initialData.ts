@@ -86,71 +86,83 @@ export const INITIAL_MEMBERS: Member[] = [
 export const SAMPLE_BBH_TEMPLATES = [
   {
     id: 'sample-bbh-1',
-    title: 'BBH Họp Ban Điều Hành Tuần 34 - Chuẩn bị TechFest NITC 2026',
-    date: '2026-08-18',
-    content: `CÂU LẠC BỘ CÔNG NGHỆ THÔNG TIN NITC
-BAN ĐIỀU HÀNH CLB
-Số: 34/BBH-NITC-2026
+    title: 'BBH BCN — Chuẩn bị Ngày Câu lạc bộ (NCD) & Tuyển Gen 8',
+    date: '2026-11-03',
+    content: `BBH BCN
 
-BIÊN BẢN HỌP BAN ĐIỀU HÀNH
-(V/v: Triển khai sự kiện TechFest NITC 2026 & Đánh giá công việc tuần)
+I. THỜI GIAN, ĐỊA ĐIỂM, THÀNH PHẦN THAM GIA
+1. Thời gian: 20h00, Thứ Ba, ngày 03/11/2026
+2. Địa điểm: Google Meeting
+3. Thành phần tham gia:
+- Có mặt: Phạm Phúc Minh, Trần Thị Hoài Thương, Vũ Quang Thái, Lê Ngọc Anh Thư, Trần Thị Huyền Trang, Đoàn Anh Tú, Hoàng Thanh Tú, Chu Hà My, Phạm Duy Anh
+- Vắng: Nguyễn Việt Hoàng (Học thuật - có phép)
+- Muộn: 1 (Hoàng Thanh Tú)
 
-1. THỜI GIAN & ĐỊA ĐIỂM:
-- Thời gian: 19h30, Thứ Ba ngày 18/08/2026
-- Địa điểm: Phòng họp Zoom BĐH & Văn phòng CLB NITC
-- Chủ trì: Lê Hồng Phúc Minh (Chủ tịch CLB)
-- Thư ký: Nguyễn Thị Ngọc Ánh
+II. MỤC TIÊU BUỔI HỌP
+Chốt kế hoạch Ngày Câu lạc bộ (NCD 20/11) và khởi động quy trình tuyển Gen 8: concept, key visual, form đăng ký.
 
-2. THÀNH PHẦN THAM DỰ:
-- Có mặt: Lê Hồng Phúc Minh (Chủ tịch), Trần Hoàng Nam (Trưởng ban Truyền thông), Đặng Thu Thảo (Trưởng ban Sự kiện), Phạm Minh Anh (Trưởng ban Đối ngoại), Vũ Đình Trọng (Ban Học thuật), Nguyễn Thị Ngọc Ánh.
-- Vắng mặt: Nguyễn Đức Minh (Trưởng ban Học thuật - có phép), Hoàng Nhật Minh (Ban Sự kiện - không phép).
+III. NỘI DUNG CHÍNH
+1. Báo cáo từng ban
+- Ban Học thuật: Coding challenge đã có 120 lượt tham gia; ICPC đang khảo sát nguyện vọng bằng form; NITC project: điền form + add group.
+- Ban Truyền thông: còn thiếu ảnh thầy cố vấn cho bài tốt nghiệp; đăng 2 bài tri ân (Chủ nhiệm và Phó Chủ nhiệm chung 1 bài); core tuyển gen: Chu Hà My, Phạm Duy Anh.
+- Ban Sự kiện: chờ chốt ngân sách quà NCD, dự trù 400k chưa tính tuyển gen.
+- Ban Đối ngoại: core tuyển gen (Trịnh Thị Ngọc Hoa, Hoàng Thanh Tú); không kịp mời tài trợ cho NCD năm nay.
+2. Thảo luận
+- NCD: sinh viên qua gian CLB lấy điểm đoàn, điều kiện nhận dấu là follow + like page.
+- Quà NCD đặt trước tối đa 2 ngày, phải dán hình CLB; chốt ngân sách và dự trù.
+- Xin quà của khoa; làm sheet phân công trực bàn và trang trí gian hàng.
+- Làm form thông tin tuyển gen (họ tên, msv, lớp, gmail, ban mong muốn) — Đối ngoại phụ trách form.
+3. Kế hoạch sắp tới
+- Họp chốt ngày tổ chức tuyển Gen 8 sau khi có concept và key visual.
 
-3. NỘI DUNG THẢO LUẬN:
-- Chủ tịch đánh giá tiến độ chuẩn bị sự kiện TechFest 2026. Khâu truyền thông cần đẩy mạnh teaser và mở đơn đăng ký cho sinh viên toàn trường.
-- Ban Đối ngoại báo cáo đã tiếp cận 3 nhà tài trợ công nghệ, cần hoàn thiện hồ sơ mời tài trợ chính thức và xin lịch gặp đại diện doanh nghiệp.
-- Ban Sự kiện đã khảo sát hội trường B1, cần chốt hợp đồng âm thanh ánh sáng và kịch bản chi tiết.
-- Về học thuật: Cần hoàn thiện đề thi vòng sơ loại Code Challenge và chuẩn bị server chấm bài tự động.
+IV. DEADLINES
+1. Chung: Báo cáo kế hoạch NCD gửi Thầy cố vấn trước 10/11/2026.
+2. Thiết kế key visual NCD và bộ ấn phẩm fanpage — Ban Truyền thông (Chu Hà My). Deadline: 14/11/2026.
+3. Làm form đăng ký tuyển Gen 8 — Trịnh Thị Ngọc Hoa (Đối ngoại). Deadline: 12/11/2026.
+4. Chốt ngân sách quà NCD và đặt quà — Đoàn Anh Tú. Deadline: 15/11/2026.
+5. Lên sheet phân công trực bàn gian hàng NCD — Ban Sự kiện. Deadline: 17/11/2026.
 
-4. KẾ HOẠCH & PHÂN CÔNG CÔNG VIỆC:
-1. Ban Truyền thông làm bộ ảnh Key Visual và Avatar Frame cho TechFest. Deadline: Thứ Sáu tuần này (21/08/2026).
-2. Minh làm đề thi vòng 1 Code Challenge và barem chấm điểm chi tiết. Deadline: Thứ Hai tới (24/08/2026).
-3. Đặng Thu Thảo hoàn thiện kịch bản chi tiết chương trình TechFest và gửi duyệt. Deadline: Chủ Nhật (23/08/2026).
-4. Phạm Minh Anh gửi email mời tài trợ và báo cáo kết quả liên hệ 3 doanh nghiệp (VNG, FPT, MoMo). Deadline: 3 ngày sau họp (21/08/2026).
-5. Vũ Đình Trọng setup hệ thống máy chủ chấm code test thử tải 500 thí sinh. Deadline: Tuần sau (25/08/2026).
-6. Ban Sự kiện liên hệ gặp Ban Quản lý Giảng đường B1 để làm thủ tục mượn phòng. Deadline: Ngày mai (19/08/2026).`,
+Người lập biên bản
+Đoàn Anh Tú`,
   },
   {
     id: 'sample-bbh-2',
-    title: 'BBH Họp Giao Ban Đầu Tháng - Triển khai Khóa Huấn luyện Web Dev & Hackathon',
-    date: '2026-08-10',
-    content: `CÂU LẠC BỘ CÔNG NGHỆ THÔNG TIN NITC
-BAN ĐIỀU HÀNH CLB
-Số: 32/BBH-NITC-2026
+    title: 'BBH BCN — Sơ kết tháng 11 & Đôn đốc tiến độ',
+    date: '2026-11-10',
+    content: `BBH BCN
 
-BIÊN BẢN HỌP ĐẦU THÁNG BAN ĐIỀU HÀNH
-(V/v: Kế hoạch Bootcamp Web Development & Quỹ CLB)
+I. THỜI GIAN, ĐỊA ĐIỂM, THÀNH PHẦN THAM GIA
+1. Thời gian: 21h00, Thứ Ba, ngày 10/11/2026
+2. Địa điểm: Phòng tự học A2, NEU
+3. Thành phần tham gia:
+- Có mặt: Phạm Phúc Minh, Trần Thị Hoài Thương, Lê Ngọc Anh Thư, Trần Thị Huyền Trang, Đoàn Anh Tú, Nguyễn Minh Hiếu
+- Vắng: Hoàng Thanh Tú (Đối ngoại), Phạm Quang Minh (Học thuật)
+- Muộn: 0
 
-1. THỜI GIAN & ĐỊA ĐIỂM:
-- Thời gian: 20h00, Thứ Hai ngày 10/08/2026
-- Địa điểm: Phòng C3-302, Đại học Bách Khoa
-- Chủ trì: Lê Hồng Phúc Minh (Chủ tịch)
-- Thư ký: Nguyễn Thị Ngọc Ánh
+II. MỤC TIÊU BUỔI HỌP
+Sơ kết tiến độ tuyển Gen 8 và NCD; phân công các đầu việc tuần tiếp theo.
 
-2. THÀNH PHẦN THAM DỰ:
-- Có mặt: Lê Hồng Phúc Minh, Nguyễn Đức Minh, Trần Hoàng Nam, Đặng Thu Thảo, Phạm Minh Anh, Trần Quang Minh.
-- Vắng mặt: Lê Khánh Huyền (Sự kiện).
+III. NỘI DUNG CHÍNH
+1. Báo cáo từng ban
+- Ban Học thuật: Coding challenge cần barem chấm điểm chi tiết.
+- Ban Truyền thông: key visual NCD đã xong, cần cắt bộ ảnh recap.
+- Ban Sự kiện: trực bàn NCD chạy tốt, cần tổng kết số lượng điểm đoàn.
+- Ban Đối ngoại: form tuyển gen đã mở, cần tổng hợp ứng viên mỗi tuần.
+2. Thảo luận
+- Tuyển gen 8: cần chốt core trước thứ Sáu để gọi ứng viên phỏng vấn.
+- Cần nhắc lại việc sheet trực bàn còn thiếu ca tối.
+3. Kế hoạch sắp tới
+- Đêm sự kiện WiE tháng 12: bắt đầu lên concept.
 
-3. NỘI DUNG THẢO LUẬN:
-- Rà soát các đầu việc còn tồn của tháng trước. Ban Học thuật triển khai giáo trình 6 buổi bootcamp React & Node.js.
-- Ban Truyền thông thiết kế poster tuyển sinh bootcamp và đăng bài đợt 1.
-- Ban Đối ngoại làm việc với Đoàn trường để xin chứng nhận tham gia cho sinh viên.
+IV. DEADLINES
+1. Minh hoàn thiện barem chấm điểm Coding Challenge. Deadline: Thứ Hai tới.
+2. Nguyễn Minh Hiếu cắt bộ ảnh recap NCD đăng fanpage. Deadline: 14/11/2026.
+3. Tổng kết số điểm đoàn NCD — Đoàn Anh Tú. Deadline: 13/11/2026.
+4. Tổng hợp danh sách ứng viên tuyển Gen 8 tuần 1 — Ban Đối ngoại. Deadline: 16/11/2026.
 
-4. KẾ HOẠCH & PHÂN CÔNG CÔNG VIỆC:
-1. Nguyễn Đức Minh hoàn thiện Slide và giáo trình Bootcamp 6 buổi. Deadline: 17/08/2026.
-2. Trần Hoàng Nam thiết kế Banner và Form đăng ký Google Form cho học viên. Deadline: 15/08/2026.
-3. Phạm Minh Anh gặp Thầy Cố vấn Đoàn trường xin phê duyệt kinh phí và chữ ký mộc. Deadline: 14/08/2026.
-4. Ban Sự kiện mua văn phòng phẩm và thẻ ban tổ chức. Deadline: 16/08/2026.`,
-  }
+Người lập biên bản
+Nguyễn Minh Hiếu`,
+  },
 ];
 
 export const INITIAL_MEETINGS: Meeting[] = [

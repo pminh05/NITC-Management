@@ -59,6 +59,8 @@ export function serializeMeeting(m: {
   secretary: string;
   attendees: string;
   absentees: string;
+  latecomers: string;
+  objectives: string;
   discussionSummary: string;
   actionPlan: string;
   rawContent: string;
@@ -66,8 +68,10 @@ export function serializeMeeting(m: {
 }) {
   let attendees: string[] = [];
   let absentees: string[] = [];
+  let latecomers: string[] = [];
   try { attendees = JSON.parse(m.attendees); } catch { attendees = []; }
   try { absentees = JSON.parse(m.absentees); } catch { absentees = []; }
+  try { latecomers = JSON.parse(m.latecomers); } catch { latecomers = []; }
   return {
     id: m.id,
     title: m.title,
@@ -78,6 +82,8 @@ export function serializeMeeting(m: {
     secretary: m.secretary,
     attendees,
     absentees,
+    latecomers,
+    objectives: m.objectives,
     discussionSummary: m.discussionSummary,
     actionPlan: m.actionPlan,
     rawContent: m.rawContent,

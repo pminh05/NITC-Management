@@ -32,7 +32,7 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
   onExtractionSuccess,
 }) => {
   const [bbhText, setBbhText] = useState(SAMPLE_BBH_TEMPLATES[0].content);
-  const [meetingDate, setMeetingDate] = useState('2026-08-18');
+  const [meetingDate, setMeetingDate] = useState('2026-11-03');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -72,6 +72,8 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
         secretary: data.meeting?.secretary || 'Nguyễn Thị Ngọc Ánh',
         attendees: data.meeting?.attendees || [],
         absentees: data.meeting?.absentees || [],
+        latecomers: data.meeting?.latecomers || [],
+        objectives: data.meeting?.objectives || '',
         discussionSummary: data.meeting?.discussionSummary || '',
         actionPlan: data.meeting?.actionPlan || '',
       };

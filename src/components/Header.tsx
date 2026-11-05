@@ -2,7 +2,6 @@ import React from 'react';
 import {
   FileText,
   Users,
-  Bell,
   Sparkles,
   Database,
   Pin,
@@ -11,12 +10,20 @@ import {
   Clock,
   LogOut,
 } from 'lucide-react';
-import { Member, Task } from '../types';
+import { AppNotification, Member, Task } from '../types';
+import { NotificationBell } from './NotificationBell';
 
 interface HeaderProps {
   authMember: Member;
   onLogout: () => void;
   tasks: Task[];
+  notifications: AppNotification[];
+  unreadCount: number;
+  notificationChannel: string;
+  onRefreshNotifications: () => void;
+  onMarkAllRead: () => void;
+  onMarkRead: (id: string) => void;
+  onChangeNotificationChannel: (channel: string) => void;
   onOpenBBHParser: () => void;
   onOpenMeetingHistory: () => void;
   onOpenNagModal: () => void;
@@ -28,6 +35,13 @@ export const Header: React.FC<HeaderProps> = ({
   authMember,
   onLogout,
   tasks,
+  notifications,
+  unreadCount,
+  notificationChannel,
+  onRefreshNotifications,
+  onMarkAllRead,
+  onMarkRead,
+  onChangeNotificationChannel,
   onOpenBBHParser,
   onOpenMeetingHistory,
   onOpenNagModal,
@@ -101,17 +115,15 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="hidden lg:inline">Kho biên bản</span>
               </button>
 
-              <button
-                onClick={onOpenNagModal}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg border border-slate-700 transition relative cursor-pointer"
-                title="Nhắc việc quá hạn & Báo cáo tuần"
-              >
-                <Bell className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden lg:inline">Nhắc việc</span>
-                {overdueCount > 0 && (
-                  <span className="w-2 h-2 rounded-full bg-red-500 absolute -top-0.5 -right-0.5 animate-ping"></span>
-                )}
-              </button>
+              <NotificationBell
+                notifications={notifications}
+                unread={unreadCount}
+                onRefresh={onRefreshNotifications}
+                onMarkAllRead={onMarkAllRead}
+                onMarkRead={onMarkRead}
+                channel={notificationChannel}
+                onChangeChannel={onChangeNotificationChannel}
+              />
 
               {isLeadership && (
                 <>

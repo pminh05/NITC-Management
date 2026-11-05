@@ -14,6 +14,17 @@ import {
 import { serializeTask, serializeMeeting, serializeMember, serializeLog } from './serialize';
 import { resetAndSeed, DEFAULT_PASSWORD } from './seed';
 import { importRosterFromExcel, getActiveTerm } from './importExcel';
+import {
+  notify,
+  notifyLeadership,
+  listNotifications,
+  unreadCount,
+  markRead,
+  markAllRead,
+  getPref,
+  setPref,
+} from './notifications';
+import { scanDeadlines } from './scheduler';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
@@ -60,6 +71,58 @@ apiRouter.put('/terms/:id/activate', requirePresident, async (req: Request, res:
     prisma.term.update({ where: { id }, data: { isActive: true } }),
   ]);
   return res.json({ success: true, activeTerm: term.name });
+});
+
+// ============ NOTIFICATIONS (Trung tâm thông báo) ============
+
+apiRouter.get('/notifications', async (req: Request, res: Response) => {
+  const me = req.authMember!;
+  const items = await listNotifications(me.id, { unreadOnly: req.query.unread === '1' });
+  res.json({
+    items: items.map((n) => ({
+      id: n.id,
+      type: n.type,
+      title: n.title,
+      body: n.body ?? undefined,
+      taskId: n.taskId ?? undefined,
+      readAt: n.readAt?.toISOString(),
+      createdAt: n.createdAt.toISOString(),
+    })),
+    unread: await unreadCount(me.id),
+  });
+});
+
+apiRouter.get('/notifications/unread-count', async (req: Request, res: Response) => {
+  res.json({ unread: await unreadCount(req.authMember!.id) });
+});
+
+apiRouter.post('/notifications/:id/read', async (req: Request, res: Response) => {
+  await markRead(req.authMember!.id, req.params.id);
+  res.json({ success: true });
+});
+
+apiRouter.post('/notifications/read-all', async (req: Request, res: Response) => {
+  await markAllRead(req.authMember!.id);
+  res.json({ success: true });
+});
+
+apiRouter.get('/notifications/prefs', async (req: Request, res: Response) => {
+  res.json({ channel: await getPref(req.authMember!.id) });
+});
+
+apiRouter.put('/notifications/prefs', async (req: Request, res: Response) => {
+  try {
+    await setPref(req.authMember!.id, String(req.body?.channel || 'in_app'));
+    res.json({ success: true, channel: req.body?.channel });
+  } catch (e: any) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+// Quét deadline thủ công (phục vụ demo/kịch bản thử nghiệm S3 — bình thường cron 6h tự chạy)
+apiRouter.post('/notifications/scan', requirePresidentOrHead, async (_req: Request, res: Response) => {
+  const result = await scanDeadlines();
+  res.json({ success: true, ...result });
 });
 
 // ============ MEMBERS (Danh bạ) ============
@@ -239,6 +302,14 @@ apiRouter.post('/tasks', requirePresidentOrHead, async (req: Request, res: Respo
     },
     include: { sourceMeeting: { select: { id: true, title: true } } },
   });
+  await notify({
+    memberId: task.assigneeId,
+    type: 'task_assigned',
+    title: '📌 Bạn được giao việc mới',
+    body: `"${task.title}" — hạn chót ${task.deadline}. Xem chi tiết trong Bảng điều hành.`,
+    taskId: task.id,
+    dedupeKey: `task_assigned:${task.id}`,
+  });
   return res.status(201).json(serializeTask(task));
 });
 
@@ -281,6 +352,13 @@ apiRouter.put('/tasks/:id', requireAuth, async (req: Request, res: Response) => 
       },
       include: { sourceMeeting: { select: { id: true, title: true } } },
     });
+    await notifyLeadership({
+      type: 'evidence_submitted',
+      title: '📥 Minh chứng chờ duyệt',
+      body: `${me.name} đã nộp minh chứng cho "${task.title}". Vào Bảng điều hành để nghiệm thu.`,
+      taskId: task.id,
+      dedupeKey: `evidence_submitted:${task.id}:${me.id}`,
+    });
     return res.json(serializeTask(updated));
   }
 
@@ -296,6 +374,14 @@ apiRouter.put('/tasks/:id', requireAuth, async (req: Request, res: Response) => 
       },
       include: { sourceMeeting: { select: { id: true, title: true } } },
     });
+    await notify({
+      memberId: task.assigneeId,
+      type: 'evidence_approved',
+      title: '✅ Việc đã được nghiệm thu',
+      body: `"${task.title}" đã hoàn thành. ${req.body.note || ''}`.trim(),
+      taskId: task.id,
+      dedupeKey: `approved:${task.id}`,
+    });
     return res.json(serializeTask(updated));
   }
 
@@ -307,6 +393,14 @@ apiRouter.put('/tasks/:id', requireAuth, async (req: Request, res: Response) => 
       where: { id },
       data: { status: 'in_progress', rejectedReason: reason, updatedAt: now },
       include: { sourceMeeting: { select: { id: true, title: true } } },
+    });
+    await notify({
+      memberId: task.assigneeId,
+      type: 'evidence_rejected',
+      title: '↩️ Minh chứng bị trả lại',
+      body: `"${task.title}" cần làm lại. Lý do: ${reason}`,
+      taskId: task.id,
+      dedupeKey: `rejected:${task.id}:${now.getTime()}`,
     });
     return res.json(serializeTask(updated));
   }
@@ -388,6 +482,8 @@ apiRouter.post('/meetings/publish', requirePresidentOrHead, async (req: Request,
         secretary: meeting.secretary || '',
         attendees: JSON.stringify(meeting.attendees || []),
         absentees: JSON.stringify(meeting.absentees || []),
+        latecomers: JSON.stringify(meeting.latecomers || []),
+        objectives: meeting.objectives || '',
         discussionSummary: meeting.discussionSummary || '',
         actionPlan: meeting.actionPlan || '',
         rawContent: meeting.rawContent || '',
@@ -422,7 +518,35 @@ apiRouter.post('/meetings/publish', requirePresidentOrHead, async (req: Request,
         include: { sourceMeeting: { select: { id: true, title: true } } },
       });
       newTasks.push(serializeTask(task));
+      await notify({
+        memberId: task.assigneeId,
+        type: 'task_assigned',
+        title: '📌 Bạn được giao việc mới từ biên bản họp',
+        body: `"${task.title}" — hạn chót ${task.deadline} (nguồn: "${m.title}").`,
+        taskId: task.id,
+        dedupeKey: `task_assigned:${task.id}`,
+      });
     }
+    // Việc cũ chưa xong bị đánh dấu Sticky → báo cho người làm biết việc còn lưu chuyển
+    const stickyTasks = await tx.task.findMany({
+      where: { isSticky: true, status: { not: 'completed' } },
+    });
+    for (const st of stickyTasks) {
+      await notify({
+        memberId: st.assigneeId,
+        type: 'sticky_carried',
+        title: '📎 Việc còn lưu chuyển sang kỳ mới',
+        body: `"${st.title}" chưa hoàn thành từ kỳ họp trước — tiếp tục đôn đốc trong kỳ này.`,
+        taskId: st.id,
+        dedupeKey: `sticky:${st.id}:${m.id}`,
+      });
+    }
+    await notifyLeadership({
+      type: 'task_assigned',
+      title: '✅ Đã ban hành kỳ họp mới',
+      body: `"${m.title}": ${tasks.length} việc đã lên bảng điều hành, ${stickyTasks.length} việc cũ lưu chuyển.`,
+      dedupeKey: `published:${m.id}`,
+    });
     return { meeting: serializeMeeting(m), tasks: newTasks };
   });
 
