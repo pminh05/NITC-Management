@@ -518,36 +518,41 @@ apiRouter.post('/meetings/publish', requirePresidentOrHead, async (req: Request,
         include: { sourceMeeting: { select: { id: true, title: true } } },
       });
       newTasks.push(serializeTask(task));
-      await notify({
-        memberId: task.assigneeId,
-        type: 'task_assigned',
-        title: '📌 Bạn được giao việc mới từ biên bản họp',
-        body: `"${task.title}" — hạn chót ${task.deadline} (nguồn: "${m.title}").`,
-        taskId: task.id,
-        dedupeKey: `task_assigned:${task.id}`,
-      });
     }
-    // Việc cũ chưa xong bị đánh dấu Sticky → báo cho người làm biết việc còn lưu chuyển
+    // Việc cũ chưa xong bị đánh dấu Sticky (thu thập để thông báo SAU khi commit)
     const stickyTasks = await tx.task.findMany({
       where: { isSticky: true, status: { not: 'completed' } },
+      select: { id: true, assigneeId: true, title: true },
     });
-    for (const st of stickyTasks) {
-      await notify({
-        memberId: st.assigneeId,
-        type: 'sticky_carried',
-        title: '📎 Việc còn lưu chuyển sang kỳ mới',
-        body: `"${st.title}" chưa hoàn thành từ kỳ họp trước — tiếp tục đôn đốc trong kỳ này.`,
-        taskId: st.id,
-        dedupeKey: `sticky:${st.id}:${m.id}`,
-      });
-    }
-    await notifyLeadership({
+    return { meeting: serializeMeeting(m), tasks: newTasks, stickyTasks };
+  });
+
+  // --- Sau khi commit: gửi thông báo (ngoài transaction, tránh deadlock SQLite) ---
+  for (const t of created.tasks) {
+    await notify({
+      memberId: t.assigneeId,
       type: 'task_assigned',
-      title: '✅ Đã ban hành kỳ họp mới',
-      body: `"${m.title}": ${tasks.length} việc đã lên bảng điều hành, ${stickyTasks.length} việc cũ lưu chuyển.`,
-      dedupeKey: `published:${m.id}`,
+      title: '📌 Bạn được giao việc mới từ biên bản họp',
+      body: `"${t.title}" — hạn chót ${t.deadline} (nguồn: "${created.meeting.title}").`,
+      taskId: t.id,
+      dedupeKey: `task_assigned:${t.id}`,
     });
-    return { meeting: serializeMeeting(m), tasks: newTasks };
+  }
+  for (const st of created.stickyTasks) {
+    await notify({
+      memberId: st.assigneeId,
+      type: 'sticky_carried',
+      title: '📎 Việc còn lưu chuyển sang kỳ mới',
+      body: `"${st.title}" chưa hoàn thành từ kỳ họp trước — tiếp tục đôn đốc trong kỳ này.`,
+      taskId: st.id,
+      dedupeKey: `sticky:${st.id}:${created.meeting.id}`,
+    });
+  }
+  await notifyLeadership({
+    type: 'task_assigned',
+    title: '✅ Đã ban hành kỳ họp mới',
+    body: `"${created.meeting.title}": ${created.tasks.length} việc đã lên bảng điều hành, ${created.stickyTasks.length} việc cũ lưu chuyển.`,
+    dedupeKey: `published:${created.meeting.id}`,
   });
 
   return res.status(201).json(created);

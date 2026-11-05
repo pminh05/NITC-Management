@@ -60,10 +60,10 @@ function calculateFallbackDate(baseDateStr: string, relativeText: string): strin
 function fallbackParseBBH(bbhText: string, members: any[], meetingDateStr: string) {
   const lines = bbhText.split('\n').map((l) => l.trim()).filter(Boolean);
 
-  let title = 'Biên bản họp Ban Điều Hành NITC';
+  let title = 'Biên bản họp Ban Điều hành NITC';
   let date = meetingDateStr || new Date().toISOString().split('T')[0];
-  let chairperson = 'Lê Hồng Phúc Minh';
-  let secretary = 'Nguyễn Thị Ngọc Ánh';
+  let chairperson = 'Phạm Phúc Minh';
+  let secretary = '';
   const attendees: string[] = [];
   const absentees: string[] = [];
   const latecomers: string[] = [];
@@ -74,8 +74,27 @@ function fallbackParseBBH(bbhText: string, members: any[], meetingDateStr: strin
 
   for (const line of lines) {
     const lower = line.toLowerCase();
-    if (lower.includes('biên bản') || lower.includes('bbh')) {
-      title = line.replace(/^[#\-\*\d\.\s]+/, '').trim();
+    const isSignatureLine = lower.includes('lập biên bản') || lower.includes('lap bien ban');
+    const looksLikeTitle = (lower.includes('bbh') || lower.includes('biên bản')) &&
+      !isSignatureLine && !lower.includes(':') && line.length <= 80;
+    if (looksLikeTitle) {
+      const candidate = line.replace(/^[#\-\*\d\.\s]+/, '').trim();
+      // Ưu tiên dòng có "BBH"; nếu tiêu đề hiện tại đã có "BBH" thì không hạ cấp bằng dòng thường
+      if (candidate && !(candidate.length > 0 && /biên bản họp ban điều hành nitc/i.test(candidate) && title.toLowerCase().includes('bbh'))) {
+        title = candidate;
+      }
+    }
+    // Dòng chữ ký "Người lập biên bản" -> bắt đầu phần ký tên, ngưng thu thập nội dung
+    if (isSignatureLine) {
+      currentSection = 'signature';
+      continue;
+    }
+    if (currentSection === 'signature') {
+      // Dòng không trống đầu tiên sau chữ ký là tên người lập biên bản
+      if (!secretary && !/^[\d\.\-\s]*$/.test(line)) {
+        secretary = line.trim();
+      }
+      continue;
     }
     if (lower.includes('ngày') && lower.includes('thời gian')) {
       const dateMatch = line.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
