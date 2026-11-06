@@ -15,7 +15,7 @@ const app = express();
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'nitc-command-center-dev-secret-change-in-production';
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '25mb' })); // ảnh/PDF base64 có thể lớn hơn file gốc ~37%
 
 // Health check
 app.get('/api/health', (_req, res) => {

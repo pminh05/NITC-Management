@@ -317,16 +317,29 @@ function fallbackParseBBH(bbhText: string, members: any[], meetingDateStr: strin
 }
 
 export async function parseBBHHandler(req: Request, res: Response) {
-  const { bbhText, members, meetingDate } = req.body;
+  const { bbhText, images, pdf, members, meetingDate } = req.body;
 
-  if (!bbhText || typeof bbhText !== 'string') {
-    return res.status(400).json({ error: 'Nội dung Biên bản họp không được để trống' });
+  // Đầu vào: văn bản HOẶC ảnh (mảng data URL) HOẶC PDF (data URL)
+  const imageList: string[] = Array.isArray(images)
+    ? images.filter((x: any) => typeof x === 'string' && x.startsWith('data:image/'))
+    : [];
+  const pdfData: string | null = typeof pdf === 'string' && pdf.startsWith('data:application/pdf') ? pdf : null;
+  const hasText = typeof bbhText === 'string' && bbhText.trim().length > 0;
+  const hasFile = imageList.length > 0 || !!pdfData;
+
+  if (!hasText && !hasFile) {
+    return res.status(400).json({ error: 'Vui lòng dán nội dung hoặc đính kèm ảnh/PDF biên bản họp' });
   }
 
   const memberList = Array.isArray(members) ? members : [];
   const ai = getAIClient();
 
   if (!ai) {
+    if (hasFile) {
+      return res.status(400).json({
+        error: 'Đọc biên bản từ ảnh/PDF cần OPENAI_API_KEY. Hãy cấu hình key trong .env rồi khởi động lại server (hoặc dùng tab Dán văn bản).',
+      });
+    }
     console.log('Using local heuristic parser (No OPENAI_API_KEY provided)');
     const fallbackResult = fallbackParseBBH(bbhText, memberList, meetingDate);
     return res.json(fallbackResult);
@@ -345,10 +358,17 @@ ${memberContext}
 
 NGÀY HỌP MẶC ĐỊNH (nếu biên bản không ghi rõ): ${meetingDate || new Date().toISOString().split('T')[0]}
 
-VĂN BẢN BIÊN BẢN HỌP:
+NGUỒN BIÊN BẢN:
+${
+  hasFile
+    ? (pdfData ? '- Một tệp PDF chứa biên bản họp (đính kèm trong tin nhắn). ' : '') +
+      (imageList.length > 0 ? `- ${imageList.length} ảnh chụp biên bản họp (đính kèm, có thể nhiều trang, chụp lệch hoặc nhòe). ` : '') +
+      'Hãy TỰ ĐỌC (OCR) toàn bộ nội dung biên bản từ tài liệu đính kèm — kể cả chữ in nhỏ và chữ viết tay nếu rõ ràng — rồi phân tích theo các quy tắc dưới đây.'
+    : `VĂN BẢN BIÊN BẢN HỌP:
 """
 ${bbhText}
-"""
+"""`
+}
 
 CẤU TRÚC BBH CHUẨN NITC:
 - Mục I: THỜI GIAN, ĐỊA ĐIỂM, THÀNH PHẦN THAM GIA (Có mặt/Tổng — Vắng — Muộn)
@@ -395,7 +415,20 @@ Trả về JSON theo cấu trúc trên.`;
           content:
             'Bạn là trợ lý điều hành CLB NITC. Luôn trả về DUY NHẤT một object JSON hợp lệ đúng cấu trúc được yêu cầu, không thêm văn bản nào khác.',
         },
-        { role: 'user', content: prompt },
+        {
+          role: 'user',
+          content: (() => {
+            const parts: any[] = [];
+            if (pdfData) {
+              parts.push({ type: 'file', file: { filename: 'bbh.pdf', file_data: pdfData } });
+            }
+            for (const img of imageList) {
+              parts.push({ type: 'image_url', image_url: { url: img } });
+            }
+            parts.push({ type: 'text', text: prompt });
+            return parts;
+          })(),
+        },
       ],
     });
 
@@ -406,6 +439,8 @@ Trả về JSON theo cấu trúc trên.`;
       parsedJson.tasks = parsedJson.tasks.map((t: any, idx: number) => ({
         ...t,
         tempId: t.tempId || `draft-${Date.now()}-${idx}`,
+        // OCR/vision có thể bỏ sót ban — mặc định về Ban Chủ nhiệm để người duyệt chỉnh
+        suggestedDepartment: t.suggestedDepartment || 'Ban Chủ nhiệm',
         approved: true,
         priority: t.priority || 'high',
         warningMessages: t.warningMessages || [],
