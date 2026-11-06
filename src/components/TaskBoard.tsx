@@ -90,7 +90,13 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
         if (!matchTitle && !matchAssignee && !matchDept) return false;
       }
       return true;
-    }).sort((a, b) => a.deadline.localeCompare(b.deadline)); // việc sắp đến hạn nhất lên đầu
+    }).sort((a, b) => {
+      // Việc đã hoàn thành luôn đẩy xuống cuối bảng
+      const aDone = a.status === 'completed';
+      const bDone = b.status === 'completed';
+      if (aDone !== bDone) return aDone ? 1 : -1;
+      return a.deadline.localeCompare(b.deadline); // còn lại: sắp đến hạn nhất lên đầu
+    });
   }, [tasks, selectedDept, selectedStatus, searchQuery]);
 
   // Counts for tabs
