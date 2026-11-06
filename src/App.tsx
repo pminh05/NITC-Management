@@ -25,6 +25,7 @@ import { TheNagWeeklyReport } from './components/TheNagWeeklyReport';
 import { MeetingHistoryModal } from './components/MeetingHistoryModal';
 import { RosterManagerModal } from './components/RosterManagerModal';
 import { DataSyncModal } from './components/DataSyncModal';
+import { LeaderboardModal } from './components/LeaderboardModal';
 import {
   Sparkles,
   Pin,
@@ -213,6 +214,7 @@ export function App() {
   const [isMeetingHistoryOpen, setIsMeetingHistoryOpen] = useState(false);
   const [isRosterOpen, setIsRosterOpen] = useState(false);
   const [isDataSyncOpen, setIsDataSyncOpen] = useState(false);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
 
   // Modal payload state
   const [parsedMeetingData, setParsedMeetingData] = useState<Partial<Meeting> | null>(null);
@@ -632,6 +634,19 @@ export function App() {
                 </span>
               )}
             </button>
+
+            <button
+              onClick={() => setIsLeaderboardOpen(true)}
+              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-md text-xs transition cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <span>🏆</span>
+                <span>Bảng xếp hạng</span>
+              </div>
+              <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold">
+                KPI
+              </span>
+            </button>
           </div>
 
           <div className="p-4 space-y-1 border-t border-slate-100">
@@ -947,6 +962,13 @@ export function App() {
           onResetToDemo={handleResetToDemo}
         />
       )}
+
+      {/* Modal 9: Bảng xếp hạng & KPI (mọi vai trò đều xem được trong phạm vi của mình) */}
+      <LeaderboardModal
+        isOpen={isLeaderboardOpen}
+        onClose={() => setIsLeaderboardOpen(false)}
+        authMember={authMember}
+      />
 
     </div>
   );

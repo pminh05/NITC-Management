@@ -25,6 +25,7 @@ import {
   setPref,
 } from './notifications';
 import { scanDeadlines } from './scheduler';
+import { computeKpi } from './kpi';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
@@ -71,6 +72,13 @@ apiRouter.put('/terms/:id/activate', requirePresident, async (req: Request, res:
     prisma.term.update({ where: { id }, data: { isActive: true } }),
   ]);
   return res.json({ success: true, activeTerm: term.name });
+});
+
+// ============ KPI (Bảng xếp hạng thành viên) ============
+
+apiRouter.get('/kpi', async (req: Request, res: Response) => {
+  const result = await computeKpi(req.authMember!);
+  res.json(result);
 });
 
 // ============ NOTIFICATIONS (Trung tâm thông báo) ============
