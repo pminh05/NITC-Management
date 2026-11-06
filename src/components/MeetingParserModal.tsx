@@ -299,36 +299,6 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
           </div>
           )}
 
-          {/* Business rules highlight */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-            <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
-              <div className="font-semibold text-amber-400 mb-1 flex items-center gap-1.5">
-                <span>⚠️ Quy tắc "Minh"</span>
-              </div>
-              <p className="text-slate-400">
-                Nếu biên bản ghi tên trùng nhiều người (VD: tên Minh), AI không tự gán mà sẽ hiện cảnh báo để Chủ nhiệm chọn người chính xác.
-              </p>
-            </div>
-
-            <div className="p-3 bg-red-500/5 border border-red-500/20 rounded-xl">
-              <div className="font-semibold text-red-400 mb-1 flex items-center gap-1.5">
-                <span>🚨 Cảnh báo Vắng mặt</span>
-              </div>
-              <p className="text-slate-400">
-                Nếu người được giao việc nằm trong danh sách vắng họp, hệ thống lập tức báo động đỏ.
-              </p>
-            </div>
-
-            <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
-              <div className="font-semibold text-emerald-400 mb-1 flex items-center gap-1.5">
-                <span>🔗 Loại Xác minh</span>
-              </div>
-              <p className="text-slate-400">
-                Tự động phân loại việc cần Link (Design/Slide/Form) hoặc Báo cáo 2 câu (Gặp đối tác/Mua đồ).
-              </p>
-            </div>
-          </div>
-
           {errorMsg && (
             <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-400 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
