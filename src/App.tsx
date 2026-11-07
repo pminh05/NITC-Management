@@ -29,8 +29,8 @@ import { LeaderboardModal } from './components/LeaderboardModal';
 import { SettingsModal } from './components/SettingsModal';
 import { CalendarModal } from './components/CalendarModal';
 import { DocsModal } from './components/DocsModal';
+import { DashboardModal } from './components/DashboardModal';
 import {
-  Sparkles,
   Pin,
   CheckCircle2,
 } from 'lucide-react';
@@ -229,6 +229,7 @@ export function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isDocsOpen, setIsDocsOpen] = useState(false);
+  const [isDashOpen, setIsDashOpen] = useState(false);
   const [clubName, setClubName] = useState('CLB Công nghệ thông tin NITC');
 
   // Modal payload state
@@ -549,7 +550,7 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F1F5F9] text-slate-900 flex flex-col font-sans antialiased selection:bg-[#2C69FF]/100 selection:text-white">
+    <div className="min-h-screen bg-[#F1F5F9] dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans antialiased selection:bg-[#2C69FF]/100 selection:text-white">
 
       {/* Toast Notification */}
       {toastMessage && (
@@ -559,14 +560,14 @@ export function App() {
               ? 'bg-amber-50 border-amber-300 text-amber-900'
               : toastMessage.type === 'info'
               ? 'bg-blue-50 border-blue-300 text-blue-900'
-              : 'bg-white border-emerald-400 text-slate-900 shadow-emerald-100'
+              : 'bg-white border-emerald-400 text-slate-900 dark:text-slate-100 shadow-emerald-100'
           }`}>
             <div className="p-1 rounded-lg bg-emerald-100 text-emerald-700">
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
               <h5 className="font-bold text-sm text-slate-900">{toastMessage.title}</h5>
-              <p className="text-xs text-slate-600 mt-0.5">{toastMessage.desc}</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">{toastMessage.desc}</p>
             </div>
           </div>
         </div>
@@ -598,7 +599,7 @@ export function App() {
       <div className="flex flex-1 w-full overflow-x-hidden">
 
         {/* High Density Desktop Sidebar */}
-        <aside className="w-60 bg-white border-r border-slate-200 hidden lg:flex flex-col shrink-0">
+        <aside className="w-60 bg-white border-r border-slate-200 dark:border-slate-800 hidden lg:flex flex-col shrink-0">
           <div className="p-4 space-y-1">
             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">
               Hệ thống
@@ -611,14 +612,14 @@ export function App() {
               className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition cursor-pointer ${
                 sidebarDeptFilter === 'all' && sidebarStatusFilter === 'all'
                   ? 'bg-[#2C69FF]/10 text-[#1E4FC4] font-bold border border-[#2C69FF]/30'
-                  : 'text-slate-600 hover:bg-slate-50'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50'
               }`}
             >
               <div className="flex items-center gap-2.5">
                 <span>📊</span>
                 <span>Tổng quan</span>
               </div>
-              <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono">
+              <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded font-mono">
                 {dataLoading ? '...' : totalTasksCount}
               </span>
             </button>
@@ -626,7 +627,7 @@ export function App() {
             {canManageMeetings && (
               <button
                 onClick={() => setIsParserOpen(true)}
-                className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-md text-xs transition cursor-pointer"
+                className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-900 rounded-md text-xs transition cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
                   <span>🤖</span>
@@ -640,7 +641,7 @@ export function App() {
 
             <button
               onClick={() => setIsNagOpen(true)}
-              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-md text-xs transition cursor-pointer"
+              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-900 rounded-md text-xs transition cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
                 <span>🚨</span>
@@ -654,8 +655,18 @@ export function App() {
             </button>
 
             <button
-              onClick={() => setIsLeaderboardOpen(true)}
+              onClick={() => setIsDashOpen(true)}
               className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-md text-xs transition cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <span>📊</span>
+                <span>Dashboard</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setIsLeaderboardOpen(true)}
+              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-900 rounded-md text-xs transition cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
                 <span>🏆</span>
@@ -668,7 +679,7 @@ export function App() {
 
             <button
               onClick={() => setIsCalendarOpen(true)}
-              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-md text-xs transition cursor-pointer"
+              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-900 rounded-md text-xs transition cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
                 <span>📅</span>
@@ -678,7 +689,7 @@ export function App() {
 
             <button
               onClick={() => setIsDocsOpen(true)}
-              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-md text-xs transition cursor-pointer"
+              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-900 rounded-md text-xs transition cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
                 <span>📚</span>
@@ -715,15 +726,15 @@ export function App() {
                   }}
                   className={`w-full flex items-center justify-between px-3 py-1.5 rounded-md text-xs transition cursor-pointer ${
                     isSelected
-                      ? 'bg-slate-100 text-slate-900 font-bold'
-                      : 'text-slate-600 hover:bg-slate-50'
+                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50'
                   }`}
                 >
                   <span className="flex items-center gap-2 truncate">
                     <span>{emoji}</span>
                     <span className="truncate">{dept}</span>
                   </span>
-                  <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded font-mono text-slate-600">
+                  <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono text-slate-600">
                     {count}
                   </span>
                 </button>
@@ -751,15 +762,15 @@ export function App() {
           {/* Top 4 KPI Metric Cards (High Density) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
             {/* Card 1: Total Tasks */}
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
               <div>
                 <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
                   <span>Tổng nhiệm vụ</span>
-                  <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold">
+                  <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded font-bold">
                     {currentRole === 'Chủ nhiệm' ? 'Toàn CLB' : currentDepartment}
                   </span>
                 </div>
-                <div className="text-2xl font-bold text-slate-900 mt-1">{totalTasksCount}</div>
+                <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{totalTasksCount}</div>
               </div>
               <div className="text-[10px] text-emerald-600 font-medium mt-2 flex items-center gap-1">
                 <span>↑ {completionRate}% hoàn thành toàn trình</span>
@@ -767,7 +778,7 @@ export function App() {
             </div>
 
             {/* Card 2: In Progress */}
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
               <div>
                 <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
                   <span>Đang thực hiện</span>
@@ -775,13 +786,13 @@ export function App() {
                 </div>
                 <div className="text-2xl font-bold text-blue-600 mt-1">{inProgressCount}</div>
               </div>
-              <div className="h-1.5 w-full bg-slate-100 rounded-full mt-3 overflow-hidden">
+              <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full mt-3 overflow-hidden">
                 <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${inProgressPct}%` }}></div>
               </div>
             </div>
 
             {/* Card 3: The Nag Overdue */}
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-red-500 flex flex-col justify-between">
+            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm border-l-4 border-l-red-500 flex flex-col justify-between">
               <div>
                 <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
                   <span>Việc quá hạn</span>
@@ -809,7 +820,7 @@ export function App() {
             </div>
 
             {/* Card 4: Evidence Review Pending */}
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
               <div>
                 <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
                   <span>Đợi duyệt bằng chứng</span>
@@ -837,19 +848,6 @@ export function App() {
             </div>
           </div>
 
-          {/* Nhập biên bản mới */}
-          {isLeadership && (
-            <div className="flex justify-end shrink-0">
-              <button
-                onClick={() => setIsParserOpen(true)}
-                className="px-4 py-2 rounded-lg bg-[#2C69FF] hover:bg-[#1F56D6] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Nhập biên bản mới</span>
-              </button>
-            </div>
-          )}
-
           {/* 3. Task Management Board */}
           <TaskBoard
             tasks={tasks}
@@ -873,7 +871,7 @@ export function App() {
       </div>
 
       {/* 4. Footer */}
-      <footer className="border-t border-slate-200 bg-white py-3 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white py-3 text-center text-xs text-slate-500">
         <div className="w-full px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>NITC Command Center &copy; 2026 {clubName}</span>
           <div className="flex items-center gap-4 text-[11px] text-slate-400">
@@ -991,6 +989,15 @@ export function App() {
         onClose={() => setIsCalendarOpen(false)}
         tasks={tasks}
         meetings={meetings}
+      />
+
+      {/* Modal: Dashboard phân tích */}
+      <DashboardModal
+        isOpen={isDashOpen}
+        onClose={() => setIsDashOpen(false)}
+        tasks={tasks}
+        meetings={meetings}
+        authMember={authMember}
       />
 
       {/* Modal: Kho tài liệu (mọi vai trò xem trong phạm vi) */}

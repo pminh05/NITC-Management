@@ -10,7 +10,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { AppNotification, Member, Task } from '../types';
-import { Calendar, Settings as SettingsIcon } from 'lucide-react';
+import { Calendar, Settings as SettingsIcon, Sun, Moon } from 'lucide-react';
 import { api } from '../api/client';
 import { isTaskOverdue } from '../utils/dateUtils';
 import { NotificationBell } from './NotificationBell';
@@ -57,6 +57,13 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenDataSyncModal,
 }) => {
   const isPresident = authMember.role === 'Chủ nhiệm';
+  const [dark, setDark] = React.useState(() => document.documentElement.classList.contains('dark'));
+  const toggleTheme = () => {
+    const next = !dark;
+    setDark(next);
+    document.documentElement.classList.toggle('dark', next);
+    localStorage.setItem('nitc_theme', next ? 'dark' : 'light');
+  };
   const isLeadership = authMember.role === 'Chủ nhiệm' || authMember.role === 'Phó Chủ nhiệm';
   // Trưởng/Phó ban được đọc biên bản & họp riêng ban mình
   const canManageMeetings = isLeadership || authMember.role === 'Trưởng ban' || authMember.role === 'Phó ban';
@@ -145,6 +152,13 @@ export const Header: React.FC<HeaderProps> = ({
 
               {isLeadership && (
                 <>
+                  <button
+                    onClick={toggleTheme}
+                    className="p-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-lg border border-slate-700 transition cursor-pointer"
+                    title={dark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
+                  >
+                    {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                  </button>
                   <button
                     onClick={onOpenSettings}
                     className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition cursor-pointer"

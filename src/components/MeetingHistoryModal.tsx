@@ -198,9 +198,9 @@ export const MeetingHistoryModal: React.FC<MeetingHistoryModalProps> = ({
                 </div>
 
                 {/* Printable Document Box */}
-                <div className="p-6 bg-white text-slate-900 rounded-xl shadow-lg font-serif space-y-4 print:p-0 print:shadow-none">
+                <div className="p-6 bg-white text-slate-900 dark:text-slate-100 rounded-xl shadow-lg font-serif space-y-4 print:p-0 print:shadow-none">
                   {/* Official Header */}
-                  <div className="flex justify-between items-start text-[11px] pb-3 border-b border-slate-300 leading-tight">
+                  <div className="flex justify-between items-start text-[11px] pb-3 border-b border-slate-300 dark:border-slate-700 leading-tight">
                     <div className="text-center font-bold">
                       <p>CÂU LẠC BỘ CNTT NITC</p>
                       <p className="text-indigo-900">BAN ĐIỀU HÀNH CLB</p>
@@ -218,13 +218,13 @@ export const MeetingHistoryModal: React.FC<MeetingHistoryModalProps> = ({
                     <h3 className="font-bold text-base tracking-wide uppercase">
                       BIÊN BẢN HỌP BAN ĐIỀU HÀNH
                     </h3>
-                    <p className="italic text-xs text-slate-700 font-sans">
+                    <p className="italic text-xs text-slate-700 dark:text-slate-300 font-sans">
                       {selectedMeeting.title}
                     </p>
                   </div>
 
                   {/* General details */}
-                  <div className="space-y-1.5 text-xs text-slate-800 font-sans">
+                  <div className="space-y-1.5 text-xs text-slate-800 dark:text-slate-200 font-sans">
                     <p><strong>1. Thời gian:</strong> Ngày {formatDateVN(selectedMeeting.date)}</p>
                     <p><strong>2. Thành phần chủ trì:</strong> {selectedMeeting.chairperson} (Chủ nhiệm CLB)</p>
                     <p><strong>3. Thư ký cuộc họp:</strong> {selectedMeeting.secretary || 'Nguyễn Thị Ngọc Ánh'}</p>
@@ -234,9 +234,9 @@ export const MeetingHistoryModal: React.FC<MeetingHistoryModalProps> = ({
                   </div>
 
                   {/* Discussion Summary */}
-                  <div className="space-y-1 text-xs text-slate-800 font-sans pt-2">
+                  <div className="space-y-1 text-xs text-slate-800 dark:text-slate-200 font-sans pt-2">
                     <p className="font-bold">5. Tóm tắt nội dung thảo luận:</p>
-                    <div className="p-3 bg-slate-50 border border-slate-200 rounded text-slate-700 whitespace-pre-wrap leading-relaxed">
+                    <div className="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
                       {selectedMeeting.discussionSummary || 'Đã thống nhất các nội dung trọng tâm chuẩn bị sự kiện và phân bổ nhân sự.'}
                     </div>
                   </div>
@@ -245,25 +245,25 @@ export const MeetingHistoryModal: React.FC<MeetingHistoryModalProps> = ({
                   <div className="space-y-2 text-xs font-sans pt-2">
                     <p className="font-bold text-slate-900">6. Bảng phân công nhiệm vụ & Tiến độ thực tế:</p>
                     
-                    <div className="border border-slate-300 rounded overflow-hidden">
+                    <div className="border border-slate-300 dark:border-slate-700 rounded overflow-hidden">
                       <table className="w-full text-left border-collapse text-[11px]">
                         <thead>
-                          <tr className="bg-slate-100 border-b border-slate-300 text-slate-800 font-bold">
-                            <th className="p-2 border-r border-slate-300 w-8 text-center">STT</th>
+                          <tr className="bg-slate-100 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold">
+                            <th className="p-2 border-r border-slate-300 dark:border-slate-700 w-8 text-center">STT</th>
                             <th className="p-2 border-r border-slate-300">Nội dung công việc</th>
-                            <th className="p-2 border-r border-slate-300 w-24">Ban / Phụ trách</th>
-                            <th className="p-2 border-r border-slate-300 w-20">Hạn chót</th>
+                            <th className="p-2 border-r border-slate-300 dark:border-slate-700 w-24">Ban / Phụ trách</th>
+                            <th className="p-2 border-r border-slate-300 dark:border-slate-700 w-20">Hạn chót</th>
                             <th className="p-2 w-24">Trạng thái</th>
                           </tr>
                         </thead>
                         <tbody>
                           {meetingTasks.length > 0 ? (
                             meetingTasks.map((t, idx) => (
-                              <tr key={t.id} className="border-b border-slate-200 hover:bg-slate-50">
-                                <td className="p-2 border-r border-slate-300 text-center font-bold text-slate-600">
+                              <tr key={t.id} className="border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50">
+                                <td className="p-2 border-r border-slate-300 dark:border-slate-700 text-center font-bold text-slate-600">
                                   {idx + 1}
                                 </td>
-                                <td className="p-2 border-r border-slate-300 font-medium">
+                                <td className="p-2 border-r border-slate-300 dark:border-slate-700 font-medium">
                                   {t.title}
                                   {t.isSticky && (
                                     <span className="ml-1 text-[10px] text-purple-700 font-semibold">[Sticky]</span>
@@ -273,7 +273,7 @@ export const MeetingHistoryModal: React.FC<MeetingHistoryModalProps> = ({
                                   <strong>{t.assigneeName}</strong>
                                   <div className="text-[10px] text-slate-500">{t.department}</div>
                                 </td>
-                                <td className="p-2 border-r border-slate-300 font-mono">
+                                <td className="p-2 border-r border-slate-300 dark:border-slate-700 font-mono">
                                   {formatDateVN(t.deadline)}
                                 </td>
                                 <td className="p-2 font-semibold">

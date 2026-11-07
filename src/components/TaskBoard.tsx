@@ -112,7 +112,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
     <div className="space-y-4">
       
       {/* Top Filter & Command Bar */}
-      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
+      <div className="bg-white dark:bg-slate-900 dark:border-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm space-y-3">
         
         {/* Row 1: Search, Department pills & Quick Add */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
@@ -124,7 +124,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
               className={`px-3 py-1.5 rounded-lg font-bold transition shrink-0 cursor-pointer ${
                 selectedDept === 'all'
                   ? 'bg-[#2C69FF]/100 text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
               }`}
             >
               Toàn CLB ({tasks.length})
@@ -140,7 +140,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                   className={`px-3 py-1.5 rounded-lg font-semibold transition shrink-0 cursor-pointer ${
                     isActive
                       ? 'bg-slate-800 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
                   }`}
                 >
                   Ban {dept} ({deptTasks.length})
@@ -158,7 +158,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 placeholder="Tìm việc hoặc người làm..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#2C69FF] transition"
+                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white focus:outline-none focus:border-[#2C69FF] transition"
               />
             </div>
 
@@ -173,7 +173,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
               className={`px-2.5 py-1 rounded-md font-semibold transition cursor-pointer ${
                 selectedStatus === 'all'
                   ? 'bg-slate-900 text-white'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:bg-slate-100'
               }`}
             >
               Tất cả ({countAll})
@@ -184,7 +184,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
               className={`px-2.5 py-1 rounded-md font-semibold transition flex items-center gap-1 cursor-pointer ${
                 selectedStatus === 'in_progress'
                   ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                  : 'text-slate-600 hover:text-blue-700 hover:bg-slate-100'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-blue-700 hover:bg-slate-100'
               }`}
             >
               <span>Đang làm</span>
@@ -198,7 +198,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
               className={`px-2.5 py-1 rounded-md font-semibold transition flex items-center gap-1 cursor-pointer ${
                 selectedStatus === 'pending_approval'
                   ? 'bg-amber-50 text-amber-800 border border-amber-300'
-                  : 'text-slate-600 hover:text-amber-700 hover:bg-slate-100'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-amber-700 hover:bg-slate-100'
               }`}
             >
               <Clock className="w-3 h-3 text-amber-600" />
@@ -213,7 +213,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
               className={`px-2.5 py-1 rounded-md font-semibold transition flex items-center gap-1 cursor-pointer ${
                 selectedStatus === 'overdue'
                   ? 'bg-red-50 text-red-700 border border-red-300'
-                  : 'text-slate-600 hover:text-red-700 hover:bg-slate-100'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-red-700 hover:bg-slate-100'
               }`}
             >
               <AlertTriangle className="w-3 h-3 text-red-500" />
@@ -230,7 +230,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
               className={`px-2.5 py-1 rounded-md font-semibold transition flex items-center gap-1 cursor-pointer ${
                 selectedStatus === 'completed'
                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-300'
-                  : 'text-slate-600 hover:text-emerald-700 hover:bg-slate-100'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-emerald-700 hover:bg-slate-100'
               }`}
             >
               <CheckCircle2 className="w-3 h-3 text-emerald-600" />
@@ -271,8 +271,8 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
           ))}
         </div>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-xl p-12 text-center space-y-4 shadow-sm">
-          <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+        <div className="bg-white dark:bg-slate-900 dark:border-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl p-12 text-center space-y-4 shadow-sm">
+          <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
             <Layers className="w-6 h-6" />
           </div>
           <div>
@@ -294,7 +294,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                   setStatus('all');
                   setSearchQuery('');
                 }}
-                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer"
+                className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition cursor-pointer"
               >
                 Xóa tất cả bộ lọc
               </button>
@@ -384,24 +384,24 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-      <div className="bg-white border border-slate-200 rounded-xl w-full max-w-md p-6 shadow-2xl space-y-4 text-xs">
+      <div className="bg-white dark:bg-slate-900 dark:border-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl w-full max-w-md p-6 shadow-2xl space-y-4 text-xs">
         <h3 className="text-base font-bold text-slate-900">Thêm Công Việc Phát Sinh Nhanh</h3>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block text-slate-700 font-semibold mb-1">Tên công việc:</label>
+            <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Tên công việc:</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="VD: Thiết kế mockup bài đăng..."
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
               required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Ban phụ trách:</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Ban phụ trách:</label>
               <select
                 value={dept}
                 onChange={(e) => {
@@ -411,7 +411,7 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
                   const head = nextMembers.find((m) => m.role === 'Trưởng ban') || nextMembers[0];
                   setAssigneeIds(head ? [head.id] : []);
                 }}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
               >
                 {departments.map((d) => (
                   <option key={d} value={d}>Ban {d}</option>
@@ -419,7 +419,7 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Người phụ trách:</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Người phụ trách:</label>
               <AssigneeMultiSelect
                 members={deptMembers}
                 selectedIds={assigneeIds}
@@ -429,7 +429,7 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-slate-700 font-semibold mb-1">
+            <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
               Mô tả công việc <span className="text-slate-400 font-normal">(không bắt buộc)</span>:
             </label>
             <textarea
@@ -437,28 +437,28 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               placeholder="VD: Thiết kế trên Canva theo bộ màu NITC, gửi link duyệt..."
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#2C69FF] resize-none"
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white focus:outline-none focus:border-[#2C69FF] resize-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Hạn chót:</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Hạn chót:</label>
               <input
                 type="date"
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Loại xác minh:</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Loại xác minh:</label>
               <select
                 value={verificationType}
                 onChange={(e) => setVerificationType(e.target.value as any)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
               >
                 <option value="link_required">Cần Link 🔗</option>
                 <option value="report_required">Cần Báo cáo 📝</option>
@@ -470,7 +470,7 @@ const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-medium cursor-pointer"
+              className="px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 font-medium cursor-pointer"
             >
               Hủy
             </button>
