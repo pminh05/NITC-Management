@@ -610,6 +610,30 @@ export function App() {
         onOpenDataSyncModal={() => setIsDataSyncOpen(true)}
       />
 
+      {/* Thanh điều hướng cho điện thoại (sidebar ẩn trên màn nhỏ) */}
+      <div className="lg:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-2 py-2 flex items-center gap-1.5 overflow-x-auto">
+        {[
+          { icon: '🤖', label: 'AI đọc BBH', action: () => setIsParserOpen(true), show: canManageMeetings },
+          { icon: '🏆', label: 'Xếp hạng', action: () => setIsLeaderboardOpen(true), show: true },
+          { icon: '📊', label: 'Dashboard', action: () => setIsDashOpen(true), show: true },
+          { icon: '📅', label: 'Lịch tổng', action: () => setIsCalendarOpen(true), show: true },
+          { icon: '📚', label: 'Kho tài liệu', action: () => setIsDocsOpen(true), show: true },
+          { icon: '🚨', label: 'Việc quá hạn', action: () => setIsNagOpen(true), show: true },
+          { icon: '👥', label: 'Danh sách', action: () => setIsRosterOpen(true), show: isLeadership },
+        ]
+          .filter((item) => item.show)
+          .map((item) => (
+            <button
+              key={item.label}
+              onClick={item.action}
+              className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer shrink-0"
+            >
+              <span className="text-base leading-none">{item.icon}</span>
+              <span className="text-[9px] font-semibold whitespace-nowrap">{item.label}</span>
+            </button>
+          ))}
+      </div>
+
       {/* 2. High Density Dashboard Layout: Sidebar + Main Area */}
       <div className="flex flex-1 w-full overflow-x-hidden">
 
