@@ -575,6 +575,7 @@ export function App() {
         authMember={authMember}
         onLogout={handleLogout}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenCalendar={() => setIsCalendarOpen(true)}
         clubName={clubName}
         tasks={tasks}
         notifications={notifications}

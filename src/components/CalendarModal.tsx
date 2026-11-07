@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { X, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, CalendarDays, Download } from 'lucide-react';
 import { Meeting, Task } from '../types';
+import { getToken } from '../api/client';
 
 interface CalendarModalProps {
   isOpen: boolean;
@@ -124,6 +125,30 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose, t
               className="px-2.5 py-1.5 rounded-lg bg-[#2C69FF]/15 text-[#8FB2FF] text-xs font-bold hover:bg-[#2C69FF]/30 transition cursor-pointer"
             >
               Hôm nay
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch('/api/calendar.ics', {
+                    headers: { Authorization: `Bearer ${getToken() || ''}` },
+                  });
+                  if (!res.ok) throw new Error();
+                  const blob = await res.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'nitc-lich-dieu-hanh.ics';
+                  a.click();
+                  URL.revokeObjectURL(url);
+                } catch {
+                  alert('Không tải được lịch. Kiểm tra kết nối máy chủ.');
+                }
+              }}
+              className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+              title="Tải file .ics để đưa lịch vào Google/Apple Calendar"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Xuất .ics
             </button>
           </div>
           <div className="flex items-center gap-3 text-[10px] text-slate-400">

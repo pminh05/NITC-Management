@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { AppNotification, Member, Task } from '../types';
 import { Calendar, Settings as SettingsIcon } from 'lucide-react';
-import { api, getToken } from '../api/client';
+import { api } from '../api/client';
 import { isTaskOverdue } from '../utils/dateUtils';
 import { NotificationBell } from './NotificationBell';
 
@@ -19,6 +19,7 @@ interface HeaderProps {
   authMember: Member;
   onLogout: () => void;
   onOpenSettings: () => void;
+  onOpenCalendar: () => void;
   clubName: string;
   tasks: Task[];
   notifications: AppNotification[];
@@ -39,6 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
   authMember,
   onLogout,
   onOpenSettings,
+  onOpenCalendar,
   clubName,
   tasks,
   notifications,
@@ -133,25 +135,9 @@ export const Header: React.FC<HeaderProps> = ({
               />
 
               <button
-                onClick={async () => {
-                  try {
-                    const res = await fetch('/api/calendar.ics', {
-                      headers: { Authorization: `Bearer ${getToken() || ''}` },
-                    });
-                    if (!res.ok) throw new Error('Lỗi tải lịch');
-                    const blob = await res.blob();
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'nitc-lich-dieu-hanh.ics';
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  } catch {
-                    alert('Không tải được lịch. Kiểm tra kết nối máy chủ.');
-                  }
-                }}
+                onClick={onOpenCalendar}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg border border-slate-700 transition cursor-pointer"
-                title="Tải lịch deadline & họp (Google/Apple Calendar)"
+                title="Lịch deadline & kỳ họp"
               >
                 <Calendar className="w-3.5 h-3.5 text-violet-400" />
                 <span className="hidden lg:inline">Lịch</span>
