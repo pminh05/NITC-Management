@@ -140,6 +140,21 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, members,
             </div>
           )}
 
+          {/* Yêu cầu cập nhật đang chờ / feedback */}
+          {task.updateRequestedAt && !task.updateFeedback && (
+            <div className="p-2.5 rounded-lg bg-purple-500/10 border border-purple-500/30">
+              <div className="text-purple-300 font-bold text-xs mb-1">⏳ Yêu cầu cập nhật đang chờ phản hồi</div>
+              {task.updateRequestNote && <div className="text-slate-300">Ghi chú: {task.updateRequestNote}</div>}
+              <div className="text-[10px] text-slate-500 mt-1">Gửi {formatDateVN(task.updateRequestedAt)}</div>
+            </div>
+          )}
+          {task.updateFeedback && (
+            <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
+              <div className="text-amber-300 font-bold text-xs mb-1">🔄 Phản hồi yêu cầu cập nhật</div>
+              <div className="text-slate-300">{task.updateFeedback}</div>
+            </div>
+          )}
+
           {/* Kết quả duyệt */}
           {task.approvalNote && (
             <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-start gap-2">

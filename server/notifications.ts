@@ -14,6 +14,7 @@ export type NotifyType =
   | 'evidence_rejected'
   | 'sticky_carried'
   | 'weekly_summary'
+  | 'update_request'
   | 'broadcast';
 
 export interface NotifyInput {

@@ -21,6 +21,10 @@ export function serializeTask(t: {
   evidenceSubmittedAt: string | null;
   approvalNote: string | null;
   rejectedReason: string | null;
+  updateRequestedAt: string | null;
+  updateRequestNote: string | null;
+  updateRequestById: string | null;
+  updateFeedback: string | null;
   sourceMeetingId: string | null;
   priority: string | null;
   isSticky: boolean;
@@ -45,6 +49,10 @@ export function serializeTask(t: {
     evidenceSubmittedAt: t.evidenceSubmittedAt ?? undefined,
     approvalNote: t.approvalNote ?? undefined,
     rejectedReason: t.rejectedReason ?? undefined,
+    updateRequestedAt: t.updateRequestedAt ?? undefined,
+    updateRequestNote: t.updateRequestNote ?? undefined,
+    updateRequestById: t.updateRequestById ?? undefined,
+    updateFeedback: t.updateFeedback ?? undefined,
     sourceMeetingId: t.sourceMeetingId ?? undefined,
     sourceMeetingTitle: t.sourceMeeting?.title,
     isSticky: t.isSticky,

@@ -31,6 +31,7 @@ import { CalendarModal } from './components/CalendarModal';
 import { DocsModal } from './components/DocsModal';
 import { DashboardModal } from './components/DashboardModal';
 import { TaskDetailModal } from './components/TaskDetailModal';
+import { UpdateRequestFlowModal } from './components/UpdateRequestFlowModal';
 import {
   Pin,
   CheckCircle2,
@@ -232,6 +233,7 @@ export function App() {
   const [isDocsOpen, setIsDocsOpen] = useState(false);
   const [isDashOpen, setIsDashOpen] = useState(false);
   const [detailTask, setDetailTask] = useState<Task | null>(null);
+  const [updateReqTask, setUpdateReqTask] = useState<{ task: Task; mode: 'request' | 'respond' } | null>(null);
   const [clubName, setClubName] = useState('CLB Công nghệ thông tin NITC');
 
   // Modal payload state
@@ -330,6 +332,17 @@ export function App() {
   };
 
   // Step 4: Evidence Review by President
+  const handleUpdateRequestDone = async (updated: Task) => {
+    setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+    setUpdateReqTask(null);
+    showToast(
+      updated.updateRequestedAt ? 'Đã gửi yêu cầu cập nhật' : 'Đã phản hồi yêu cầu',
+      updated.updateRequestedAt
+        ? 'Ban lãnh đạo/Trưởng ban sẽ xem xét và phản hồi với feedback.'
+        : 'Thành viên đã nhận được phản hồi qua thông báo.'
+    );
+  };
+
   const handleOpenReviewModal = (task: Task) => {
     setSelectedTask(task);
     setIsReviewOpen(true);
@@ -868,6 +881,7 @@ export function App() {
             onOpenBBHParser={() => setIsParserOpen(true)}
             onAddNewManualTask={handleAddNewManualTask}
             onOpenDetail={setDetailTask}
+            onUpdateRequest={(task) => setUpdateReqTask({ task, mode: isLeadership ? 'respond' : 'request' })}
           />
 
         </main>
@@ -983,6 +997,17 @@ export function App() {
           logs={logs}
           onImportAllData={handleImportAllData}
           onResetToDemo={handleResetToDemo}
+        />
+      )}
+
+      {/* Modal: Luồng yêu cầu cập nhật minh chứng */}
+      {updateReqTask && (
+        <UpdateRequestFlowModal
+          task={updateReqTask.task}
+          mode={updateReqTask.mode}
+          authMember={authMember}
+          onClose={() => setUpdateReqTask(null)}
+          onDone={handleUpdateRequestDone}
         />
       )}
 

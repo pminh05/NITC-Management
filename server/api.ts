@@ -452,6 +452,80 @@ apiRouter.put('/tasks/:id', requireAuth, async (req: Request, res: Response) => 
     return res.json(serializeTask(updated));
   }
 
+  // Gửi yêu cầu cập nhật minh chứng (người làm, khi đang chờ duyệt)
+  if (action === 'request_update') {
+    if (task.status !== 'pending_approval') {
+      return res.status(400).json({ error: 'Chỉ gửi yêu cầu cập nhật khi minh chứng đang chờ duyệt' });
+    }
+    const canSubmit = isPresident(me) || me.department === task.department || me.id === task.assigneeId;
+    if (!canSubmit) return res.status(403).json({ error: 'Bạn không có quyền với nhiệm vụ này' });
+    const note = String(req.body.note || '').trim();
+    await prisma.task.update({
+      where: { id },
+      data: {
+        updateRequestedAt: now.toISOString(),
+        updateRequestNote: note || null,
+        updateRequestById: me.id,
+      },
+    });
+    // Thông báo: Ban lãnh đạo + Trưởng ban bộ phận
+    await notifyLeadership({
+      type: 'update_request',
+      title: '🔄 Yêu cầu cập nhật minh chứng',
+      body: `${me.name} muốn cập nhật minh chứng cho "${task.title}".${note ? ` Ghi chú: ${note}` : ''}`,
+      taskId: task.id,
+      dedupeKey: `update_req:${task.id}:${now.getTime()}`,
+    });
+    const head = await prisma.member.findFirst({ where: { department: task.department, role: 'Trưởng ban' } });
+    if (head) {
+      await notify({
+        memberId: head.id,
+        type: 'update_request',
+        title: '🔄 Yêu cầu cập nhật minh chứng',
+        body: `${me.name} muốn cập nhật minh chứng cho "${task.title}". Vui lòng phản hồi.`,
+        taskId: task.id,
+        dedupeKey: `update_req:${task.id}:${head.id}:${now.getTime()}`,
+      });
+    }
+    return res.json({ success: true });
+  }
+
+  // Phản hồi yêu cầu cập nhật (Ban lãnh đạo / Trưởng ban bộ phận) — điền feedback
+  if (action === 'respond_update') {
+    const isDeptHead = me.role === 'Trưởng ban' && me.department === task.department;
+    if (!isLeadership(me) && !isDeptHead) {
+      return res.status(403).json({ error: 'Chỉ Ban lãnh đạo hoặc Trưởng ban bộ phận được phản hồi' });
+    }
+    if (!task.updateRequestedAt) return res.status(400).json({ error: 'Không có yêu cầu cập nhật nào đang chờ' });
+    const feedback = String(req.body.feedback || '').trim();
+    if (!feedback) return res.status(400).json({ error: 'Vui lòng điền nội dung phản hồi (feedback)' });
+    const decision = req.body.decision === 'approve' ? 'approve' : 'reject';
+    await prisma.task.update({
+      where: { id },
+      data: {
+        updateFeedback: `${me.name}: ${feedback}`,
+        updateRequestedAt: null,
+        updateRequestNote: null,
+        updateRequestById: null,
+        ...(decision === 'approve' ? { status: 'in_progress', updatedAt: now } : {}),
+      },
+    });
+    await notify({
+      memberId: task.assigneeId,
+      type: 'update_request',
+      title: decision === 'approve' ? '✅ Được phép cập nhật minh chứng' : '❌ Yêu cầu cập nhật không được duyệt',
+      body: `"${task.title}" — Phản hồi: ${feedback}${decision === 'approve' ? ' Bạn có thể chỉnh sửa và nộp lại minh chứng.' : ' Minh chứng hiện tại được giữ nguyên.'}`,
+      taskId: task.id,
+      dedupeKey: `update_res:${task.id}:${now.getTime()}`,
+    });
+    const updated = await prisma.task.update({
+      where: { id },
+      data: { updatedAt: now },
+      include: { sourceMeeting: { select: { id: true, title: true } } },
+    });
+    return res.json(serializeTask(updated));
+  }
+
   if (action === 'update') {
     const b = req.body;
     // Đổi ban phụ trách -> kiểm tra quyền quản lý cả ban cũ lẫn ban mới

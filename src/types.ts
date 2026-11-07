@@ -90,6 +90,10 @@ export interface Task {
   evidenceSubmittedAt?: string;
   approvalNote?: string;
   rejectedReason?: string;
+  updateRequestedAt?: string;
+  updateRequestNote?: string;
+  updateRequestById?: string;
+  updateFeedback?: string;
   sourceMeetingId?: string;
   sourceMeetingTitle?: string;
   isSticky?: boolean; // Nhiệm vụ lưu chuyển từ tuần trước

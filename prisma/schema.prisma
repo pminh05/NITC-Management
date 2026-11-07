@@ -115,6 +115,11 @@ model Task {
   evidenceSubmittedAt String?
   approvalNote        String?
   rejectedReason      String?
+  // Yêu cầu cập nhật minh chứng (người làm gửi -> Ban lãnh đạo/TB phản hồi bằng feedback)
+  updateRequestedAt   String?
+  updateRequestNote   String?
+  updateRequestById   String?
+  updateFeedback      String?
   sourceMeetingId     String?
   priority            String? // high | medium | normal
   isSticky            Boolean   @default(false)
