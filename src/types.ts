@@ -37,6 +37,17 @@ export interface Member {
   avatar?: string;
 }
 
+export interface Doc {
+  id: string;
+  name: string;
+  url: string;
+  docType: string; // drive | sheet | doc | slide | pdf | image | form | other
+  department: string; // 'Ban Chủ nhiệm' = tài liệu chung
+  termId?: string;
+  label?: string;
+  pinned: boolean;
+}
+
 export interface Term {
   id: string;
   name: string; // "2025-2026"

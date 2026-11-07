@@ -9,6 +9,7 @@ import { parseBBHHandler } from './server/aiParser';
 import { seedIfEmpty } from './server/seed';
 import { subscribeMember } from './server/notifications';
 import { calendarIcsHandler } from './server/calendar';
+import { registerDocsRoutes } from './server/docs';
 import { startScheduler } from './server/scheduler';
 import { prisma } from './server/db';
 
@@ -90,6 +91,7 @@ app.post('/api/nag/send-reminders', requireAuth, (req, res) => {
 
 // Toàn bộ API nghiệp vụ (cần đăng nhập)
 app.use('/api', requireAuth, apiRouter);
+registerDocsRoutes(apiRouter);
 
 // Vite & Static Asset Handling
 async function startServer() {

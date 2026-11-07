@@ -28,6 +28,7 @@ import { DataSyncModal } from './components/DataSyncModal';
 import { LeaderboardModal } from './components/LeaderboardModal';
 import { SettingsModal } from './components/SettingsModal';
 import { CalendarModal } from './components/CalendarModal';
+import { DocsModal } from './components/DocsModal';
 import {
   Sparkles,
   Pin,
@@ -227,6 +228,7 @@ export function App() {
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isDocsOpen, setIsDocsOpen] = useState(false);
   const [clubName, setClubName] = useState('CLB Công nghệ thông tin NITC');
 
   // Modal payload state
@@ -673,6 +675,16 @@ export function App() {
                 <span>Lịch tổng</span>
               </div>
             </button>
+
+            <button
+              onClick={() => setIsDocsOpen(true)}
+              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-md text-xs transition cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <span>📚</span>
+                <span>Kho tài liệu</span>
+              </div>
+            </button>
           </div>
 
           <div className="p-4 space-y-1 border-t border-slate-100">
@@ -995,6 +1007,14 @@ export function App() {
         onClose={() => setIsCalendarOpen(false)}
         tasks={tasks}
         meetings={meetings}
+      />
+
+      {/* Modal: Kho tài liệu (mọi vai trò xem trong phạm vi) */}
+      <DocsModal
+        isOpen={isDocsOpen}
+        onClose={() => setIsDocsOpen(false)}
+        terms={terms}
+        authMember={authMember}
       />
 
       {/* Modal 10: Cấu hình hệ thống (chỉ Ban lãnh đạo) */}

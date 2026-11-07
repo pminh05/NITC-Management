@@ -25,6 +25,7 @@ model Term {
   isActive Boolean  @default(false)
   createdAt DateTime @default(now())
   members  Member[]
+  docs     Doc[]
 }
 
 // Thành viên CLB (roster) — tương ứng Member trong src/types.ts
@@ -48,6 +49,7 @@ model Member {
   ownedTasks Task[]   @relation("Creator")
   notifications    Notification[]
   notificationPref NotificationPref?
+  createdDocs      Doc[]          @relation("DocCreator")
 }
 
 // Biên bản họp (NITC Archive)
@@ -143,4 +145,21 @@ model NotificationLog {
 model Setting {
   key   String @id
   value String // JSON string
+}
+
+// Kho tài liệu (G6) — link-based: phản chiếu cấu trúc Drive của CLB
+model Doc {
+  id          String   @id @default(cuid())
+  name        String
+  url         String // link Drive/Docs/Sheet/PDF...
+  docType     String   @default("drive") // drive | sheet | doc | slide | pdf | image | form | other
+  department  String   @default("Ban Chủ nhiệm") // "Ban Chủ nhiệm" = TÀI LIỆU CHUNG (mọi thành viên xem); còn lại = riêng ban
+  termId      String?
+  term        Term?    @relation(fields: [termId], references: [id])
+  label       String? // nhãn tự do: Key element, Hồ sơ tài trợ, Giáo án...
+  pinned      Boolean  @default(false)
+  createdById String?
+  createdBy   Member?  @relation("DocCreator", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
