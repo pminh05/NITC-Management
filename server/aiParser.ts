@@ -66,7 +66,7 @@ function calculateFallbackDate(baseDateStr: string, relativeText: string): strin
 function fallbackParseBBH(bbhText: string, members: any[], meetingDateStr: string) {
   const lines = bbhText.split('\n').map((l) => l.trim()).filter(Boolean);
 
-  let title = 'Biên bản họp Ban Điều hành NITC';
+  let title = 'Họp Ban Điều hành NITC';
   let date = meetingDateStr || new Date().toISOString().split('T')[0];
   let chairperson = 'Phạm Phúc Minh';
   let secretary = '';
@@ -87,7 +87,7 @@ function fallbackParseBBH(bbhText: string, members: any[], meetingDateStr: strin
       const candidate = line.replace(/^[#\-\*\d\.\s]+/, '').trim();
       // Ưu tiên dòng có "BBH"; nếu tiêu đề hiện tại đã có "BBH" thì không hạ cấp bằng dòng thường
       if (candidate && !(candidate.length > 0 && /biên bản họp ban điều hành nitc/i.test(candidate) && title.toLowerCase().includes('bbh'))) {
-        title = candidate;
+        title = candidate.replace(/BBH/g, 'Họp');
       }
     }
     // Dòng chữ ký "Người lập biên bản" -> bắt đầu phần ký tên, ngưng thu thập nội dung
@@ -379,7 +379,7 @@ CẤU TRÚC BBH CHUẨN NITC:
 
 QUY TẮC TRÍCH XUẤT BẮT BUỘC:
 1. THÔNG TIN HỌP (meeting):
-   - title: tiêu đề/loại biên bản (VD: "BBH BCN tuần 45", hoặc tự đặt ngắn gọn nếu không có)
+   - title: tiêu đề/loại biên bản (VD: "Họp BCN tuần 45" — không dùng viết tắt BBH, hoặc tự đặt ngắn gọn nếu không có)
    - date: ngày họp chuẩn YYYY-MM-DD (quy đổi từ "Thứ Hai 3/11/2026" theo tuần thực tế)
    - chairperson: người chủ trì (thường là Chủ nhiệm/Phó Chủ nhiệm — so khớp Roster)
    - secretary: "Người lập biên bản" cuối biên bản
@@ -435,6 +435,10 @@ Trả về JSON theo cấu trúc trên.`;
     const parsedJson = JSON.parse(response.choices[0]?.message?.content?.trim() || '{}');
 
     // Post-process tasks: đảm bảo ID + tính nhất quán
+    // Chuẩn hóa tiêu đề: không dùng viết tắt BBH trên giao diện
+    if (parsedJson.meeting?.title) {
+      parsedJson.meeting.title = String(parsedJson.meeting.title).replace(/BBH/g, 'Họp');
+    }
     if (parsedJson.tasks && Array.isArray(parsedJson.tasks)) {
       parsedJson.tasks = parsedJson.tasks.map((t: any, idx: number) => ({
         ...t,

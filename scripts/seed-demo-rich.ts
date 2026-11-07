@@ -44,12 +44,12 @@ async function main() {
 
   // ===== 2. Thêm kỳ họp trải theo tháng =====
   const meetingDefs = [
-    { title: 'BBH BCN tuần 42 — Sơ kết tháng 10', date: d(-25), chairperson: 'Phạm Phúc Minh', secretary: 'Đoàn Anh Tú', attendees: ['Phạm Phúc Minh', 'Trần Thị Hoài Thương', 'Lê Ngọc Anh Thư', 'Đoàn Anh Tú'], absentees: ['Hoàng Thanh Tú'], latecomers: [] },
-    { title: 'BBH BCN tuần 43', date: d(-18), chairperson: 'Phạm Phúc Minh', secretary: 'Đoàn Anh Tú', attendees: ['Phạm Phúc Minh', 'Vũ Quang Thái', 'Trần Thị Huyền Trang', 'Đoàn Anh Tú'], absentees: [], latecomers: ['Chu Hà My'] },
-    { title: 'BBH riêng Ban Sự kiện — Lên kế hoạch talkshow', date: d(-10), chairperson: 'Đoàn Anh Tú', secretary: 'Trần Xuân Dương', attendees: ['Đoàn Anh Tú', 'Trần Xuân Dương', 'Ngô Minh Quân'], absentees: [], latecomers: [], dept: 'Sự kiện' },
-    { title: 'BBH BCN tuần 45 — Triển khai tháng 11', date: d(-4), chairperson: 'Phạm Phúc Minh', secretary: 'Nguyễn Thị Ngọc Ánh', attendees: ['Phạm Phúc Minh', 'Trần Thị Hoài Thương', 'Lê Ngọc Anh Thư', 'Trần Thị Huyền Trang'], absentees: ['Vũ Quang Thái'], latecomers: [], dept: 'Ban Chủ nhiệm' },
-    { title: 'BBH riêng Ban Đối ngoại — Chốt tài trợ talkshow', date: d(-2), chairperson: 'Hoàng Thanh Tú', secretary: 'Trịnh Thị Ngọc Hoa', attendees: ['Hoàng Thanh Tú', 'Bùi Thị Thanh Hoa', 'Trần Ngọc Linh'], absentees: [], latecomers: [], dept: 'Đối ngoại' },
-    { title: 'BBH BCN tuần 46 — Đầu tháng 12', date: d(8), chairperson: 'Phạm Phúc Minh', secretary: 'Đoàn Anh Tú', attendees: ['Phạm Phúc Minh', 'Trần Thị Hoài Thương'], absentees: [], latecomers: [] },
+    { title: 'Họp BCN tuần 42 — Sơ kết tháng 10', date: d(-25), chairperson: 'Phạm Phúc Minh', secretary: 'Đoàn Anh Tú', attendees: ['Phạm Phúc Minh', 'Trần Thị Hoài Thương', 'Lê Ngọc Anh Thư', 'Đoàn Anh Tú'], absentees: ['Hoàng Thanh Tú'], latecomers: [] },
+    { title: 'Họp BCN tuần 43', date: d(-18), chairperson: 'Phạm Phúc Minh', secretary: 'Đoàn Anh Tú', attendees: ['Phạm Phúc Minh', 'Vũ Quang Thái', 'Trần Thị Huyền Trang', 'Đoàn Anh Tú'], absentees: [], latecomers: ['Chu Hà My'] },
+    { title: 'Họp riêng Ban Sự kiện — Lên kế hoạch talkshow', date: d(-10), chairperson: 'Đoàn Anh Tú', secretary: 'Trần Xuân Dương', attendees: ['Đoàn Anh Tú', 'Trần Xuân Dương', 'Ngô Minh Quân'], absentees: [], latecomers: [], dept: 'Sự kiện' },
+    { title: 'Họp BCN tuần 45 — Triển khai tháng 11', date: d(-4), chairperson: 'Phạm Phúc Minh', secretary: 'Nguyễn Thị Ngọc Ánh', attendees: ['Phạm Phúc Minh', 'Trần Thị Hoài Thương', 'Lê Ngọc Anh Thư', 'Trần Thị Huyền Trang'], absentees: ['Vũ Quang Thái'], latecomers: [], dept: 'Ban Chủ nhiệm' },
+    { title: 'Họp riêng Ban Đối ngoại — Chốt tài trợ talkshow', date: d(-2), chairperson: 'Hoàng Thanh Tú', secretary: 'Trịnh Thị Ngọc Hoa', attendees: ['Hoàng Thanh Tú', 'Bùi Thị Thanh Hoa', 'Trần Ngọc Linh'], absentees: [], latecomers: [], dept: 'Đối ngoại' },
+    { title: 'Họp BCN tuần 46 — Đầu tháng 12', date: d(8), chairperson: 'Phạm Phúc Minh', secretary: 'Đoàn Anh Tú', attendees: ['Phạm Phúc Minh', 'Trần Thị Hoài Thương'], absentees: [], latecomers: [] },
   ];
   const createdMeetings: Array<{ id: string; title: string }> = [];
   for (const m of meetingDefs) {

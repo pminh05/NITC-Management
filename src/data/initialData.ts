@@ -86,7 +86,7 @@ export const INITIAL_MEMBERS: Member[] = [
 export const SAMPLE_BBH_TEMPLATES = [
   {
     id: 'sample-bbh-1',
-    title: 'BBH BCN — Chuẩn bị Ngày Câu lạc bộ (NCD) & Tuyển Gen 8',
+    title: 'Họp BCN — Chuẩn bị Ngày Câu lạc bộ (NCD) & Tuyển Gen 8',
     date: '2026-11-03',
     content: `BBH BCN
 
@@ -127,7 +127,7 @@ Người lập biên bản
   },
   {
     id: 'sample-bbh-2',
-    title: 'BBH BCN — Sơ kết tháng 11 & Đôn đốc tiến độ',
+    title: 'Họp BCN — Sơ kết tháng 11 & Đôn đốc tiến độ',
     date: '2026-11-10',
     content: `BBH BCN
 
