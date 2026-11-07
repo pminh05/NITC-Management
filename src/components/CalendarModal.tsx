@@ -283,7 +283,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose, t
 
         {/* Footer */}
         <div className="px-6 py-3 border-t border-slate-800 bg-slate-900 flex items-center justify-between text-slate-400">
-          <span>Mẹo: bấm nút "📅 Lịch" trên thanh công cụ để xuất file .ics đưa vào Google Calendar.</span>
+          <span>Mẹo: bấm "Xuất .ics" ở thanh trên để đưa lịch vào Google/Apple Calendar.</span>
           <button onClick={onClose} className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-semibold cursor-pointer">
             Đóng
           </button>
