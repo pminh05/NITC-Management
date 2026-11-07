@@ -210,14 +210,17 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({ isOpen, onClose,
                 )}
                 {upcoming.map((t) => {
                   const days = Math.round((new Date(t.deadline).getTime() - new Date(todayISO()).getTime()) / 86400000);
+                  const dateLabel = `${t.deadline.slice(8, 10)}/${t.deadline.slice(5, 7)}`;
+                  const rel = days === 0 ? 'Hôm nay' : days === 1 ? 'Ngày mai' : `Còn ${days} ngày`;
                   return (
                     <div key={t.id} className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 border border-slate-800">
                       <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 ${
                         days === 0 ? 'bg-orange-500/20 text-orange-300' : 'bg-[#2C69FF]/15 text-[#8FB2FF]'
                       }`}>
-                        {days === 0 ? 'Hôm nay' : `T+${days}`}
+                        {dateLabel}
                       </span>
-                      <span className="text-slate-200 truncate flex-1" title={t.title}>{t.title}</span>
+                      <span className="text-slate-200 truncate flex-1" title={`${t.title} — ${rel} (${t.deadline})`}>{t.title}</span>
+                      <span className="text-[10px] text-slate-400 shrink-0" title={`Hạn chót: ${t.deadline}`}>{rel}</span>
                       <span className="text-[10px] text-slate-500 shrink-0">{t.assigneeName}</span>
                     </div>
                   );
