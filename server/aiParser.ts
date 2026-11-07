@@ -316,8 +316,70 @@ function fallbackParseBBH(bbhText: string, members: any[], meetingDateStr: strin
   };
 }
 
+/**
+ * G6.5: Nhận link Google Docs/Sheets (chia sẻ "Anyone with the link can view")
+ * -> tải trực tiếp nội dung văn bản/CSV qua link export của Google (không cần API/OAuth).
+ */
+export function extractGoogleDocId(url: string): { kind: 'doc' | 'sheet'; id: string } | null {
+  const doc = url.match(/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/);
+  if (doc) return { kind: 'doc', id: doc[1] };
+  const sheet = url.match(/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  if (sheet) return { kind: 'sheet', id: sheet[1] };
+  return null;
+}
+
+export async function fetchGoogleDocText(url: string): Promise<string> {
+  const parsed = extractGoogleDocId(url);
+  if (!parsed) {
+    throw new Error('LINK_INVALID');
+  }
+  const exportUrl =
+    parsed.kind === 'doc'
+      ? `https://docs.google.com/document/d/${parsed.id}/export?format=txt`
+      : `https://docs.google.com/spreadsheets/d/${parsed.id}/gviz/tq?tqx=out:csv`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20000);
+  try {
+    const res = await fetch(exportUrl, {
+      signal: controller.signal,
+      redirect: 'follow',
+      headers: { 'User-Agent': 'Mozilla/5.0 (NITC Command Center)' },
+    });
+    const contentType = res.headers.get('content-type') || '';
+    const body = await res.text();
+    // Google trả HTML (trang đăng nhập/nội dung rỗng) khi tài liệu chưa công khai
+    if (!res.ok || contentType.includes('text/html') || body.trim().startsWith('<!DOCTYPE html')) {
+      throw new Error('NOT_PUBLIC');
+    }
+    return body;
+  } catch (e: any) {
+    if (e.message === 'NOT_PUBLIC' || e.message === 'LINK_INVALID') throw e;
+    if (e.name === 'AbortError') throw new Error('TIMEOUT');
+    throw new Error('FETCH_FAILED');
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function parseBBHHandler(req: Request, res: Response) {
-  const { bbhText, images, pdf, members, meetingDate } = req.body;
+  const { bbhText: rawText, images, pdf, docUrl, members, meetingDate } = req.body;
+
+  // Chế độ LINK: tải nội dung Google Docs/Sheets công khai thành văn bản
+  let bbhText: string | undefined = typeof rawText === 'string' ? rawText : undefined;
+  if (typeof docUrl === 'string' && docUrl.trim()) {
+    try {
+      bbhText = await fetchGoogleDocText(docUrl.trim());
+      console.log(`Loaded Google doc content: ${bbhText.length} chars from ${docUrl}`);
+    } catch (e: any) {
+      const messages: Record<string, string> = {
+        LINK_INVALID: 'Đây không phải link Google Docs/Sheets hợp lệ. Dán link dạng https://docs.google.com/document/d/...',
+        NOT_PUBLIC: 'Chưa đọc được tài liệu. Hãy mở tài liệu -> Chia sẻ -> chọn "Anyone with the link" (Anyone with the link can view) rồi thử lại.',
+        TIMEOUT: 'Tải tài liệu quá lâu (hết 20 giây). Thử lại sau.',
+        FETCH_FAILED: 'Không kết nối được Google Docs. Kiểm tra link/mạng rồi thử lại.',
+      };
+      return res.status(400).json({ error: messages[e.message] || 'Không đọc được tài liệu từ link đã dán.' });
+    }
+  }
 
   // Đầu vào: văn bản HOẶC ảnh (mảng data URL) HOẶC PDF (data URL)
   const imageList: string[] = Array.isArray(images)

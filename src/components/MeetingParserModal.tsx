@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Sparkles,
+  Link as LinkIcon,
   X,
   FileText,
   Calendar,
@@ -33,7 +34,8 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
 }) => {
   const [bbhText, setBbhText] = useState(SAMPLE_BBH_TEMPLATES[0].content);
   const [meetingDate, setMeetingDate] = useState('2026-11-03');
-  const [inputMode, setInputMode] = useState<'text' | 'file'>('text');
+  const [inputMode, setInputMode] = useState<'text' | 'file' | 'link'>('text');
+  const [docUrl, setDocUrl] = useState('');
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [pdfName, setPdfName] = useState<string | null>(null);
   const [pdfData, setPdfData] = useState<string | null>(null);
@@ -56,6 +58,10 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
       setErrorMsg('Vui lòng chọn ảnh hoặc tệp PDF biên bản họp trước khi phân tích.');
       return;
     }
+    if (inputMode === 'link' && !docUrl.trim()) {
+      setErrorMsg('Vui lòng dán link Google Docs biên bản họp.');
+      return;
+    }
     if (inputMode === 'text' && !bbhText.trim()) {
       setErrorMsg('Vui lòng dán nội dung Biên bản họp trước khi phân tích.');
       return;
@@ -70,6 +76,8 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
         body:
           inputMode === 'file'
             ? { images: imagePreviews, pdf: pdfData, members, meetingDate }
+            : inputMode === 'link'
+            ? { docUrl: docUrl.trim(), members, meetingDate }
             : { bbhText, members, meetingDate },
       });
 
@@ -188,6 +196,15 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
             </button>
             <button
               type="button"
+              onClick={() => setInputMode('link')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                inputMode === 'link' ? 'bg-[#2C69FF] text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              🔗 Link Docs
+            </button>
+            <button
+              type="button"
               onClick={() => setInputMode('file')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
                 inputMode === 'file' ? 'bg-[#2C69FF] text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
@@ -276,6 +293,28 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
                   </button>
                 </div>
               )}
+            </div>
+          )}
+
+          {inputMode === 'link' && (
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-300">
+                Link Google Docs / Sheets biên bản họp:
+              </label>
+              <div className="relative">
+                <LinkIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                <input
+                  type="url"
+                  value={docUrl}
+                  onChange={(e) => setDocUrl(e.target.value)}
+                  placeholder="https://docs.google.com/document/d/..."
+                  className="w-full pl-9 pr-3 py-2.5 bg-slate-950/80 border border-slate-700 rounded-xl text-xs font-mono text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+              <div className="text-[11px] text-slate-400 bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 space-y-1">
+                <p>✅ Hệ thống tự tải nội dung tài liệu rồi AI phân tích — không cần copy-paste.</p>
+                <p>⚠️ Tài liệu phải được chia sẻ chế độ <strong className="text-slate-300">"Anyone with the link can view"</strong> (Ai có đường liên kết đều xem được).</p>
+              </div>
             </div>
           )}
 
