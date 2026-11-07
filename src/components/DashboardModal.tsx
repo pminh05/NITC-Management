@@ -61,7 +61,7 @@ const DonutChart: React.FC<{ slices: Array<{ label: string; value: number; color
   return (
     <div className="flex items-center gap-5">
       <svg viewBox="0 0 140 140" className="w-36 h-36 -rotate-90">
-        <circle cx="70" cy="70" r={R} fill="none" stroke="currentColor" className="text-slate-200 dark:text-slate-800" strokeWidth="18" />
+        <circle cx="70" cy="70" r={R} fill="none" stroke="currentColor" className="text-slate-800" strokeWidth="18" />
         {total > 0 &&
           slices.map((s) => {
             const len = (s.value / total) * C;
@@ -87,8 +87,8 @@ const DonutChart: React.FC<{ slices: Array<{ label: string; value: number; color
         {slices.map((s) => (
           <div key={s.label} className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
-            <span className="text-slate-600 dark:text-slate-300">{s.label}</span>
-            <span className="font-bold text-slate-900 dark:text-white ml-auto">{s.value}</span>
+            <span className="text-slate-300">{s.label}</span>
+            <span className="font-bold text-white ml-auto">{s.value}</span>
             <span className="text-slate-400 text-[10px] w-9 text-right">{total > 0 ? Math.round((s.value / total) * 100) : 0}%</span>
           </div>
         ))}
