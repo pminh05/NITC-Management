@@ -31,6 +31,7 @@ interface TaskBoardProps {
   onQuickApprove: (taskId: string) => void;
   onOpenBBHParser: () => void;
   onAddNewManualTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onOpenDetail?: (task: Task) => void;
 }
 
 export const TaskBoard: React.FC<TaskBoardProps> = ({
@@ -49,6 +50,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
   onQuickApprove,
   onOpenBBHParser,
   onAddNewManualTask,
+  onOpenDetail,
 }) => {
   const [internalDept, setInternalDept] = useState<string>('all');
   const [internalStatus, setInternalStatus] = useState<string>('all');
@@ -260,9 +262,11 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
             <TaskCard
               key={task.id}
               task={task}
+              members={members}
               currentRole={currentRole}
               currentDepartment={currentDepartment}
               currentUserId={currentUserId}
+              onOpenDetail={onOpenDetail}
               onOpenSubmitModal={onOpenSubmitModal}
               onOpenReviewModal={onOpenReviewModal}
               onDeleteTask={onDeleteTask}

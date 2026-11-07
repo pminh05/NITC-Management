@@ -15,7 +15,7 @@ import {
   MessageSquare,
   ShieldCheck,
 } from 'lucide-react';
-import { Department, Role, Task } from '../types';
+import { Department, Role, Task, Member } from '../types';
 import { formatDateVN, getDaysRemaining, isTaskOverdue } from '../utils/dateUtils';
 
 interface TaskCardProps {
@@ -23,6 +23,8 @@ interface TaskCardProps {
   currentRole: Role;
   currentDepartment: Department;
   currentUserId: string;
+  members: Member[];
+  onOpenDetail: (task: Task) => void;
   onOpenSubmitModal: (task: Task) => void;
   onOpenReviewModal: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
@@ -34,6 +36,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   currentRole,
   currentDepartment,
   currentUserId,
+  members,
+  onOpenDetail,
   onOpenSubmitModal,
   onOpenReviewModal,
   onDeleteTask,
@@ -98,12 +102,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </span>
         </div>
 
-        {/* Task Title */}
+        {/* Task Title — bấm để xem chi tiết */}
         <h4
-          className={`font-semibold text-sm leading-snug mb-2 ${
+          onClick={() => onOpenDetail(task)}
+          title="Bấm để xem chi tiết công việc"
+          className={`font-semibold text-sm leading-snug mb-2 cursor-pointer hover:text-[#2C69FF] transition ${
             task.status === 'completed'
               ? 'text-slate-400 line-through'
-              : 'text-slate-900'
+              : 'text-slate-900 dark:text-slate-100'
           }`}
         >
           {task.title}
@@ -124,12 +130,18 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               {task.assigneeName}
             </span>
             {(task.assigneeIds?.length || 0) > 1 && (
-              <span
-                className="px-1.5 py-0.5 rounded bg-[#2C69FF]/10 text-[#1E4FC4] text-[10px] font-bold shrink-0"
-                title={`Công việc nhóm: ${task.assigneeIds.length} người cùng phụ trách`}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenDetail(task);
+                }}
+                className="px-1.5 py-0.5 rounded bg-[#2C69FF]/10 text-[#1E4FC4] dark:text-[#8FB2FF] text-[10px] font-bold shrink-0 hover:bg-[#2C69FF]/30 transition cursor-pointer"
+                title={`Công việc nhóm: ${task.assigneeIds
+                  .map((id) => members.find((m) => m.id === id)?.name || '?')
+                  .join(', ')}`}
               >
                 +{task.assigneeIds.length - 1}
-              </span>
+              </button>
             )}
           </div>
 

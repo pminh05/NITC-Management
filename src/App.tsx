@@ -30,6 +30,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { CalendarModal } from './components/CalendarModal';
 import { DocsModal } from './components/DocsModal';
 import { DashboardModal } from './components/DashboardModal';
+import { TaskDetailModal } from './components/TaskDetailModal';
 import {
   Pin,
   CheckCircle2,
@@ -230,6 +231,7 @@ export function App() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isDocsOpen, setIsDocsOpen] = useState(false);
   const [isDashOpen, setIsDashOpen] = useState(false);
+  const [detailTask, setDetailTask] = useState<Task | null>(null);
   const [clubName, setClubName] = useState('CLB Công nghệ thông tin NITC');
 
   // Modal payload state
@@ -865,6 +867,7 @@ export function App() {
             onQuickApprove={handleQuickApprove}
             onOpenBBHParser={() => setIsParserOpen(true)}
             onAddNewManualTask={handleAddNewManualTask}
+            onOpenDetail={setDetailTask}
           />
 
         </main>
@@ -982,6 +985,9 @@ export function App() {
           onResetToDemo={handleResetToDemo}
         />
       )}
+
+      {/* Modal: Chi tiết công việc */}
+      <TaskDetailModal task={detailTask} members={members} onClose={() => setDetailTask(null)} />
 
       {/* Modal: Lịch tổng deadline & họp */}
       <CalendarModal
