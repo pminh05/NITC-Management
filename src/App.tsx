@@ -837,34 +837,18 @@ export function App() {
             </div>
           </div>
 
-          {/* Core Rules Quick Summary Banner */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-[#2C69FF]/15 text-[#1E4FC4] text-[10px] font-bold uppercase tracking-wide">
-                  Quy Chuẩn Điều Hành NITC
-                </span>
-                <h2 className="text-sm font-bold text-slate-900">
-                  Tự động hóa từ biên bản họp & Giám sát trách nhiệm toàn CLB
-                </h2>
-              </div>
-              <p className="text-xs text-slate-600 leading-relaxed max-w-4xl">
-                Tự động hóa toàn trình: <strong className="text-slate-800">Biên bản họp &rarr; Danh sách việc</strong> &bull; Thực thi nghiêm ngặt <strong className="text-amber-700">Quy tắc Minh (Không tự ý gán người mơ hồ)</strong> &bull; <strong className="text-red-600">Cảnh báo vắng mặt</strong> &bull;<strong className="text-emerald-700">Nghiệm thu minh chứng (Link hoặc báo cáo 2 câu)</strong>.
-              </p>
+          {/* Nhập biên bản mới */}
+          {isLeadership && (
+            <div className="flex justify-end shrink-0">
+              <button
+                onClick={() => setIsParserOpen(true)}
+                className="px-4 py-2 rounded-lg bg-[#2C69FF] hover:bg-[#1F56D6] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Nhập biên bản mới</span>
+              </button>
             </div>
-
-            {canManageMeetings && (
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => setIsParserOpen(true)}
-                  className="px-4 py-2 rounded-lg bg-[#2C69FF]/100 hover:bg-[#1F56D6] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Nhập biên bản mới</span>
-                </button>
-              </div>
-            )}
-          </div>
+          )}
 
           {/* 3. Task Management Board */}
           <TaskBoard
