@@ -1,6 +1,7 @@
-import cron from 'node-cron';
+import cron, { ScheduledTask } from 'node-cron';
 import { prisma } from './db';
 import { notify, notifyLeadership, departmentHead, sendEmailIfEnabled, getPref } from './notifications';
+import { getSettings } from './settings';
 
 // ===== Bộ lập lịch tự động (G2) =====
 // Cron: quét deadline 6h00 hằng ngày · digest email 20h00 · báo cáo tuần Chủ Nhật 21h00.
@@ -177,6 +178,21 @@ export async function weeklyReport(): Promise<void> {
   }
 }
 
+let weeklyJob: ScheduledTask | null = null;
+
+/** Đặt lại lịch báo cáo tuần khi Cấu hình thay đổi (không cần restart) */
+export async function rescheduleWeeklyReport(): Promise<void> {
+  const s = await getSettings();
+  const cronExpr = `0 ${s.reportHour} * * ${s.reportDayOfWeek}`;
+  if (weeklyJob) weeklyJob.stop();
+  weeklyJob = cron.schedule(cronExpr, async () => {
+    await weeklyReport();
+    console.log('[cron] Đã tạo báo cáo tuần');
+  });
+  const dayNames = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
+  console.log(`[cron] Báo cáo tuần: ${dayNames[s.reportDayOfWeek]} ${s.reportHour}h`);
+}
+
 export function startScheduler(): void {
   if (process.env.SCHEDULER_ENABLED === 'false') {
     console.log('⏸ Scheduler tắt (SCHEDULER_ENABLED=false)');
@@ -192,10 +208,7 @@ export function startScheduler(): void {
     const n = await sendDigestEmails();
     console.log(`[cron 20h] Digest email: ${n} người`);
   });
-  // Báo cáo tuần 21h00 Chủ Nhật
-  cron.schedule('0 21 * * 0', async () => {
-    await weeklyReport();
-    console.log('[cron CN 21h] Đã tạo báo cáo tuần');
-  });
-  console.log('✔ Scheduler khởi động: quét deadline 6h · digest 20h · báo cáo tuần CN 21h');
+  // Báo cáo tuần — lịch đọc từ Cấu hình (mặc định Chủ nhật 21h)
+  rescheduleWeeklyReport();
+  console.log('✔ Scheduler khởi động: quét deadline 6h · digest 20h · báo cáo tuần theo Cấu hình');
 }

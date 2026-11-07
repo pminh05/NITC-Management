@@ -1,5 +1,6 @@
 import { prisma } from './db';
 import { isLeadership, AuthMember } from './auth';
+import { getSettings } from './settings';
 
 // ===== G3: KPI thành viên — tự tính từ dữ liệu công việc =====
 // Thang điểm (quy tắc nghiệp vụ NITC, sẽ đưa vào Settings ở G5):
@@ -10,6 +11,7 @@ import { isLeadership, AuthMember } from './auth';
 //   Đang làm (chưa đến hạn)       0
 // Công việc nhóm (nhiều người phụ trách): mỗi người đều được tính điểm công việc đó.
 
+// Mặc định — giá trị thật đọc từ bảng Settings (PUT /api/settings để chỉnh)
 export const KPI_RULES = {
   completedOnTime: 3,
   completedLate: 1,
@@ -49,17 +51,17 @@ export interface DeptKpiRow {
 }
 
 /** Điểm 1 công việc cho 1 người dựa trên trạng thái + ngày nộp/hạn */
-function scoreTaskFor(deadline: string, status: string, evidenceSubmittedAt: string | null, updatedAt: Date): number {
+function scoreTaskFor(deadline: string, status: string, evidenceSubmittedAt: string | null, updatedAt: Date, rules: typeof KPI_RULES): number {
   if (status === 'completed') {
     const submittedDate = dateOf(evidenceSubmittedAt) || updatedAt.toISOString().split('T')[0];
-    return submittedDate <= deadline ? KPI_RULES.completedOnTime : KPI_RULES.completedLate;
+    return submittedDate <= deadline ? rules.completedOnTime : rules.completedLate;
   }
   if (status === 'pending_approval') {
     const submittedDate = dateOf(evidenceSubmittedAt) || updatedAt.toISOString().split('T')[0];
-    return submittedDate <= deadline ? KPI_RULES.submittedPending : 0;
+    return submittedDate <= deadline ? rules.submittedPending : 0;
   }
   const today = new Date().toISOString().split('T')[0];
-  if (deadline < today) return KPI_RULES.overdueUnfinished;
+  if (deadline < today) return rules.overdueUnfinished;
   return 0;
 }
 
@@ -69,6 +71,14 @@ export async function computeKpi(me: AuthMember): Promise<{
   members: MemberKpiRow[];
   departments: DeptKpiRow[];
 }> {
+  const settings = await getSettings();
+  const rules: typeof KPI_RULES = {
+    completedOnTime: settings.kpiOnTime,
+    completedLate: settings.kpiLate,
+    submittedPending: settings.kpiPending,
+    overdueUnfinished: settings.kpiOverdue,
+  };
+
   const [members, tasks] = await Promise.all([
     prisma.member.findMany({
       where: { status: 'active', term: { isActive: true } },
@@ -104,7 +114,7 @@ export async function computeKpi(me: AuthMember): Promise<{
     } catch {
       // fallback 1 người
     }
-    const points = scoreTaskFor(t.deadline, t.status, t.evidenceSubmittedAt, t.updatedAt);
+    const points = scoreTaskFor(t.deadline, t.status, t.evidenceSubmittedAt, t.updatedAt, rules);
     for (const id of ids) {
       const row = rows.get(id);
       if (!row) continue;
@@ -164,5 +174,5 @@ export async function computeKpi(me: AuthMember): Promise<{
   visibleMembers.sort((a, b) => b.points - a.points || a.name.localeCompare(b.name, 'vi'));
   visibleDepts.sort((a, b) => b.points - a.points);
 
-  return { rules: KPI_RULES, members: visibleMembers, departments: visibleDepts };
+  return { rules, members: visibleMembers, departments: visibleDepts };
 }

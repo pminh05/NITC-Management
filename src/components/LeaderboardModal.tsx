@@ -53,6 +53,7 @@ export const LeaderboardModal: React.FC<{
   const [data, setData] = useState<KpiData | null>(null);
   const [tab, setTab] = useState<'members' | 'departments'>('members');
   const [loading, setLoading] = useState(false);
+  const [deptFilter, setDeptFilter] = useState<string>('all');
 
   const load = async () => {
     setLoading(true);
@@ -119,14 +120,29 @@ export const LeaderboardModal: React.FC<{
               🏢 Theo ban
             </button>
           </div>
-          <button
-            onClick={load}
-            disabled={loading}
-            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-50 transition cursor-pointer"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Làm mới
-          </button>
+          <div className="flex items-center gap-1.5">
+            <select
+              value={deptFilter}
+              onChange={(e) => setDeptFilter(e.target.value)}
+              className="px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs font-semibold focus:outline-none focus:border-[#2C69FF] cursor-pointer"
+              title="Lọc bảng xếp hạng theo ban"
+            >
+              <option value="all">🌐 Tất cả ban</option>
+              {Object.keys(DEPT_EMOJI).map((d) => (
+                <option key={d} value={d}>
+                  {DEPT_EMOJI[d]} Ban {d}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={load}
+              disabled={loading}
+              className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-50 transition cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Làm mới
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -152,7 +168,7 @@ export const LeaderboardModal: React.FC<{
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
-                  {data.members.map((m, i) => {
+                  {data.members.filter((m) => deptFilter === 'all' || m.department === deptFilter).map((m, i) => {
                     const isMe = m.memberId === authMember.id;
                     return (
                       <tr key={m.memberId} className={`transition ${isMe ? 'bg-[#2C69FF]/10' : 'hover:bg-slate-800/50'}`}>
@@ -204,7 +220,7 @@ export const LeaderboardModal: React.FC<{
 
           {tab === 'departments' && data && (
             <div className="space-y-3">
-              {data.departments.map((d, i) => {
+              {data.departments.filter((d) => deptFilter === 'all' || d.department === deptFilter).map((d, i) => {
                 const rate = d.completionRate;
                 const barColor = rate >= 75 ? 'bg-emerald-500' : rate >= 40 ? 'bg-amber-500' : 'bg-red-500';
                 return (
@@ -246,8 +262,8 @@ export const LeaderboardModal: React.FC<{
           <span className="flex items-center gap-2">
             <Users className="w-3.5 h-3.5" />
             {tab === 'members'
-              ? `${data?.members.length || 0} thành viên trong phạm vi của bạn`
-              : `${data?.departments.length || 0} ban`}
+              ? `${(data?.members || []).filter((m) => deptFilter === 'all' || m.department === deptFilter).length} thành viên${deptFilter !== 'all' ? ` — Ban ${deptFilter}` : ' trong phạm vi của bạn'}`
+              : `${(data?.departments || []).filter((d) => deptFilter === 'all' || d.department === deptFilter).length} ban`}
           </span>
           <button onClick={onClose} className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-semibold cursor-pointer">
             Đóng

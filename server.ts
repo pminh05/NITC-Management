@@ -8,6 +8,7 @@ import { apiRouter } from './server/api';
 import { parseBBHHandler } from './server/aiParser';
 import { seedIfEmpty } from './server/seed';
 import { subscribeMember } from './server/notifications';
+import { calendarIcsHandler } from './server/calendar';
 import { startScheduler } from './server/scheduler';
 import { prisma } from './server/db';
 
@@ -56,6 +57,9 @@ app.get('/api/notifications/stream', async (req, res) => {
     unsubscribe();
   });
 });
+
+// Xuất lịch ICS (Google/Apple Calendar) — tải trực tiếp trên trình duyệt qua ?token=
+app.get('/api/calendar.ics', requireAuth, calendarIcsHandler);
 
 // AI BBH Parser: Ban lãnh đạo + Trưởng/Phó ban (họp riêng ban)
 app.post('/api/gemini/parse-bbh', requireAuth, (req, res, next) => {

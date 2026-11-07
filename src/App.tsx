@@ -26,6 +26,7 @@ import { MeetingHistoryModal } from './components/MeetingHistoryModal';
 import { RosterManagerModal } from './components/RosterManagerModal';
 import { DataSyncModal } from './components/DataSyncModal';
 import { LeaderboardModal } from './components/LeaderboardModal';
+import { SettingsModal } from './components/SettingsModal';
 import {
   Sparkles,
   Pin,
@@ -167,6 +168,14 @@ export function App() {
     })();
   }, [authMember, selectedTermId, loadMembers]);
 
+  // Cấu hình CLB (tên CLB hiển thị footer)
+  useEffect(() => {
+    if (!authMember) return;
+    api<{ clubName: string }>('/settings')
+      .then((s) => setClubName(s.clubName))
+      .catch(() => {});
+  }, [authMember]);
+
   // Trung tâm thông báo: tải ban đầu + SSE realtime + polling dự phòng 45s
   useEffect(() => {
     if (!authMember) return;
@@ -215,6 +224,8 @@ export function App() {
   const [isRosterOpen, setIsRosterOpen] = useState(false);
   const [isDataSyncOpen, setIsDataSyncOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [clubName, setClubName] = useState('CLB Công nghệ thông tin NITC');
 
   // Modal payload state
   const [parsedMeetingData, setParsedMeetingData] = useState<Partial<Meeting> | null>(null);
@@ -561,6 +572,8 @@ export function App() {
       <Header
         authMember={authMember}
         onLogout={handleLogout}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        clubName={clubName}
         tasks={tasks}
         notifications={notifications}
         unreadCount={unreadCount}
@@ -853,7 +866,7 @@ export function App() {
       {/* 4. Footer */}
       <footer className="border-t border-slate-200 bg-white py-3 text-center text-xs text-slate-500">
         <div className="w-full px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>NITC Command Center &copy; 2026 CLB Công Nghệ Thông Tin NITC</span>
+          <span>NITC Command Center &copy; 2026 {clubName}</span>
           <div className="flex items-center gap-4 text-[11px] text-slate-400">
             <span className="text-emerald-600 font-medium">● Server + AI Engine Active</span>
             <span>Phiên bản v3.0 Multi-user</span>
@@ -962,6 +975,13 @@ export function App() {
           onResetToDemo={handleResetToDemo}
         />
       )}
+
+      {/* Modal 10: Cấu hình hệ thống (chỉ Ban lãnh đạo) */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        onSaved={() => showToast('Đã lưu cấu hình', 'Thang điểm KPI và lịch báo cáo đã được áp dụng.')}
+      />
 
       {/* Modal 9: Bảng xếp hạng & KPI (mọi vai trò đều xem được trong phạm vi của mình) */}
       <LeaderboardModal

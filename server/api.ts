@@ -24,7 +24,8 @@ import {
   getPref,
   setPref,
 } from './notifications';
-import { scanDeadlines } from './scheduler';
+import { scanDeadlines, rescheduleWeeklyReport } from './scheduler';
+import { getSettings, updateSettings, AppSettings } from './settings';
 import { computeKpi } from './kpi';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -72,6 +73,27 @@ apiRouter.put('/terms/:id/activate', requirePresident, async (req: Request, res:
     prisma.term.update({ where: { id }, data: { isActive: true } }),
   ]);
   return res.json({ success: true, activeTerm: term.name });
+});
+
+// ============ SETTINGS (Cấu hình) ============
+
+apiRouter.get('/settings', async (_req: Request, res: Response) => {
+  res.json(await getSettings());
+});
+
+apiRouter.put('/settings', requirePresident, async (req: Request, res: Response) => {
+  const b = req.body || {};
+  const partial: Partial<AppSettings> = {};
+  if (typeof b.clubName === 'string' && b.clubName.trim()) partial.clubName = b.clubName.trim();
+  if (typeof b.groupEmail === 'string' && b.groupEmail.includes('@')) partial.groupEmail = b.groupEmail.trim();
+  for (const k of ['kpiOnTime', 'kpiLate', 'kpiPending', 'kpiOverdue'] as const) {
+    if (typeof b[k] === 'number' && Number.isFinite(b[k])) partial[k] = Math.round(b[k]);
+  }
+  if (typeof b.reportDayOfWeek === 'number' && b.reportDayOfWeek >= 0 && b.reportDayOfWeek <= 6) partial.reportDayOfWeek = Math.round(b.reportDayOfWeek);
+  if (typeof b.reportHour === 'number' && b.reportHour >= 0 && b.reportHour <= 23) partial.reportHour = Math.round(b.reportHour);
+  const updated = await updateSettings(partial);
+  await rescheduleWeeklyReport(); // áp lịch báo cáo mới ngay
+  res.json(updated);
 });
 
 // ============ KPI (Bảng xếp hạng thành viên) ============
