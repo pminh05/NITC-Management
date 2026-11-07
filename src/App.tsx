@@ -27,6 +27,7 @@ import { RosterManagerModal } from './components/RosterManagerModal';
 import { DataSyncModal } from './components/DataSyncModal';
 import { LeaderboardModal } from './components/LeaderboardModal';
 import { SettingsModal } from './components/SettingsModal';
+import { CalendarModal } from './components/CalendarModal';
 import {
   Sparkles,
   Pin,
@@ -225,6 +226,7 @@ export function App() {
   const [isDataSyncOpen, setIsDataSyncOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [clubName, setClubName] = useState('CLB Công nghệ thông tin NITC');
 
   // Modal payload state
@@ -660,6 +662,16 @@ export function App() {
                 KPI
               </span>
             </button>
+
+            <button
+              onClick={() => setIsCalendarOpen(true)}
+              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-md text-xs transition cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <span>📅</span>
+                <span>Lịch tổng</span>
+              </div>
+            </button>
           </div>
 
           <div className="p-4 space-y-1 border-t border-slate-100">
@@ -975,6 +987,14 @@ export function App() {
           onResetToDemo={handleResetToDemo}
         />
       )}
+
+      {/* Modal: Lịch tổng deadline & họp */}
+      <CalendarModal
+        isOpen={isCalendarOpen}
+        onClose={() => setIsCalendarOpen(false)}
+        tasks={tasks}
+        meetings={meetings}
+      />
 
       {/* Modal 10: Cấu hình hệ thống (chỉ Ban lãnh đạo) */}
       <SettingsModal
