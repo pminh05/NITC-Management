@@ -892,8 +892,10 @@ export function App() {
                 {pendingApprovalsCount > 0 ? (
                   <button
                     onClick={() => {
-                      const firstPending = tasks.find((t) => t.status === 'pending_approval');
-                      if (firstPending) handleOpenReviewModal(firstPending);
+                      // Lọc bảng việc hiển thị TẤT CẢ việc chờ duyệt để duyệt lần lượt
+                      setSidebarDeptFilter('all');
+                      setSidebarStatusFilter('pending_approval');
+                      document.getElementById('task-board')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }}
                     className="text-[11px] font-bold text-[#1F56D6] hover:text-[#1E4FC4] underline cursor-pointer"
                   >

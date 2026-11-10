@@ -113,7 +113,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
   const departments: Department[] = ['Học thuật', 'Truyền thông', 'Sự kiện', 'Đối ngoại', 'Ban Chủ nhiệm'];
 
   return (
-    <div className="space-y-4">
+    <div id="task-board" className="space-y-4">
       
       {/* Top Filter & Command Bar */}
       <div className="bg-white dark:bg-slate-900 dark:border-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm space-y-3">
