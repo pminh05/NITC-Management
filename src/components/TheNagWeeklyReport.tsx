@@ -167,25 +167,25 @@ Hệ thống NITC Command Center`;
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/95 sticky top-0 z-10">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900/95 sticky top-0 z-10">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-red-500/20 text-red-400 border border-red-500/30">
+            <div className="p-2 rounded-xl bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30">
               <Flame className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-white tracking-tight">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
                   Nhắc việc quá hạn & Báo cáo tuần
                 </h2>
-                <span className="bg-red-500/20 text-red-300 text-xs px-2.5 py-0.5 rounded-full font-semibold border border-red-500/30">
+                <span className="bg-red-500/20 text-red-600 dark:text-red-300 text-xs px-2.5 py-0.5 rounded-full font-semibold border border-red-500/30">
                   {totalOverdue} Quá hạn
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Tự động gửi Báo cáo tối Chủ nhật & Email nhắc nợ hàng ngày cho các đầu việc trễ hạn
               </p>
             </div>
@@ -193,21 +193,21 @@ Hệ thống NITC Command Center`;
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Navigation */}
-        <div className="px-6 py-2 bg-slate-950 border-b border-slate-800 flex items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2">
+        <div className="px-6 py-2 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 text-xs flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setActiveTab('weekly')}
-              className={`px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition ${
+              className={`px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-sm ${
                 activeTab === 'weekly'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'
               }`}
             >
               <Calendar className="w-3.5 h-3.5" />
@@ -216,10 +216,10 @@ Hệ thống NITC Command Center`;
 
             <button
               onClick={() => setActiveTab('overdue')}
-              className={`px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition ${
+              className={`px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-sm ${
                 activeTab === 'overdue'
-                  ? 'bg-red-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-red-300 hover:bg-slate-800'
+                  ? 'bg-red-600 text-white'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-slate-200/60 dark:hover:bg-slate-800'
               }`}
             >
               <AlertTriangle className="w-3.5 h-3.5" />
@@ -228,10 +228,10 @@ Hệ thống NITC Command Center`;
 
             <button
               onClick={() => setActiveTab('logs')}
-              className={`px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition ${
+              className={`px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-sm ${
                 activeTab === 'logs'
                   ? 'bg-slate-700 text-white'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'
               }`}
             >
               <Mail className="w-3.5 h-3.5" />
@@ -242,20 +242,20 @@ Hệ thống NITC Command Center`;
 
         {/* Notification banner */}
         {successNotice && (
-          <div className="bg-emerald-500/15 border-b border-emerald-500/30 px-6 py-2 text-xs text-emerald-300 flex items-center gap-2 animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+          <div className="bg-emerald-500/15 border-b border-emerald-500/30 px-6 py-2 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
             <span>{successNotice}</span>
           </div>
         )}
 
         {/* Tab 1: Sunday Weekly Report */}
         {activeTab === 'weekly' && (
-          <div className="p-6 overflow-y-auto space-y-5 flex-1 text-slate-200 text-xs">
+          <div className="p-6 overflow-y-auto space-y-5 flex-1 text-slate-700 dark:text-slate-200 text-xs">
             
             {/* Department Leaderboard Cards */}
             <div>
-              <h4 className="text-slate-300 font-bold mb-3 flex items-center gap-1.5 text-sm">
-                <Users className="w-4 h-4 text-sky-400" />
+              <h4 className="text-slate-800 dark:text-slate-300 font-bold mb-3 flex items-center gap-1.5 text-sm">
+                <Users className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                 <span>Bảng Xếp Hạng Tiến Độ Các Ban Tuần Này</span>
               </h4>
 
@@ -263,32 +263,32 @@ Hệ thống NITC Command Center`;
                 {deptStats.map((d) => (
                   <div
                     key={d.dept}
-                    className="p-3.5 bg-slate-800/80 border border-slate-700 rounded-xl space-y-2"
+                    className="p-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2 shadow-sm"
                   >
                     <div className="flex items-center justify-between font-bold">
-                      <span className="text-white">Ban {d.dept}</span>
+                      <span className="text-slate-900 dark:text-white">Ban {d.dept}</span>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-extrabold ${
                         d.rate >= 75
-                          ? 'bg-emerald-500/20 text-emerald-300'
+                          ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
                           : d.rate >= 40
-                          ? 'bg-amber-500/20 text-amber-300'
-                          : 'bg-red-500/20 text-red-300'
+                          ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                          : 'bg-red-500/20 text-red-700 dark:text-red-300'
                       }`}>
                         {d.rate}% Xong
                       </span>
                     </div>
 
                     {/* Progress bar */}
-                    <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
+                    <div className="w-full bg-slate-200 dark:bg-slate-900 rounded-full h-2 overflow-hidden">
                       <div
                         className="bg-gradient-to-r from-indigo-500 to-emerald-500 h-full rounded-full transition-all duration-500"
                         style={{ width: `${d.rate}%` }}
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 text-[11px] text-slate-400 pt-1">
-                      <span>Đã xong: <strong className="text-emerald-400">{d.completed}</strong></span>
-                      <span className="text-right">Quá hạn: <strong className="text-red-400">{d.overdue}</strong></span>
+                    <div className="grid grid-cols-2 text-[11px] text-slate-500 dark:text-slate-400 pt-1">
+                      <span>Đã xong: <strong className="text-emerald-600 dark:text-emerald-400">{d.completed}</strong></span>
+                      <span className="text-right">Quá hạn: <strong className="text-red-600 dark:text-red-400">{d.overdue}</strong></span>
                     </div>
                   </div>
                 ))}
@@ -298,20 +298,20 @@ Hệ thống NITC Command Center`;
             {/* Generated Email Preview Box */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="font-bold text-slate-300 flex items-center gap-1.5 text-sm">
-                  <Mail className="w-4 h-4 text-amber-400" />
+                <label className="font-bold text-slate-800 dark:text-slate-300 flex items-center gap-1.5 text-sm">
+                  <Mail className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                   <span>Bản Thảo Email Chủ Nhật Tự Động (Gửi Toàn BĐH):</span>
                 </label>
 
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleCopy}
-                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold flex items-center gap-1 border border-slate-700 transition"
+                    className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold flex items-center gap-1 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-sm"
                   >
                     {copied ? (
                       <>
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="text-emerald-400">Đã copy!</span>
+                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        <span className="text-emerald-600 dark:text-emerald-400">Đã copy!</span>
                       </>
                     ) : (
                       <>
@@ -332,7 +332,7 @@ Hệ thống NITC Command Center`;
                 </div>
               </div>
 
-              <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl font-mono text-xs text-slate-300 whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto">
+              <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-mono text-xs text-slate-800 dark:text-slate-300 whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto shadow-inner">
                 {sundayEmailContent}
               </div>
             </div>
@@ -342,15 +342,15 @@ Hệ thống NITC Command Center`;
 
         {/* Tab 2: Overdue Nagging */}
         {activeTab === 'overdue' && (
-          <div className="p-6 overflow-y-auto space-y-4 flex-1 text-slate-200 text-xs">
+          <div className="p-6 overflow-y-auto space-y-4 flex-1 text-slate-700 dark:text-slate-200 text-xs">
             
-            <div className="flex items-center justify-between bg-red-950/20 border border-red-500/30 rounded-xl p-3.5">
+            <div className="flex items-center justify-between bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-500/30 rounded-xl p-3.5">
               <div>
-                <h4 className="font-bold text-red-300 text-sm flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-red-400" />
+                <h4 className="font-bold text-red-700 dark:text-red-300 text-sm flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-500 dark:text-red-400" />
                   <span>Phát hiện {overdueTasks.length} nhiệm vụ đang ở trạng thái Quá hạn</span>
                 </h4>
-                <p className="text-slate-400 text-xs mt-0.5">
+                <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
                   Gửi email nhắc nhở đôn đốc khẩn cấp tới từng cá nhân phụ trách.
                 </p>
               </div>
@@ -358,7 +358,7 @@ Hệ thống NITC Command Center`;
               {overdueTasks.length > 0 && (
                 <button
                   onClick={handleNagAllOverdue}
-                  className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold flex items-center gap-1.5 shadow-md transition active:scale-95 shrink-0"
+                  className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold flex items-center gap-1.5 shadow-md transition active:scale-95 shrink-0 cursor-pointer"
                 >
                   <Flame className="w-4 h-4" />
                   <span>Nhắc tất cả việc quá hạn ⚡</span>
@@ -371,32 +371,32 @@ Hệ thống NITC Command Center`;
                 {overdueTasks.map((task) => (
                   <div
                     key={task.id}
-                    className="p-3.5 bg-slate-800/80 border border-red-500/40 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                    className="p-3.5 bg-white dark:bg-slate-800/80 border border-red-200 dark:border-red-500/40 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm"
                   >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-300 font-bold border border-red-500/30">
+                        <span className="px-2 py-0.5 rounded bg-red-50 dark:bg-red-500/20 text-red-700 dark:text-red-300 font-bold border border-red-200 dark:border-red-500/30">
                           {task.department}
                         </span>
-                        <span className="font-bold text-white text-sm">{task.title}</span>
+                        <span className="font-bold text-slate-900 dark:text-white text-sm">{task.title}</span>
                         {task.isSticky && (
-                          <span className="px-2 py-0.5 rounded bg-purple-900/40 text-purple-300 text-[11px] font-semibold flex items-center gap-1">
+                          <span className="px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-[11px] font-semibold flex items-center gap-1">
                             <Pin className="w-3 h-3 rotate-45" />
                             <span>Sticky</span>
                           </span>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-4 text-slate-400 text-xs">
-                        <span>Người phụ trách: <strong className="text-white">{task.assigneeName}</strong></span>
-                        <span>Hạn chót: <strong className="text-red-400">{formatDateVN(task.deadline)}</strong></span>
+                      <div className="flex items-center gap-4 text-slate-500 dark:text-slate-400 text-xs">
+                        <span>Người phụ trách: <strong className="text-slate-800 dark:text-white">{task.assigneeName}</strong></span>
+                        <span>Hạn chót: <strong className="text-red-600 dark:text-red-400">{formatDateVN(task.deadline)}</strong></span>
                         <span>Loại: {task.verificationType === 'link_required' ? 'Cần Link' : 'Cần Báo cáo'}</span>
                       </div>
                     </div>
 
                     <button
                       onClick={() => handleNagSingleTask(task)}
-                      className="px-3.5 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white border border-red-500/40 font-semibold flex items-center gap-1.5 transition active:scale-95 shrink-0"
+                      className="px-3.5 py-1.5 rounded-lg bg-red-50 dark:bg-red-500/20 hover:bg-red-500 text-red-700 dark:text-red-200 hover:text-white border border-red-200 dark:border-red-500/40 font-semibold flex items-center gap-1.5 transition active:scale-95 shrink-0 cursor-pointer"
                     >
                       <Bell className="w-3.5 h-3.5" />
                       <span>Gửi Nhắc Việc Gấp</span>
@@ -405,9 +405,9 @@ Hệ thống NITC Command Center`;
                 ))}
               </div>
             ) : (
-              <div className="p-8 text-center bg-slate-900/60 rounded-xl border border-slate-800 text-slate-400">
-                <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
-                <p className="font-semibold text-white">Không có công việc nào bị quá hạn!</p>
+              <div className="p-8 text-center bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500 dark:text-emerald-400 mx-auto mb-2" />
+                <p className="font-semibold text-slate-800 dark:text-white">Không có công việc nào bị quá hạn!</p>
                 <p className="text-xs mt-1">Mọi thành viên đều đang duy trì tiến độ hoàn hảo.</p>
               </div>
             )}
@@ -417,8 +417,8 @@ Hệ thống NITC Command Center`;
 
         {/* Tab 3: Notification History Logs */}
         {activeTab === 'logs' && (
-          <div className="p-6 overflow-y-auto space-y-3 flex-1 text-slate-200 text-xs">
-            <h4 className="font-bold text-slate-300 text-sm">
+          <div className="p-6 overflow-y-auto space-y-3 flex-1 text-slate-700 dark:text-slate-200 text-xs">
+            <h4 className="font-bold text-slate-800 dark:text-slate-300 text-sm">
               Nhật Ký Thông Báo & Nhắc Việc Đã Gửi ({logs.length})
             </h4>
 
@@ -427,28 +427,28 @@ Hệ thống NITC Command Center`;
                 {logs.map((log) => (
                   <div
                     key={log.id}
-                    className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl space-y-1.5"
+                    className="p-3 bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-xl space-y-1.5 shadow-sm"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
                           log.type === 'weekly_summary'
-                            ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                            : 'bg-red-500/20 text-red-300 border border-red-500/30'
+                            ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30'
+                            : 'bg-red-50 dark:bg-red-500/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-500/30'
                         }`}>
                           {log.type === 'weekly_summary' ? 'Báo cáo Tuần' : 'Nhắc Quá Hạn'}
                         </span>
-                        <span className="font-semibold text-white">{log.subject}</span>
+                        <span className="font-semibold text-slate-900 dark:text-white">{log.subject}</span>
                       </div>
-                      <span className="text-[11px] text-slate-500">
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500">
                         {new Date(log.sentAt).toLocaleString('vi-VN')}
                       </span>
                     </div>
 
-                    <div className="text-slate-400 text-xs flex items-center gap-3">
-                      <span>Người nhận: <strong>{log.recipientName}</strong></span>
-                      <span>Email: <code className="text-slate-300">{log.recipientEmail}</code></span>
-                      <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                    <div className="text-slate-500 dark:text-slate-400 text-xs flex items-center gap-3">
+                      <span>Người nhận: <strong className="text-slate-800 dark:text-slate-200">{log.recipientName}</strong></span>
+                      <span>Email: <code className="text-slate-700 dark:text-slate-300">{log.recipientEmail}</code></span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3" /> Đã gửi thành công
                       </span>
                     </div>
@@ -462,10 +462,10 @@ Hệ thống NITC Command Center`;
         )}
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-800 bg-slate-900/95 flex items-center justify-end">
+        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/95 flex items-center justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition"
+            className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold transition cursor-pointer"
           >
             Đóng
           </button>

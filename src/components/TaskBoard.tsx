@@ -56,6 +56,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
 }) => {
   const [internalDept, setInternalDept] = useState<string>('all');
   const [internalStatus, setInternalStatus] = useState<string>('all');
+  const [onlyMyTasks, setOnlyMyTasks] = useState<boolean>(false);
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showQuickAddModal, setShowQuickAddModal] = useState<boolean>(false);
@@ -73,10 +74,20 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
     setInternalStatus(status);
   };
 
+  // Số lượng việc được giao cho người dùng hiện tại
+  const myTasksCount = useMemo(() => {
+    return tasks.filter((t) => t.assigneeId === currentUserId || t.assigneeIds?.includes(currentUserId)).length;
+  }, [tasks, currentUserId]);
+
+  // Tập công việc cơ sở (Toàn CLB hoặc Việc của tôi)
+  const baseTasks = useMemo(() => {
+    if (!onlyMyTasks) return tasks;
+    return tasks.filter((t) => t.assigneeId === currentUserId || t.assigneeIds?.includes(currentUserId));
+  }, [tasks, onlyMyTasks, currentUserId]);
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
-    return tasks.filter((task) => {
+    return baseTasks.filter((task) => {
       // Dept filter
       if (selectedDept !== 'all' && task.department !== selectedDept) {
         return false;
@@ -101,14 +112,14 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
       if (aDone !== bDone) return aDone ? 1 : -1;
       return a.deadline.localeCompare(b.deadline); // còn lại: sắp đến hạn nhất lên đầu
     });
-  }, [tasks, selectedDept, selectedStatus, searchQuery]);
+  }, [baseTasks, selectedDept, selectedStatus, searchQuery]);
 
-  // Counts for tabs
-  const countAll = tasks.length;
-  const countInProgress = tasks.filter((t) => t.status === 'in_progress').length;
-  const countPending = tasks.filter((t) => t.status === 'pending_approval').length;
-  const countOverdue = tasks.filter((t) => t.status === 'overdue').length;
-  const countCompleted = tasks.filter((t) => t.status === 'completed').length;
+  // Counts for tabs (phản ánh theo Toàn CLB hoặc Việc của tôi)
+  const countAll = baseTasks.length;
+  const countInProgress = baseTasks.filter((t) => t.status === 'in_progress').length;
+  const countPending = baseTasks.filter((t) => t.status === 'pending_approval').length;
+  const countOverdue = baseTasks.filter((t) => t.status === 'overdue').length;
+  const countCompleted = baseTasks.filter((t) => t.status === 'completed').length;
 
   const departments: Department[] = ['Học thuật', 'Truyền thông', 'Sự kiện', 'Đối ngoại', 'Ban Chủ nhiệm'];
 
@@ -121,12 +132,36 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
         {/* Row 1: Search, Department pills & Quick Add */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           
-          {/* Department Pills */}
+          {/* Department Pills & My Tasks Switcher */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 text-xs">
+            {/* Nút 'Việc của tôi' — phân biệt rõ với Toàn CLB */}
             <button
-              onClick={() => setDept('all')}
+              onClick={() => {
+                setOnlyMyTasks(!onlyMyTasks);
+                if (!onlyMyTasks) {
+                  setDept('all'); // reset dept để xem tất cả việc được giao cho mình
+                }
+              }}
+              className={`px-3 py-1.5 rounded-lg font-bold transition shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                onlyMyTasks
+                  ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-300 dark:ring-amber-500'
+                  : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 hover:bg-amber-100 dark:hover:bg-amber-900/40'
+              }`}
+              title="Chỉ hiển thị các công việc giao cho bạn"
+            >
+              <span>⭐</span>
+              <span>Việc của tôi ({myTasksCount})</span>
+            </button>
+
+            <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-0.5 shrink-0" />
+
+            <button
+              onClick={() => {
+                setOnlyMyTasks(false);
+                setDept('all');
+              }}
               className={`px-3 py-1.5 rounded-lg font-bold transition shrink-0 cursor-pointer ${
-                selectedDept === 'all'
+                !onlyMyTasks && selectedDept === 'all'
                   ? 'bg-[#2C69FF]/100 text-white shadow-sm'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
               }`}
@@ -136,14 +171,17 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
 
             {departments.map((dept) => {
               const deptTasks = tasks.filter((t) => t.department === dept);
-              const isActive = selectedDept === dept;
+              const isActive = !onlyMyTasks && selectedDept === dept;
               return (
                 <button
                   key={dept}
-                  onClick={() => setDept(dept)}
+                  onClick={() => {
+                    setOnlyMyTasks(false);
+                    setDept(dept);
+                  }}
                   className={`px-3 py-1.5 rounded-lg font-semibold transition shrink-0 cursor-pointer ${
                     isActive
-                      ? 'bg-slate-800 text-white shadow-sm'
+                      ? 'bg-slate-800 dark:bg-slate-700 text-white shadow-sm'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
                   }`}
                 >
@@ -257,6 +295,26 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
         </div>
       </div>
 
+      {/* Banner thông báo khi đang lọc "Việc của tôi" */}
+      {onlyMyTasks && (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 shadow-sm animate-in fade-in duration-150">
+          <div className="flex items-center gap-2">
+            <span className="text-base">⭐</span>
+            <span>
+              Đang xem <strong>Việc của tôi</strong> —{' '}
+              {filteredTasks.length === 0 ? 'Hiện không có việc nào' : `${filteredTasks.length} nhiệm vụ được giao cho bạn`}
+            </span>
+          </div>
+          <button
+            onClick={() => setOnlyMyTasks(false)}
+            className="text-amber-700 dark:text-amber-400 font-bold hover:underline cursor-pointer flex items-center gap-1"
+          >
+            <span>Xem toàn CLB</span>
+            <span>&times;</span>
+          </button>
+        </div>
+      )}
+
       {/* Main Task Cards Grid */}
       {filteredTasks.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -280,40 +338,55 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
       ) : (
         <div className="bg-white dark:bg-slate-900 dark:border-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl p-12 text-center space-y-4 shadow-sm">
           <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
-            <Layers className="w-6 h-6" />
+            {onlyMyTasks ? <span className="text-2xl">🎉</span> : <Layers className="w-6 h-6" />}
           </div>
           <div>
-            <h3 className="text-base font-bold text-slate-800">
-              Không tìm thấy công việc nào phù hợp
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
+              {onlyMyTasks
+                ? 'Tuyệt vời! Bạn không có nhiệm vụ nào tồn đọng'
+                : 'Không tìm thấy công việc nào phù hợp'}
             </h3>
-            <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-              {searchQuery || selectedStatus !== 'all' || selectedDept !== 'all'
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+              {onlyMyTasks
+                ? 'Tất cả nhiệm vụ của bạn đã hoàn thành hoặc chưa có việc mới được giao.'
+                : searchQuery || selectedStatus !== 'all' || selectedDept !== 'all'
                 ? 'Thử xóa bộ lọc tìm kiếm hoặc chuyển sang ban khác để xem công việc.'
                 : 'Chưa có công việc nào trong hệ thống. Hãy tải lên Biên bản họp để AI tự động trích xuất!'}
             </p>
           </div>
 
           <div className="flex items-center justify-center gap-3 pt-2">
-            {(searchQuery || selectedStatus !== 'all' || selectedDept !== 'all') && (
+            {onlyMyTasks ? (
               <button
-                onClick={() => {
-                  setDept('all');
-                  setStatus('all');
-                  setSearchQuery('');
-                }}
-                className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition cursor-pointer"
+                onClick={() => setOnlyMyTasks(false)}
+                className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition cursor-pointer shadow-sm"
               >
-                Xóa tất cả bộ lọc
+                Xem toàn bộ công việc CLB &rarr;
               </button>
-            )}
+            ) : (
+              <>
+                {(searchQuery || selectedStatus !== 'all' || selectedDept !== 'all') && (
+                  <button
+                    onClick={() => {
+                      setDept('all');
+                      setStatus('all');
+                      setSearchQuery('');
+                    }}
+                    className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition cursor-pointer"
+                  >
+                    Xóa tất cả bộ lọc
+                  </button>
+                )}
 
-            <button
-              onClick={onOpenBBHParser}
-              className="px-4 py-2 rounded-lg bg-[#2C69FF]/100 hover:bg-[#1F56D6] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition cursor-pointer"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Nhập Biên bản họp mới</span>
-            </button>
+                <button
+                  onClick={onOpenBBHParser}
+                  className="px-4 py-2 rounded-lg bg-[#2C69FF]/100 hover:bg-[#1F56D6] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Nhập Biên bản họp mới</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
