@@ -61,10 +61,10 @@ export const EvidenceReviewModal: React.FC<EvidenceReviewModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-white text-base">
-                Duyệt Bằng Chứng Hoàn Thành
+                Kiểm tra minh chứng
               </h3>
               <p className="text-xs text-slate-400">
-                Quyền hạn Chủ nhiệm &bull; Xác minh tính trách nhiệm
+                Duyệt hoàn thành hoặc yêu cầu cập nhật kèm ghi chú
               </p>
             </div>
           </div>
@@ -99,6 +99,15 @@ export const EvidenceReviewModal: React.FC<EvidenceReviewModalProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Ghi chú yêu cầu cập nhật từ thành viên */}
+          {task.updateRequestedAt && !task.updateFeedback && (
+            <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-xl space-y-1">
+              <div className="text-purple-300 font-bold text-xs">📥 Yêu cầu cập nhật từ thành viên</div>
+              <div className="text-slate-300">{task.updateRequestNote || '(Không ghi chú kèm theo)'}</div>
+              <div className="text-[10px] text-slate-500">Gửi {formatDateTimeVN(task.updateRequestedAt)}</div>
+            </div>
+          )}
 
           {/* Evidence Content Card */}
           <div className="p-4 bg-slate-800/80 border border-slate-700 rounded-xl space-y-2">
@@ -138,7 +147,7 @@ export const EvidenceReviewModal: React.FC<EvidenceReviewModalProps> = ({
             <div>
               <label className="block text-slate-300 font-semibold mb-1 flex items-center gap-1.5">
                 <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Lời phê của Chủ nhiệm (Ghi chú duyệt hoàn thành):</span>
+                <span>Lời phê khi duyệt (tùy chọn):</span>
               </label>
               <input
                 type="text"
@@ -152,7 +161,7 @@ export const EvidenceReviewModal: React.FC<EvidenceReviewModalProps> = ({
             <div className="p-3 bg-red-950/30 border border-red-500/40 rounded-xl space-y-2">
               <label className="block text-red-300 font-semibold flex items-center gap-1.5">
                 <XCircle className="w-3.5 h-3.5 text-red-400" />
-                <span>Lý do yêu cầu làm lại:</span>
+                <span>Nội dung cần cập nhật (cho thành viên biết cần sửa gì):</span>
               </label>
               <textarea
                 rows={3}
@@ -175,7 +184,7 @@ export const EvidenceReviewModal: React.FC<EvidenceReviewModalProps> = ({
                 onClick={() => setIsRejecting(true)}
                 className="px-3.5 py-2 rounded-xl text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 transition"
               >
-                Yêu cầu làm lại ↩️
+                Yêu cầu cập nhật 🔄
               </button>
 
               <button
@@ -202,7 +211,7 @@ export const EvidenceReviewModal: React.FC<EvidenceReviewModalProps> = ({
                 onClick={handleConfirmReject}
                 className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition active:scale-95"
               >
-                Gửi Yêu Cầu Nộp Lại
+                Gửi Yêu Cầu Cập Nhật
               </button>
             </>
           )}

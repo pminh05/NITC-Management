@@ -438,7 +438,15 @@ apiRouter.put('/tasks/:id', requireAuth, async (req: Request, res: Response) => 
     if (!reason) return res.status(400).json({ error: 'Bắt buộc nhập lý do trả lại' });
     const updated = await prisma.task.update({
       where: { id },
-      data: { status: 'in_progress', rejectedReason: reason, updatedAt: now },
+      data: {
+        status: 'in_progress',
+        rejectedReason: reason,
+        // Phản hồi "Yêu cầu cập nhật" của thành viên -> dọn yêu cầu (feedback nằm trong rejectedReason)
+        updateRequestedAt: null,
+        updateRequestNote: null,
+        updateRequestById: null,
+        updatedAt: now,
+      },
       include: { sourceMeeting: { select: { id: true, title: true } } },
     });
     await notify({
