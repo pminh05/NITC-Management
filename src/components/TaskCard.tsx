@@ -256,7 +256,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {task.status === 'pending_approval' && (canReview || canSubmit) && (
             <button
               onClick={() => onOpenReviewModal(task)}
-              className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30 dark:hover:bg-amber-500/25 text-xs font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer"
               title="Kiểm tra minh chứng: duyệt hoặc yêu cầu cập nhật"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
