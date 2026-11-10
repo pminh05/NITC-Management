@@ -9,6 +9,7 @@ interface NotificationBellProps {
   onRefresh: () => void;
   onMarkAllRead: () => void;
   onMarkRead: (id: string) => void;
+  onOpenTask: (taskId: string) => void;
   channel: string;
   onChangeChannel: (channel: string) => void;
 }
@@ -46,6 +47,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
   onRefresh,
   onMarkAllRead,
   onMarkRead,
+  onOpenTask,
   channel,
   onChangeChannel,
 }) => {
@@ -69,7 +71,11 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
     const next = !open;
     setOpen(next);
     setPrefsOpen(false);
-    if (next) onRefresh();
+    if (next) {
+      onRefresh();
+      // Mở thông báo = coi như đã đọc toàn bộ
+      if (unread > 0) onMarkAllRead();
+    }
   };
 
   return (
@@ -155,11 +161,15 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
               return (
                 <button
                   key={n.id}
-                  onClick={() => onMarkRead(n.id)}
+                  onClick={() => {
+                    onMarkRead(n.id);
+                    if (n.taskId) onOpenTask(n.taskId);
+                    setOpen(false);
+                  }}
                   className={`w-full text-left px-4 py-3 hover:bg-slate-800/60 transition cursor-pointer flex gap-3 ${
                     !n.readAt ? 'bg-[#2C69FF]/[0.06]' : ''
                   }`}
-                  title={n.readAt ? '' : 'Bấm để đánh dấu đã đọc'}
+                  title={n.taskId ? 'Xem chi tiết công việc' : ''}
                 >
                   <span className={`shrink-0 w-8 h-8 rounded-lg border flex items-center justify-center text-sm ${meta.color}`}>
                     {meta.icon}

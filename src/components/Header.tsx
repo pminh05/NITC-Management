@@ -28,6 +28,7 @@ interface HeaderProps {
   onRefreshNotifications: () => void;
   onMarkAllRead: () => void;
   onMarkRead: (id: string) => void;
+  onOpenNotificationTask: (taskId: string) => void;
   onChangeNotificationChannel: (channel: string) => void;
   onOpenBBHParser: () => void;
   onOpenMeetingHistory: () => void;
@@ -48,6 +49,7 @@ export const Header: React.FC<HeaderProps> = ({
   onRefreshNotifications,
   onMarkAllRead,
   onMarkRead,
+  onOpenNotificationTask,
   onChangeNotificationChannel,
   onOpenBBHParser,
   onOpenMeetingHistory,
@@ -130,6 +132,7 @@ export const Header: React.FC<HeaderProps> = ({
               onRefresh={onRefreshNotifications}
               onMarkAllRead={onMarkAllRead}
               onMarkRead={onMarkRead}
+              onOpenTask={onOpenNotificationTask}
               channel={notificationChannel}
               onChangeChannel={onChangeNotificationChannel}
             />

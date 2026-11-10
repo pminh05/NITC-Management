@@ -114,6 +114,24 @@ export function App() {
     await api(`/notifications/${id}/read`, { method: 'POST' }).catch(() => {});
   }, [notifications]);
 
+  // Bấm thông báo có gắn công việc -> mở chi tiết (tải lại nếu chưa có trong state)
+  const openTaskFromNotification = useCallback(
+    async (taskId: string) => {
+      let t = tasks.find((x) => x.id === taskId);
+      if (!t) {
+        try {
+          const all = await api<Task[]>('/tasks');
+          setTasks(all);
+          t = all.find((x) => x.id === taskId);
+        } catch {
+          return;
+        }
+      }
+      if (t) setDetailTask(t);
+    },
+    [tasks]
+  );
+
   const handleMarkAllRead = useCallback(async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, readAt: n.readAt || new Date().toISOString() })));
     setUnreadCount(0);
@@ -602,6 +620,7 @@ export function App() {
         onRefreshNotifications={refreshNotifications}
         onMarkAllRead={handleMarkAllRead}
         onMarkRead={handleMarkRead}
+        onOpenNotificationTask={openTaskFromNotification}
         onChangeNotificationChannel={handleChangeNotificationChannel}
         onOpenBBHParser={() => setIsParserOpen(true)}
         onOpenMeetingHistory={() => setIsMeetingHistoryOpen(true)}
