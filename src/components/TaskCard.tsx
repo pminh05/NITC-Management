@@ -59,31 +59,31 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     ((currentRole === 'Trưởng ban' || currentRole === 'Phó ban') && currentDepartment === task.department);
 
   const departmentColorMap: Record<Department, string> = {
-    'Học thuật': 'bg-sky-50 text-sky-700 border-sky-200',
-    'Truyền thông': 'bg-pink-50 text-pink-700 border-pink-200',
-    'Sự kiện': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    'Đối ngoại': 'bg-purple-50 text-purple-700 border-purple-200',
-    'Ban Chủ nhiệm': 'bg-amber-50 text-amber-800 border-amber-200',
+    'Học thuật': 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/60',
+    'Truyền thông': 'bg-pink-50 dark:bg-pink-950/40 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-800/60',
+    'Sự kiện': 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60',
+    'Đối ngoại': 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60',
+    'Ban Chủ nhiệm': 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800/60',
   };
 
   const statusBadgeMap = {
-    draft: { label: 'Bản nháp', color: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200' },
-    in_progress: { label: 'Đang làm', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-    pending_approval: { label: 'Chờ duyệt', color: 'bg-amber-100 text-amber-800 border-amber-300 font-bold' },
-    completed: { label: 'Đã hoàn thành', color: 'bg-emerald-50 text-emerald-700 border-emerald-300' },
-    overdue: { label: 'Quá hạn 🚨', color: 'bg-red-100 text-red-700 border-red-300 font-bold' },
+    draft: { label: 'Bản nháp', color: 'bg-slate-100 dark:bg-slate-700/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700' },
+    in_progress: { label: 'Đang làm', color: 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60' },
+    pending_approval: { label: 'Chờ duyệt', color: 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700/60 font-bold' },
+    completed: { label: 'Đã hoàn thành', color: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800/60' },
+    overdue: { label: 'Quá hạn 🚨', color: 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700/60 font-bold' },
   };
 
   return (
     <div
       className={`rounded-xl border p-4 transition-all duration-150 flex flex-col justify-between relative shadow-sm ${
         task.status === 'completed'
-          ? 'bg-slate-50/70 border-slate-200 dark:border-slate-800 opacity-85'
+          ? 'bg-slate-50/70 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700/50 opacity-80'
           : task.status === 'overdue'
-          ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 border-l-4 border-l-red-500 shadow-sm'
+          ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700/60 border-l-4 border-l-red-500 shadow-sm'
           : task.status === 'pending_approval'
-          ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 border-l-4 border-l-amber-500 shadow-sm'
-          : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:border-slate-700 hover:shadow'
+          ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700/60 border-l-4 border-l-amber-500 shadow-sm'
+          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600 shadow-sm'
       }`}
     >
       <div>
@@ -93,7 +93,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             {/* Department Badge */}
             <span
               className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border ${
-                departmentColorMap[task.department] || 'bg-slate-100 dark:bg-slate-800 text-slate-700'
+                departmentColorMap[task.department] || 'bg-slate-100 dark:bg-slate-700/60 text-slate-700 dark:text-slate-300'
               }`}
             >
               {task.department}
@@ -103,7 +103,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {/* Status Badge */}
           <span
             className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-              statusBadgeMap[task.status]?.color || 'bg-slate-100 dark:bg-slate-800 text-slate-700'
+              statusBadgeMap[task.status]?.color || 'bg-slate-100 dark:bg-slate-700/60 text-slate-700 dark:text-slate-300'
             }`}
           >
             {statusBadgeMap[task.status]?.label || task.status}
@@ -114,10 +114,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         <h4
           onClick={() => onOpenDetail(task)}
           title="Bấm để xem chi tiết công việc"
-          className={`font-semibold text-sm leading-snug mb-2 cursor-pointer hover:text-[#2C69FF] transition ${
+          className={`font-semibold text-sm leading-snug mb-2 cursor-pointer hover:text-[#2C69FF] dark:hover:text-[#6C9BFF] transition ${
             task.status === 'completed'
-              ? 'text-slate-400 line-through'
-              : 'text-slate-900 dark:text-slate-100'
+              ? 'text-slate-400 dark:text-slate-500 line-through'
+              : 'text-slate-900 dark:text-slate-50'
           }`}
         >
           {task.title}
@@ -131,10 +131,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         )}
 
         {/* Assignee & Deadline row */}
-        <div className="grid grid-cols-2 gap-2 text-xs text-slate-700 dark:text-slate-300 mb-3 bg-slate-50 dark:bg-slate-900 rounded-lg p-2.5 border border-slate-200">
+        <div className="grid grid-cols-2 gap-2 text-xs text-slate-700 dark:text-slate-300 mb-3 bg-slate-50 dark:bg-slate-900 rounded-lg p-2.5 border border-slate-200 dark:border-slate-700/60">
           <div className="flex items-center gap-1.5 truncate">
-            <User className="w-3.5 h-3.5 text-[#2C69FF] shrink-0" />
-            <span className="truncate font-semibold text-slate-800" title={task.assigneeName}>
+            <User className="w-3.5 h-3.5 text-[#2C69FF] dark:text-[#6C9BFF] shrink-0" />
+            <span className="truncate font-semibold text-slate-800 dark:text-slate-100" title={task.assigneeName}>
               {task.assigneeName}
             </span>
             {(task.assigneeIds?.length || 0) > 1 && (
@@ -154,7 +154,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5 justify-end">
-            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
             <span className="font-mono text-slate-700 dark:text-slate-300 font-medium">
               {formatDateVN(task.deadline)}
             </span>
@@ -166,12 +166,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {/* Verification requirement */}
           <div className="flex items-center gap-1 text-[11px] font-medium">
             {task.verificationType === 'link_required' ? (
-              <span className="flex items-center gap-1 text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 font-semibold">
+              <span className="flex items-center gap-1 text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800/60 font-semibold">
                 <LinkIcon className="w-3 h-3" />
                 <span>Yêu cầu Link URL</span>
               </span>
             ) : (
-              <span className="flex items-center gap-1 text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 font-semibold">
+              <span className="flex items-center gap-1 text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800/60 font-semibold">
                 <FileCheck className="w-3 h-3" />
                 <span>Yêu cầu Báo cáo 2 câu</span>
               </span>
@@ -190,11 +190,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
         {/* Submitted Evidence Preview if exists */}
         {(task.evidenceLink || task.evidenceReport) && (
-          <div className="mb-3 p-2.5 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-xs space-y-1">
-            <div className="flex items-center justify-between text-[11px] text-slate-500">
-              <span className="font-semibold text-slate-700">Minh chứng đã nộp:</span>
+          <div className="mb-3 p-2.5 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700/60 text-xs space-y-1">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">Minh chứng đã nộp:</span>
               {task.status === 'pending_approval' && (
-                <span className="text-amber-700 font-bold">Chờ Chủ nhiệm duyệt</span>
+                <span className="text-amber-700 dark:text-amber-300 font-bold">Chờ Chủ nhiệm duyệt</span>
               )}
             </div>
 
@@ -203,7 +203,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 href={task.evidenceLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#1F56D6] hover:text-[#1E4FC4] underline truncate block flex items-center gap-1 font-medium"
+                className="text-[#1F56D6] dark:text-[#6C9BFF] hover:underline truncate block flex items-center gap-1 font-medium"
               >
                 <LinkIcon className="w-3 h-3 shrink-0" />
                 <span className="truncate">{task.evidenceLink}</span>
@@ -217,15 +217,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             )}
 
             {task.approvalNote && (
-              <p className="text-emerald-700 font-medium text-[11px] pt-1 border-t border-slate-200 dark:border-slate-800 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 shrink-0 text-emerald-600" />
+              <p className="text-emerald-700 dark:text-emerald-400 font-medium text-[11px] pt-1 border-t border-slate-200 dark:border-slate-700/60 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 shrink-0 text-emerald-600 dark:text-emerald-400" />
                 <span>{task.approvalNote}</span>
               </p>
             )}
 
             {task.rejectedReason && task.status !== 'completed' && (
-              <p className="text-red-700 font-medium text-[11px] pt-1 border-t border-slate-200 dark:border-slate-800 flex items-center gap-1">
-                <AlertCircle className="w-3 h-3 shrink-0 text-red-500" />
+              <p className="text-red-700 dark:text-red-400 font-medium text-[11px] pt-1 border-t border-slate-200 dark:border-slate-700/60 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3 shrink-0 text-red-500 dark:text-red-400" />
                 <span>Yêu cầu sửa: {task.rejectedReason}</span>
               </p>
             )}
@@ -234,9 +234,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       </div>
 
       {/* Card Action Controls */}
-      <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2 mt-1">
+      <div className="pt-2.5 border-t border-slate-200 dark:border-slate-700/60 flex items-center justify-between gap-2 mt-1">
         {/* Source meeting info */}
-        <span className="text-[10px] text-slate-400 truncate max-w-[120px]" title={task.sourceMeetingTitle}>
+        <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate max-w-[120px]" title={task.sourceMeetingTitle}>
           {task.sourceMeetingTitle || 'Biên bản NITC'}
         </span>
 
@@ -245,7 +245,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {canSubmit && task.status !== 'completed' && task.status !== 'pending_approval' && (
             <button
               onClick={() => onOpenSubmitModal(task)}
-              className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer bg-[#2C69FF]/100 hover:bg-[#1F56D6] text-white shadow-sm"
+              className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer bg-[#2C69FF] hover:bg-[#1F56D6] text-white shadow-sm"
             >
               <Send className="w-3 h-3" />
               <span>Nộp bài</span>
@@ -256,7 +256,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {task.status === 'pending_approval' && (canReview || canSubmit) && (
             <button
               onClick={() => onOpenReviewModal(task)}
-              className="px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30 dark:hover:bg-amber-500/25 text-xs font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40 dark:hover:bg-amber-500/30 text-xs font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer shadow-xs"
               title="Kiểm tra minh chứng: duyệt hoặc yêu cầu cập nhật"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
@@ -266,7 +266,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           {/* Phản hồi yêu cầu cập nhật từ Ban điều hành */}
           {task.updateFeedback && (
-            <div className="mt-2 p-2 rounded-lg bg-amber-500/5 border border-amber-300 dark:border-amber-500/30 text-[10px]">
+            <div className="mt-2 p-2 rounded-lg bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 text-[10px]">
               <div className="text-amber-800 dark:text-amber-300 font-bold flex items-center gap-1 mb-0.5">
                 <FileText className="w-3 h-3" /> Phản hồi của Ban điều hành:
               </div>
@@ -278,7 +278,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {isPresident && task.status !== 'completed' && task.status !== 'pending_approval' && onQuickApprove && (
             <button
               onClick={() => onQuickApprove(task.id)}
-              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-emerald-100 text-slate-500 hover:text-emerald-700 border border-slate-200 dark:border-slate-800 transition cursor-pointer"
+              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700/60 hover:bg-emerald-100 dark:hover:bg-emerald-950/60 text-slate-500 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-300 border border-slate-200 dark:border-slate-600/60 transition cursor-pointer shadow-xs"
               title="Duyệt nhanh hoàn thành"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
@@ -289,7 +289,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {isPresident && (
             <button
               onClick={() => onDeleteTask(task.id)}
-              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-red-100 text-slate-400 hover:text-red-600 border border-slate-200 dark:border-slate-800 transition cursor-pointer"
+              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700/60 hover:bg-red-100 dark:hover:bg-red-950/60 text-slate-400 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-300 border border-slate-200 dark:border-slate-600/60 transition cursor-pointer shadow-xs"
               title="Xóa nhiệm vụ"
             >
               <Trash2 className="w-3.5 h-3.5" />
