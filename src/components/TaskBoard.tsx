@@ -23,6 +23,7 @@ import { Department, Role, Task, Member } from '../types';
 import { formatDateVN, getDaysRemaining } from '../utils/dateUtils';
 import { AssigneeMultiSelect } from './AssigneeMultiSelect';
 import { TaskCard } from './TaskCard';
+import { QuickAddTaskModal } from './QuickAddTaskModal';
 
 export type ViewMode = 'grid' | 'kanban' | 'table';
 
@@ -177,7 +178,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           
           {/* Department Pills & My Tasks Switcher */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 text-xs">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 text-xs [scrollbar-width:none]">
             {/* Nút 'Việc của tôi' */}
             <button
               onClick={() => {
@@ -293,7 +294,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
         {/* Row 2: Status tabs & Quick Add */}
         <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-slate-100 flex-wrap">
           {viewMode !== 'kanban' ? (
-            <div className="flex items-center gap-1.5 overflow-x-auto text-xs">
+            <div className="flex items-center gap-1.5 overflow-x-auto text-xs [scrollbar-width:none] pb-1 sm:pb-0">
               <button
                 onClick={() => setStatus('all')}
                 className={`px-2.5 py-1 rounded-md font-semibold transition cursor-pointer ${
@@ -975,168 +976,6 @@ const EmptyTaskState: React.FC<EmptyTaskStateProps> = ({
             <span>Nhập Biên bản họp mới</span>
           </button>
         )}
-      </div>
-    </div>
-  );
-};
-
-// =========================================================================
-// SUB-COMPONENT: QUICK ADD TASK MODAL
-// =========================================================================
-interface QuickAddTaskModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  members: Member[];
-  onAdd: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
-}
-
-const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
-  isOpen,
-  onClose,
-  members,
-  onAdd,
-}) => {
-  const departments: Department[] = ['Học thuật', 'Truyền thông', 'Sự kiện', 'Đối ngoại', 'Ban Chủ nhiệm'];
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [dept, setDept] = useState<Department>('Học thuật');
-  const deptMembers = members.filter((m) => m.department === dept);
-  const [assigneeIds, setAssigneeIds] = useState<string[]>(() => {
-    const head = deptMembers.find((m) => m.role === 'Trưởng ban') || deptMembers[0];
-    return head ? [head.id] : [];
-  });
-  const [deadline, setDeadline] = useState(
-    new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0]
-  );
-  const [verificationType, setVerificationType] = useState<'link_required' | 'report_required'>('link_required');
-
-  if (!isOpen) return null;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
-
-    const member = members.find((m) => m.id === assigneeIds[0]);
-    if (!member) {
-      alert('Vui lòng chọn ít nhất một người phụ trách');
-      return;
-    }
-
-    onAdd({
-      title: title.trim(),
-      description: description.trim() || undefined,
-      assigneeIds,
-      assigneeId: member.id,
-      assigneeName: member.name,
-      department: dept,
-      deadline,
-      status: 'in_progress',
-      verificationType,
-      priority: 'high',
-      sourceMeetingTitle: 'Giao việc phát sinh trực tiếp',
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-      <div className="bg-white border border-slate-200 rounded-xl w-full max-w-md p-6 shadow-2xl space-y-4 text-xs">
-        <h3 className="text-base font-bold text-slate-900">Thêm Công Việc Phát Sinh Nhanh</h3>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div>
-            <label className="block text-slate-700 font-semibold mb-1">Tên công việc:</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="VD: Thiết kế mockup bài đăng..."
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-slate-700 font-semibold mb-1">Ban phụ trách:</label>
-              <select
-                value={dept}
-                onChange={(e) => {
-                  const nextDept = e.target.value as Department;
-                  setDept(nextDept);
-                  const nextMembers = members.filter((m) => m.department === nextDept);
-                  const head = nextMembers.find((m) => m.role === 'Trưởng ban') || nextMembers[0];
-                  setAssigneeIds(head ? [head.id] : []);
-                }}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
-              >
-                {departments.map((d) => (
-                  <option key={d} value={d}>Ban {d}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-slate-700 font-semibold mb-1">Người phụ trách:</label>
-              <AssigneeMultiSelect
-                members={deptMembers}
-                selectedIds={assigneeIds}
-                onChange={setAssigneeIds}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-slate-700 font-semibold mb-1">
-              Mô tả công việc <span className="text-slate-400 font-normal">(không bắt buộc)</span>:
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              placeholder="VD: Thiết kế trên Canva theo bộ màu NITC, gửi link duyệt..."
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#2C69FF] resize-none"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-slate-700 font-semibold mb-1">Hạn chót:</label>
-              <input
-                type="date"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-slate-700 font-semibold mb-1">Loại xác minh:</label>
-              <select
-                value={verificationType}
-                onChange={(e) => setVerificationType(e.target.value as any)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:border-[#2C69FF]"
-              >
-                <option value="link_required">Cần Link 🔗</option>
-                <option value="report_required">Cần Báo cáo 📝</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-medium cursor-pointer"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-lg bg-[#2C69FF] hover:bg-[#1F56D6] text-white font-bold shadow-sm transition active:scale-95 cursor-pointer"
-            >
-              Thêm vào Bảng việc
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );

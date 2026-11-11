@@ -98,8 +98,8 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Nhóm nút — icon-only trên mobile, cuộn ngang khi chật */}
-          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 flex-nowrap overflow-x-auto md:overflow-visible max-w-[62vw] sm:max-w-[70vw] md:max-w-none [scrollbar-width:none]">
+          {/* Nhóm nút điều hướng */}
+          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 shrink-0">
             {isLeadership && (
               <button
                 onClick={onOpenBBHParser}
@@ -108,10 +108,11 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Nhập biên bản (AI)</span>
+                <span className="sm:hidden text-xs">AI</span>
               </button>
             )}
 
-            <button onClick={onOpenMeetingHistory} className={ghostBtn} title="Lưu trữ biên bản họp & Xuất PDF">
+            <button onClick={onOpenMeetingHistory} className={`${ghostBtn} hidden md:inline-flex`} title="Lưu trữ biên bản họp & Xuất PDF">
               <FileText className="w-3.5 h-3.5 text-sky-400" />
               <span className="hidden md:inline">Kho biên bản</span>
             </button>
@@ -127,7 +128,7 @@ export const Header: React.FC<HeaderProps> = ({
               onChangeChannel={onChangeNotificationChannel}
             />
 
-            <button onClick={onOpenCalendar} className={ghostBtn} title="Lịch deadline & kỳ họp">
+            <button onClick={onOpenCalendar} className={`${ghostBtn} hidden md:inline-flex`} title="Lịch deadline & kỳ họp">
               <Calendar className="w-3.5 h-3.5 text-violet-400" />
               <span className="hidden md:inline">Lịch</span>
             </button>
@@ -141,9 +142,8 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   <SettingsIcon className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={onOpenRosterModal} className={ghostBtn} title="Danh sách thành viên & Quản lý ban">
+                <button onClick={onOpenRosterModal} className={`${ghostBtn} hidden md:inline-flex`} title="Danh sách thành viên & Quản lý ban">
                   <span className="hidden md:inline">Danh sách thành viên</span>
-                  <span className="md:hidden text-sm">👥</span>
                 </button>
                 <button
                   onClick={onOpenDataSyncModal}

@@ -33,6 +33,8 @@ import { DocsModal } from './components/DocsModal';
 import { DashboardModal } from './components/DashboardModal';
 import { TaskDetailModal } from './components/TaskDetailModal';
 import { UpdateRequestFlowModal } from './components/UpdateRequestFlowModal';
+import { QuickAddTaskModal } from './components/QuickAddTaskModal';
+import { MobileBottomNav } from './components/MobileBottomNav';
 import {
   Pin,
   CheckCircle2,
@@ -251,6 +253,7 @@ export function App() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isDocsOpen, setIsDocsOpen] = useState(false);
   const [isDashOpen, setIsDashOpen] = useState(false);
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [detailTask, setDetailTask] = useState<Task | null>(null);
   const [updateReqTask, setUpdateReqTask] = useState<{ task: Task; mode: 'request' | 'respond' } | null>(null);
   const [clubName, setClubName] = useState('CLB Công nghệ thông tin NITC');
@@ -633,30 +636,6 @@ export function App() {
         onOpenDataSyncModal={() => setIsDataSyncOpen(true)}
       />
 
-      {/* Thanh điều hướng cho điện thoại (sidebar ẩn trên màn nhỏ) */}
-      <div className="lg:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-2 py-2 flex items-center gap-1.5 overflow-x-auto">
-        {[
-          { icon: '🤖', label: 'AI đọc BBH', action: () => setIsParserOpen(true), show: canManageMeetings },
-          { icon: '🏆', label: 'Xếp hạng', action: () => setIsLeaderboardOpen(true), show: true },
-          { icon: '📊', label: 'Dashboard', action: () => setIsDashOpen(true), show: true },
-          { icon: '📅', label: 'Lịch tổng', action: () => setIsCalendarOpen(true), show: true },
-          { icon: '📚', label: 'Kho tài liệu', action: () => setIsDocsOpen(true), show: true },
-          { icon: '🚨', label: 'Việc quá hạn', action: () => setIsNagOpen(true), show: true },
-          { icon: '👥', label: 'Danh sách', action: () => setIsRosterOpen(true), show: isLeadership },
-        ]
-          .filter((item) => item.show)
-          .map((item) => (
-            <button
-              key={item.label}
-              onClick={item.action}
-              className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer shrink-0"
-            >
-              <span className="text-base leading-none">{item.icon}</span>
-              <span className="text-[9px] font-semibold whitespace-nowrap">{item.label}</span>
-            </button>
-          ))}
-      </div>
-
       {/* 2. High Density Dashboard Layout: Sidebar + Main Area */}
       <div className="flex flex-1 w-full overflow-x-hidden">
 
@@ -819,7 +798,7 @@ export function App() {
         </aside>
 
         {/* Main Content Pane */}
-        <main className="flex-1 flex flex-col p-4 sm:p-6 gap-5 max-w-full overflow-x-hidden">
+        <main className="flex-1 flex flex-col p-3 sm:p-5 md:p-6 gap-4 sm:gap-5 max-w-full overflow-x-hidden pb-24 lg:pb-6">
 
           {/* Top 4 KPI Metric Cards (High Density) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
@@ -937,7 +916,7 @@ export function App() {
       </div>
 
       {/* 4. Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white py-3 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white py-3 pb-20 lg:pb-3 text-center text-xs text-slate-500">
         <div className="w-full px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>NITC Command Center &copy; 2026 {clubName}</span>
           <div className="flex items-center gap-4 text-[11px] text-slate-400">
@@ -1102,6 +1081,35 @@ export function App() {
         isOpen={isLeaderboardOpen}
         onClose={() => setIsLeaderboardOpen(false)}
         authMember={authMember}
+      />
+
+      {/* Modal: Quick Add Task (Mở từ FAB mobile hoặc thao tác nhanh) */}
+      <QuickAddTaskModal
+        isOpen={isQuickAddOpen}
+        onClose={() => setIsQuickAddOpen(false)}
+        members={members}
+        onAdd={handleAddNewManualTask}
+      />
+
+      {/* 11. Mobile Bottom Navigation Bar (Cố định ở đáy màn hình di động) */}
+      <MobileBottomNav
+        authMember={authMember}
+        canManageMeetings={canManageMeetings}
+        isLeadership={isLeadership}
+        activeTasksCount={inProgressCount + pendingApprovalsCount}
+        overdueCount={overdueCount}
+        onOpenBBHParser={() => setIsParserOpen(true)}
+        onOpenQuickAdd={() => setIsQuickAddOpen(true)}
+        onOpenDashboard={() => setIsDashOpen(true)}
+        onOpenCalendar={() => setIsCalendarOpen(true)}
+        onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
+        onOpenDocs={() => setIsDocsOpen(true)}
+        onOpenNag={() => setIsNagOpen(true)}
+        onOpenMeetingHistory={() => setIsMeetingHistoryOpen(true)}
+        onOpenRoster={() => setIsRosterOpen(true)}
+        onOpenDataSync={() => setIsDataSyncOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onLogout={handleLogout}
       />
 
     </div>
