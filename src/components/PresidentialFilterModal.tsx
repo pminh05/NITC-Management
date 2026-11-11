@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ShieldCheck,
   AlertTriangle,
@@ -17,11 +17,9 @@ import {
   FileText,
   Users,
   Columns,
-  Maximize2,
-  ChevronRight,
   Sparkles,
 } from 'lucide-react';
-import { Department, ExtractedDraftTask, Meeting, Member, Role } from '../types';
+import { Department, ExtractedDraftTask, Meeting, Member } from '../types';
 import { AssigneeMultiSelect } from './AssigneeMultiSelect';
 import { todayISO, formatDateVN } from '../utils/dateUtils';
 
@@ -47,18 +45,19 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
   authMember,
   onPublishTasks,
 }) => {
+  // 1. Phân quyền và phòng ban được phép
   const isDeptHead = authMember?.role === 'Trưởng ban' || authMember?.role === 'Phó ban';
   const myDepartment = authMember?.department || 'Ban Chủ nhiệm';
   const allowedDepartments: Department[] = isDeptHead
     ? [myDepartment]
     : ['Học thuật', 'Truyền thông', 'Sự kiện', 'Đối ngoại', 'Ban Chủ nhiệm'];
 
-  const safeInitialTasks = Array.isArray(initialDraftTasks) ? initialDraftTasks : [];
-  const [tasks, setTasks] = useState<ExtractedDraftTask[]>(safeInitialTasks);
-  const [meeting, setMeeting] = useState<Partial<Meeting>>(meetingData || {});
+  // 2. State hooks (Luôn ở top-level)
+  const [tasks, setTasks] = useState<ExtractedDraftTask[]>([]);
+  const [meeting, setMeeting] = useState<Partial<Meeting>>({});
   const [crossDeptRemoved, setCrossDeptRemoved] = useState(0);
 
-  // Split screen and tabs
+  // Split-screen controls & tabs
   const [isSplitScreen, setIsSplitScreen] = useState(true);
   const [leftTab, setLeftTab] = useState<'raw' | 'summary'>('raw');
   const [mobileTab, setMobileTab] = useState<'bbh' | 'tasks'>('tasks');
@@ -67,22 +66,8 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
   const [taskFilter, setTaskFilter] = useState<'all' | 'issues'>('all');
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
 
-  // Safe helpers for string values
-  const rawAttendees = Array.isArray(meeting.attendees)
-    ? meeting.attendees.map((x: any) => (typeof x === 'string' ? x : x?.name || JSON.stringify(x))).filter(Boolean)
-    : [];
-  const rawAbsentees = Array.isArray(meeting.absentees)
-    ? meeting.absentees.map((x: any) => (typeof x === 'string' ? x : x?.name || JSON.stringify(x))).filter(Boolean)
-    : [];
-  const rawLatecomers = Array.isArray(meeting.latecomers)
-    ? meeting.latecomers.map((x: any) => (typeof x === 'string' ? x : x?.name || JSON.stringify(x))).filter(Boolean)
-    : [];
-  const safeObjectives = typeof meeting.objectives === 'string' ? meeting.objectives : '';
-  const safeDiscussion = typeof meeting.discussionSummary === 'string' ? meeting.discussionSummary : '';
-  const safeRawContent = typeof meeting.rawContent === 'string' ? meeting.rawContent : '';
-
-  // Sync initial draft tasks
-  React.useEffect(() => {
+  // 3. Effect hooks
+  useEffect(() => {
     const rawList = Array.isArray(initialDraftTasks) ? initialDraftTasks : [];
     if (isDeptHead) {
       const kept = rawList.filter(
@@ -96,12 +81,62 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
     }
   }, [initialDraftTasks, isDeptHead, myDepartment]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setMeeting(meetingData || {});
   }, [meetingData]);
 
+  // 4. Memoized values (Luôn gọi trước lệnh return)
+  const safeTasks = useMemo(() => (Array.isArray(tasks) ? tasks.filter(Boolean) : []), [tasks]);
+
+  const rawAttendees = useMemo(() => {
+    return Array.isArray(meeting.attendees)
+      ? meeting.attendees.map((x: any) => (typeof x === 'string' ? x : x?.name || JSON.stringify(x))).filter(Boolean)
+      : [];
+  }, [meeting.attendees]);
+
+  const rawAbsentees = useMemo(() => {
+    return Array.isArray(meeting.absentees)
+      ? meeting.absentees.map((x: any) => (typeof x === 'string' ? x : x?.name || JSON.stringify(x))).filter(Boolean)
+      : [];
+  }, [meeting.absentees]);
+
+  const rawLatecomers = useMemo(() => {
+    return Array.isArray(meeting.latecomers)
+      ? meeting.latecomers.map((x: any) => (typeof x === 'string' ? x : x?.name || JSON.stringify(x))).filter(Boolean)
+      : [];
+  }, [meeting.latecomers]);
+
+  const safeObjectives = typeof meeting.objectives === 'string' ? meeting.objectives : '';
+  const safeDiscussion = typeof meeting.discussionSummary === 'string' ? meeting.discussionSummary : '';
+  const safeRawContent = typeof meeting.rawContent === 'string' ? meeting.rawContent : '';
+
+  const issueCount = useMemo(() => {
+    return safeTasks.filter(
+      (t) => t.hasAmbiguity || t.isAbsentee || (t.suggestedDeadline && t.suggestedDeadline < todayISO()) || !t.suggestedAssigneeId
+    ).length;
+  }, [safeTasks]);
+
+  const filteredTasks = useMemo(() => {
+    return safeTasks.filter((t) => {
+      if (taskFilter === 'issues') {
+        const hasIssue =
+          t.hasAmbiguity ||
+          t.isAbsentee ||
+          (t.suggestedDeadline && t.suggestedDeadline < todayISO()) ||
+          !t.suggestedAssigneeId;
+        if (!hasIssue) return false;
+      }
+      if (departmentFilter !== 'all' && t.suggestedDepartment !== departmentFilter) {
+        return false;
+      }
+      return true;
+    });
+  }, [safeTasks, taskFilter, departmentFilter]);
+
+  // 5. Early return (ĐẶT SAU TẤT CẢ CÁC HOOKS để tuân thủ Rules of Hooks)
   if (!isOpen) return null;
 
+  // Handlers
   const handleUpdateTask = (tempId: string, updates: Partial<ExtractedDraftTask>) => {
     setTasks((prev) =>
       prev.map((t) => {
@@ -127,10 +162,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
             updated.hasAmbiguity = false;
 
             // Kiểm tra vắng mặt an toàn
-            const absenteesList = Array.isArray(meeting.absentees)
-              ? meeting.absentees.map((a: any) => (typeof a === 'string' ? a : a?.name || String(a || ''))).filter(Boolean)
-              : [];
-            const isAbs = absenteesList.some(
+            const isAbs = rawAbsentees.some(
               (abs) =>
                 abs.toLowerCase().includes(selectedMember.name.toLowerCase()) ||
                 selectedMember.name.toLowerCase().includes(abs.toLowerCase())
@@ -162,7 +194,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
   };
 
   const handleAddNewTask = () => {
-    const defaultMember = members[1] || members[0];
+    const defaultMember = members[1] || members[0] || { id: 'mem-1', name: 'Thành viên', department: 'Học thuật' };
     const newTask: ExtractedDraftTask = {
       tempId: `draft-manual-${Date.now()}`,
       title: 'Công việc bổ sung mới',
@@ -170,7 +202,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
       suggestedAssigneeId: defaultMember.id,
       suggestedAssigneeName: defaultMember.name,
       suggestedAssigneeIds: [defaultMember.id],
-      suggestedDepartment: defaultMember.department,
+      suggestedDepartment: defaultMember.department as Department,
       rawDeadlinetext: '7 ngày tới',
       suggestedDeadline: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
       verificationType: 'link_required',
@@ -186,9 +218,8 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
   };
 
   const handleCopyRaw = () => {
-    const text = meeting.rawContent || '';
-    if (text) {
-      navigator.clipboard.writeText(text);
+    if (safeRawContent) {
+      navigator.clipboard.writeText(safeRawContent);
       setCopiedRaw(true);
       setTimeout(() => setCopiedRaw(false), 2000);
     }
@@ -200,90 +231,67 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
   };
 
   const handlePublish = () => {
-    const unresolvedTask = tasks.find((t) => !t.suggestedAssigneeId || t.hasAmbiguity);
+    const unresolvedTask = safeTasks.find((t) => !t.suggestedAssigneeId || t.hasAmbiguity);
     if (unresolvedTask) {
       alert(
-        `⚠️ Chú ý: Công việc "${unresolvedTask.title}" chưa được gán người phụ trách cụ thể hoặc còn vướng quy tắc trùng tên! Vui lòng chọn người trước khi ban hành.`
+        `⚠️ Chú ý: Công việc "${unresolvedTask.title}" chưa được gán người phụ trách cụ thể hoặc còn trùng tên! Vui lòng chọn người trước khi ban hành.`
       );
       return;
     }
 
     const finalMeeting: Meeting = {
       id: `meet-${Date.now()}`,
-      title: meeting.title || 'Biên bản họp Ban Điều Hành',
-      date: meeting.date || new Date().toISOString().split('T')[0],
-      chairperson: meeting.chairperson || 'Lê Hồng Phúc Minh',
-      secretary: meeting.secretary || 'Nguyễn Thị Ngọc Ánh',
-      attendees: meeting.attendees || [],
-      absentees: meeting.absentees || [],
-      discussionSummary: meeting.discussionSummary || '',
-      actionPlan: meeting.actionPlan || '',
-      rawContent: meeting.rawContent || '',
-      taskCount: tasks.length,
+      title: typeof meeting.title === 'string' ? meeting.title : 'Biên bản họp Ban Điều Hành',
+      date: typeof meeting.date === 'string' ? meeting.date : new Date().toISOString().split('T')[0],
+      chairperson: typeof meeting.chairperson === 'string' ? meeting.chairperson : 'Lê Hồng Phúc Minh',
+      secretary: typeof meeting.secretary === 'string' ? meeting.secretary : 'Nguyễn Thị Ngọc Ánh',
+      attendees: rawAttendees,
+      absentees: rawAbsentees,
+      discussionSummary: safeDiscussion,
+      actionPlan: typeof meeting.actionPlan === 'string' ? meeting.actionPlan : '',
+      rawContent: safeRawContent,
+      taskCount: safeTasks.length,
       completedTaskCount: 0,
       createdAt: new Date().toISOString(),
     };
 
-    onPublishTasks(finalMeeting, tasks);
+    onPublishTasks(finalMeeting, safeTasks);
   };
-
-  // Metrics
-  const validTasks = Array.isArray(tasks) ? tasks.filter(Boolean) : [];
-  const issueCount = validTasks.filter(
-    (t) => t.hasAmbiguity || t.isAbsentee || (t.suggestedDeadline && t.suggestedDeadline < todayISO())
-  ).length;
-
-  const filteredTasks = useMemo(() => {
-    return validTasks.filter((t) => {
-      if (taskFilter === 'issues') {
-        const hasIssue =
-          t.hasAmbiguity ||
-          t.isAbsentee ||
-          (t.suggestedDeadline && t.suggestedDeadline < todayISO()) ||
-          !t.suggestedAssigneeId;
-        if (!hasIssue) return false;
-      }
-      if (departmentFilter !== 'all' && t.suggestedDepartment !== departmentFilter) {
-        return false;
-      }
-      return true;
-    });
-  }, [validTasks, taskFilter, departmentFilter]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/60 backdrop-blur-sm overflow-hidden">
-      <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-[1560px] h-[95vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white border border-slate-300 rounded-2xl w-full max-w-[1560px] h-[95vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* 1. Modal Top Header */}
         <div className="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 shadow-2xs">
-              <ShieldCheck className="w-5 h-5 text-amber-600" />
+            <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 shadow-2xs">
+              <CheckCircle2 className="w-5 h-5 text-blue-600" />
             </div>
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
-                  Đối Soát & Chuẩn Hóa Nhiệm Vụ
+                  Đối Soát & Chuẩn Hóa Nhiệm Vụ (Split-Screen Review)
                 </h2>
                 <div className="flex items-center gap-1.5">
-                  <span className="bg-blue-50 text-blue-700 text-xs px-2.5 py-0.5 rounded-full font-bold border border-blue-200">
-                    {tasks.length} nhiệm vụ
+                  <span className="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded-full font-bold border border-blue-300">
+                    {safeTasks.length} nhiệm vụ
                   </span>
                   {issueCount > 0 ? (
-                    <span className="bg-amber-50 text-amber-700 text-xs px-2.5 py-0.5 rounded-full font-bold border border-amber-200 flex items-center gap-1">
-                      <AlertTriangle className="w-3 h-3 text-amber-600" />
+                    <span className="bg-amber-100 text-amber-900 text-xs px-2.5 py-0.5 rounded-full font-bold border border-amber-300 flex items-center gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
                       {issueCount} cần lưu ý
                     </span>
                   ) : (
-                    <span className="bg-emerald-50 text-emerald-700 text-xs px-2.5 py-0.5 rounded-full font-bold border border-emerald-200 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    <span className="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-bold border border-emerald-300 flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
                       Sẵn sàng ban hành
                     </span>
                   )}
                 </div>
               </div>
               <p className="text-xs text-slate-500 hidden sm:block">
-                Giao diện đối soát song song: Đối chiếu văn bản gốc, kiểm tra người phụ trách, cảnh báo người vắng họp & chuẩn hóa deadline trước khi ban hành
+                Giao diện đối soát song song: Đối chiếu văn bản gốc bên trái và điều chỉnh nhiệm vụ bên phải trước khi ban hành
               </p>
             </div>
           </div>
@@ -293,10 +301,10 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
             <button
               type="button"
               onClick={() => setIsSplitScreen(!isSplitScreen)}
-              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 hover:bg-slate-100 text-slate-700 transition cursor-pointer"
+              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-300 hover:bg-slate-100 text-slate-700 transition cursor-pointer shadow-2xs"
               title="Bật/Tắt chế độ xem song song biên bản họp"
             >
-              <Columns className="w-4 h-4 text-slate-500" />
+              <Columns className="w-4 h-4 text-blue-600" />
               <span>{isSplitScreen ? 'Tắt chia đôi màn hình' : 'Bật chia đôi màn hình'}</span>
             </button>
 
@@ -310,23 +318,23 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
         </div>
 
         {/* 2. Meeting Details Strip */}
-        <div className="bg-slate-50 px-5 py-2.5 border-b border-slate-200 text-xs flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="bg-slate-100/90 px-5 py-2.5 border-b border-slate-200 text-xs flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-4 flex-wrap text-slate-700">
             <div>
-              <span className="text-slate-400 font-medium">Cuộc họp:</span>{' '}
-              <strong className="text-slate-900 font-bold">{meeting.title}</strong>
+              <span className="text-slate-500 font-medium">Cuộc họp:</span>{' '}
+              <strong className="text-slate-900 font-bold">{meeting.title || 'Biên bản họp Ban Điều Hành'}</strong>
             </div>
             <div>
-              <span className="text-slate-400 font-medium">Ngày họp:</span>{' '}
-              <strong className="text-blue-600 font-semibold">{formatDateVN(meeting.date)}</strong>
+              <span className="text-slate-500 font-medium">Ngày họp:</span>{' '}
+              <strong className="text-blue-700 font-bold">{formatDateVN(meeting.date)}</strong>
             </div>
             <div>
-              <span className="text-slate-400 font-medium">Chủ trì:</span>{' '}
-              <strong className="text-slate-800 font-semibold">{meeting.chairperson}</strong>
+              <span className="text-slate-500 font-medium">Chủ trì:</span>{' '}
+              <strong className="text-slate-800 font-semibold">{meeting.chairperson || 'Lê Hồng Phúc Minh'}</strong>
             </div>
             {meeting.secretary && (
               <div>
-                <span className="text-slate-400 font-medium">Thư ký:</span>{' '}
+                <span className="text-slate-500 font-medium">Thư ký:</span>{' '}
                 <strong className="text-slate-800 font-semibold">{meeting.secretary}</strong>
               </div>
             )}
@@ -334,7 +342,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
 
           <div className="flex items-center gap-2 flex-wrap">
             {rawAbsentees.length > 0 && (
-              <div className="flex items-center gap-1.5 bg-red-50 text-red-700 px-2.5 py-1 rounded-lg border border-red-200">
+              <div className="flex items-center gap-1.5 bg-red-100 text-red-900 px-2.5 py-1 rounded-lg border border-red-300 font-medium shadow-2xs">
                 <AlertTriangle className="w-3.5 h-3.5 text-red-600 shrink-0" />
                 <span>
                   <strong>Vắng mặt:</strong> {rawAbsentees.join(', ')}
@@ -343,7 +351,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
             )}
 
             {rawLatecomers.length > 0 && (
-              <div className="flex items-center gap-1.5 bg-amber-50 text-amber-800 px-2.5 py-1 rounded-lg border border-amber-200">
+              <div className="flex items-center gap-1.5 bg-amber-100 text-amber-950 px-2.5 py-1 rounded-lg border border-amber-300 font-medium shadow-2xs">
                 <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                 <span>
                   <strong>Đi muộn:</strong> {rawLatecomers.join(', ')}
@@ -354,7 +362,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
         </div>
 
         {crossDeptRemoved > 0 && (
-          <div className="mx-5 mt-2.5 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs shrink-0 flex items-center gap-2">
+          <div className="mx-5 mt-2.5 p-2.5 bg-amber-50 border border-amber-300 rounded-xl text-amber-900 text-xs shrink-0 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
               Đã ẩn <strong>{crossDeptRemoved}</strong> công việc thuộc ban khác khỏi kỳ họp riêng này. Những việc đó do Ban Điều hành xử lý ở kỳ họp toàn CLB.
@@ -386,17 +394,17 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
             }`}
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>✅ Danh Sách Việc ({tasks.length})</span>
+            <span>✅ Danh Sách Việc ({safeTasks.length})</span>
           </button>
         </div>
 
         {/* 4. Main Body: Split-Screen Content */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden bg-slate-100/70">
           
           {/* CỘT TRÁI: Bản gốc Biên bản họp (Đối soát) */}
           {(isSplitScreen || mobileTab === 'bbh') && (
             <div
-              className={`border-r border-slate-200 flex flex-col bg-slate-50/60 overflow-hidden ${
+              className={`border-r border-slate-300 flex flex-col bg-slate-50 overflow-hidden ${
                 isSplitScreen ? 'lg:col-span-5' : 'hidden'
               } ${mobileTab === 'bbh' ? 'col-span-1 flex' : 'hidden lg:flex'}`}
             >
@@ -408,7 +416,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                     onClick={() => setLeftTab('raw')}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                       leftTab === 'raw'
-                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        ? 'bg-blue-600 text-white shadow-2xs'
                         : 'text-slate-600 hover:bg-slate-100'
                     }`}
                   >
@@ -420,7 +428,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                     onClick={() => setLeftTab('summary')}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                       leftTab === 'summary'
-                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        ? 'bg-blue-600 text-white shadow-2xs'
                         : 'text-slate-600 hover:bg-slate-100'
                     }`}
                   >
@@ -432,7 +440,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                 <button
                   type="button"
                   onClick={handleCopyRaw}
-                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer border border-slate-200 text-xs flex items-center gap-1"
+                  className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer border border-slate-300 text-xs flex items-center gap-1 shadow-2xs bg-white"
                   title="Sao chép văn bản biên bản họp"
                 >
                   {copiedRaw ? (
@@ -442,7 +450,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3.5 h-3.5" />
+                      <Copy className="w-3.5 h-3.5 text-slate-500" />
                       <span className="text-[11px] font-medium hidden sm:inline">Sao chép</span>
                     </>
                   )}
@@ -451,19 +459,19 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
 
               {/* Left Column Search Input */}
               {leftTab === 'raw' && (
-                <div className="px-3.5 py-2 border-b border-slate-200 bg-white/70 flex items-center gap-2 shrink-0">
+                <div className="px-3.5 py-2 border-b border-slate-200 bg-white flex items-center gap-2 shrink-0">
                   <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Tìm từ khóa trong biên bản để đối chiếu..."
-                    className="w-full text-xs bg-transparent focus:outline-none text-slate-800 placeholder-slate-400"
+                    className="w-full text-xs bg-transparent focus:outline-none text-slate-800 placeholder-slate-400 font-medium"
                   />
                   {searchTerm && (
                     <button
                       onClick={() => setSearchTerm('')}
-                      className="text-[11px] text-slate-400 hover:text-slate-600"
+                      className="text-[11px] text-slate-400 hover:text-slate-600 px-1"
                     >
                       ✕
                     </button>
@@ -474,7 +482,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
               {/* Left Column Content Area */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {leftTab === 'raw' ? (
-                  <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs font-mono text-xs text-slate-800 whitespace-pre-wrap leading-relaxed select-text">
+                  <div className="bg-white rounded-xl border border-slate-300 p-4 shadow-sm font-mono text-xs text-slate-900 whitespace-pre-wrap leading-relaxed select-text">
                     {safeRawContent ? (
                       searchTerm.trim() ? (
                         (() => {
@@ -499,7 +507,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                       )
                     ) : (
                       <div className="text-slate-400 italic py-8 text-center font-sans">
-                        Chưa có toàn văn biên bản họp (nhập từ link hoặc ảnh OCR). Bạn có thể xem tab "Điểm danh & Tóm tắt".
+                        Chưa có toàn văn biên bản họp. Bạn có thể xem tab "Điểm danh & Tóm tắt".
                       </div>
                     )}
                   </div>
@@ -507,7 +515,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                   <div className="space-y-4 text-xs">
                     {/* Objectives */}
                     {safeObjectives && (
-                      <div className="bg-white rounded-xl border border-slate-200 p-3.5 space-y-1 shadow-2xs">
+                      <div className="bg-white rounded-xl border border-slate-300 p-3.5 space-y-1 shadow-2xs">
                         <h4 className="font-bold text-slate-900 flex items-center gap-1.5">
                           <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                           <span>Mục tiêu cuộc họp</span>
@@ -517,7 +525,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                     )}
 
                     {/* Attendees & Absentees Card */}
-                    <div className="bg-white rounded-xl border border-slate-200 p-3.5 space-y-3 shadow-2xs">
+                    <div className="bg-white rounded-xl border border-slate-300 p-3.5 space-y-3 shadow-2xs">
                       <h4 className="font-bold text-slate-900 flex items-center gap-1.5">
                         <Users className="w-3.5 h-3.5 text-blue-600" />
                         <span>Danh sách điểm danh thành viên</span>
@@ -533,7 +541,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                               rawAttendees.map((name, i) => (
                                 <span
                                   key={i}
-                                  className="px-2 py-0.5 bg-slate-100 text-slate-800 rounded-md text-[11px] font-medium border border-slate-200"
+                                  className="px-2 py-0.5 bg-slate-100 text-slate-800 rounded-md text-[11px] font-medium border border-slate-300"
                                 >
                                   {name}
                                 </span>
@@ -553,7 +561,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                               {rawAbsentees.map((name, i) => (
                                 <span
                                   key={i}
-                                  className="px-2 py-0.5 bg-red-50 text-red-700 rounded-md text-[11px] font-bold border border-red-200"
+                                  className="px-2 py-0.5 bg-red-100 text-red-800 rounded-md text-[11px] font-bold border border-red-300"
                                 >
                                   {name}
                                 </span>
@@ -566,7 +574,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
 
                     {/* Discussion & Action plan */}
                     {safeDiscussion && (
-                      <div className="bg-white rounded-xl border border-slate-200 p-3.5 space-y-1 shadow-2xs">
+                      <div className="bg-white rounded-xl border border-slate-300 p-3.5 space-y-1 shadow-2xs">
                         <h4 className="font-bold text-slate-900">Tóm tắt nội dung thảo luận</h4>
                         <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">
                           {safeDiscussion}
@@ -581,7 +589,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
 
           {/* CỘT PHẢI: Danh sách việc trích xuất & Chuẩn hóa */}
           <div
-            className={`flex flex-col bg-slate-50/30 overflow-hidden ${
+            className={`flex flex-col bg-slate-100/60 overflow-hidden ${
               isSplitScreen ? 'lg:col-span-7' : 'lg:col-span-12'
             } ${mobileTab === 'tasks' ? 'col-span-1 flex' : 'hidden lg:flex'}`}
           >
@@ -589,28 +597,28 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
             <div className="p-3.5 border-b border-slate-200 bg-white flex flex-wrap items-center justify-between gap-3 shrink-0">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-slate-800">Bộ lọc xem:</span>
-                <div className="inline-flex p-0.5 bg-slate-100 rounded-lg border border-slate-200">
+                <div className="inline-flex p-0.5 bg-slate-100 rounded-lg border border-slate-300">
                   <button
                     type="button"
                     onClick={() => setTaskFilter('all')}
-                    className={`px-2.5 py-1 rounded-md text-xs font-bold transition cursor-pointer ${
+                    className={`px-3 py-1 rounded-md text-xs font-bold transition cursor-pointer ${
                       taskFilter === 'all'
-                        ? 'bg-white text-blue-600 shadow-2xs'
+                        ? 'bg-blue-600 text-white shadow-2xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    Tất cả ({tasks.length})
+                    Tất cả ({safeTasks.length})
                   </button>
                   <button
                     type="button"
                     onClick={() => setTaskFilter('issues')}
-                    className={`px-2.5 py-1 rounded-md text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                    className={`px-3 py-1 rounded-md text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
                       taskFilter === 'issues'
-                        ? 'bg-white text-amber-600 shadow-2xs'
+                        ? 'bg-amber-600 text-white shadow-2xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    <AlertTriangle className="w-3 h-3 text-amber-500" />
+                    <AlertTriangle className="w-3 h-3" />
                     <span>Cần xử lý ({issueCount})</span>
                   </button>
                 </div>
@@ -621,7 +629,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                 <select
                   value={departmentFilter}
                   onChange={(e) => setDepartmentFilter(e.target.value)}
-                  className="px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-xs font-medium text-slate-700 focus:outline-none focus:border-blue-500 shadow-2xs"
+                  className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer"
                 >
                   <option value="all">Tất cả các ban</option>
                   {allowedDepartments.map((dept) => (
@@ -636,7 +644,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
             {/* Tasks Cards List */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
               {filteredTasks.length === 0 ? (
-                <div className="py-12 text-center space-y-2 bg-white rounded-2xl border border-slate-200 p-8 shadow-2xs">
+                <div className="py-12 text-center space-y-2 bg-white rounded-2xl border border-slate-300 p-8 shadow-xs">
                   <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
                   <h4 className="text-sm font-bold text-slate-800">Không có công việc nào cần xử lý</h4>
                   <p className="text-xs text-slate-500">
@@ -645,7 +653,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                 </div>
               ) : (
                 filteredTasks.map((task) => {
-                  const originalIndex = tasks.findIndex((t) => t.tempId === task.tempId);
+                  const originalIndex = safeTasks.findIndex((t) => t.tempId === task.tempId);
                   const isMinhAmbiguity = task.hasAmbiguity;
                   const isAbsent = task.isAbsentee;
                   const isPastDeadline = !!task.suggestedDeadline && task.suggestedDeadline < todayISO();
@@ -653,18 +661,18 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                   return (
                     <div
                       key={task.tempId}
-                      className={`p-4 sm:p-5 rounded-2xl border transition-all duration-200 relative bg-white shadow-2xs hover:shadow-xs ${
+                      className={`p-4 sm:p-5 rounded-2xl border transition-all duration-200 relative bg-white shadow-xs hover:shadow-sm ${
                         isMinhAmbiguity
-                          ? 'border-amber-300 ring-2 ring-amber-100 bg-amber-50/20'
+                          ? 'border-2 border-amber-400 bg-amber-50/40'
                           : isAbsent
-                          ? 'border-red-300 ring-2 ring-red-100 bg-red-50/20'
-                          : 'border-slate-200 hover:border-slate-300'
+                          ? 'border-2 border-red-400 bg-red-50/40'
+                          : 'border border-slate-300 hover:border-slate-400'
                       }`}
                     >
                       {/* Task Card Header */}
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs border border-slate-200">
+                          <span className="w-6 h-6 rounded-lg bg-slate-200 text-slate-800 flex items-center justify-center font-bold text-xs border border-slate-300 shadow-2xs">
                             {originalIndex + 1}
                           </span>
 
@@ -676,7 +684,17 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                                 suggestedDepartment: e.target.value as Department,
                               })
                             }
-                            className="px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs font-bold text-blue-700 focus:outline-none focus:border-blue-500 cursor-pointer shadow-2xs"
+                            className={`px-2.5 py-1 rounded-lg border text-xs font-bold cursor-pointer shadow-2xs ${
+                              task.suggestedDepartment === 'Học thuật'
+                                ? 'bg-sky-50 border-sky-300 text-sky-800'
+                                : task.suggestedDepartment === 'Truyền thông'
+                                ? 'bg-pink-50 border-pink-300 text-pink-800'
+                                : task.suggestedDepartment === 'Sự kiện'
+                                ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                                : task.suggestedDepartment === 'Đối ngoại'
+                                ? 'bg-purple-50 border-purple-300 text-purple-800'
+                                : 'bg-amber-50 border-amber-300 text-amber-900'
+                            }`}
                           >
                             {allowedDepartments.map((dept) => (
                               <option key={dept} value={dept}>
@@ -686,7 +704,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                           </select>
 
                           {/* Verification Type Toggle */}
-                          <div className="inline-flex rounded-lg bg-slate-100 p-0.5 border border-slate-200 text-xs">
+                          <div className="inline-flex rounded-lg bg-slate-100 p-0.5 border border-slate-300 text-xs">
                             <button
                               type="button"
                               onClick={() =>
@@ -694,7 +712,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                                   verificationType: 'link_required',
                                 })
                               }
-                              className={`px-2.5 py-1 rounded-md flex items-center gap-1 font-semibold transition cursor-pointer ${
+                              className={`px-2.5 py-1 rounded-md flex items-center gap-1 font-bold transition cursor-pointer ${
                                 task.verificationType === 'link_required'
                                   ? 'bg-blue-600 text-white shadow-2xs'
                                   : 'text-slate-600 hover:text-slate-900'
@@ -711,7 +729,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                                   verificationType: 'report_required',
                                 })
                               }
-                              className={`px-2.5 py-1 rounded-md flex items-center gap-1 font-semibold transition cursor-pointer ${
+                              className={`px-2.5 py-1 rounded-md flex items-center gap-1 font-bold transition cursor-pointer ${
                                 task.verificationType === 'report_required'
                                   ? 'bg-purple-600 text-white shadow-2xs'
                                   : 'text-slate-600 hover:text-slate-900'
@@ -726,7 +744,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                         <button
                           type="button"
                           onClick={() => handleDeleteTask(task.tempId)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 transition cursor-pointer"
                           title="Xóa công việc này"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -741,7 +759,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                           onChange={(e) =>
                             handleUpdateTask(task.tempId, { title: e.target.value })
                           }
-                          className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-2xs"
+                          className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 shadow-2xs"
                           placeholder="Tiêu đề nhiệm vụ..."
                         />
                         <textarea
@@ -750,7 +768,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                             handleUpdateTask(task.tempId, { description: e.target.value })
                           }
                           rows={2}
-                          className="w-full px-3.5 py-2 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 resize-none shadow-2xs leading-relaxed"
+                          className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 resize-none shadow-2xs leading-relaxed"
                           placeholder="Mô tả chi tiết công việc hoặc ghi chú yêu cầu (AI tự động điền nếu biên bản có ghi rõ)..."
                         />
                       </div>
@@ -759,12 +777,12 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                       
                       {/* 1. Trùng tên thành viên Warning */}
                       {isMinhAmbiguity && (
-                        <div className="mb-3.5 p-3.5 bg-amber-50 border border-amber-300 rounded-xl text-xs space-y-2.5 animate-in fade-in duration-150">
-                          <div className="flex items-center gap-2 font-bold text-amber-900">
+                        <div className="mb-3.5 p-3.5 bg-amber-100/90 border border-amber-400 rounded-xl text-xs space-y-2.5 animate-in fade-in duration-150 shadow-2xs">
+                          <div className="flex items-center gap-2 font-bold text-amber-950">
                             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
                             <span>⚠️ PHÁT HIỆN TRÙNG TÊN: Tên "{task.rawAssigneeText}" trùng với nhiều thành viên!</span>
                           </div>
-                          <p className="text-amber-800">
+                          <p className="text-amber-900 font-medium">
                             Biên bản họp ghi: <em>"{task.rawAssigneeText}"</em>. AI không tự ý suy đoán. Vui lòng bấm chọn người phụ trách cụ thể bên dưới:
                           </p>
                           <div className="flex flex-wrap gap-2 pt-0.5">
@@ -782,7 +800,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                                       hasAmbiguity: false,
                                     })
                                   }
-                                  className="px-3 py-1.5 rounded-lg bg-white hover:bg-amber-600 hover:text-white text-amber-900 border border-amber-300 text-xs font-bold flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-2xs"
+                                  className="px-3 py-1.5 rounded-lg bg-white hover:bg-amber-600 hover:text-white text-amber-950 border border-amber-400 text-xs font-bold flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-2xs"
                                 >
                                   <UserCheck className="w-3.5 h-3.5 text-amber-600" />
                                   <span>{match.name || 'Thành viên'}</span>
@@ -809,7 +827,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                                         hasAmbiguity: false,
                                       })
                                     }
-                                    className="px-3 py-1.5 rounded-lg bg-white hover:bg-amber-600 hover:text-white text-amber-900 border border-amber-300 text-xs font-bold flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-2xs"
+                                    className="px-3 py-1.5 rounded-lg bg-white hover:bg-amber-600 hover:text-white text-amber-950 border border-amber-400 text-xs font-bold flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-2xs"
                                   >
                                     <UserCheck className="w-3.5 h-3.5 text-amber-600" />
                                     <span>{m.name}</span>
@@ -823,8 +841,8 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
 
                       {/* 2. Cảnh báo hạn chót đã qua */}
                       {isPastDeadline && (
-                        <div className="mb-3.5 p-3 bg-orange-50 border border-orange-300 rounded-xl text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-orange-900 font-medium">
-                          <div className="flex items-center gap-2">
+                        <div className="mb-3.5 p-3 bg-orange-100/90 border border-orange-400 rounded-xl text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-orange-950 font-medium shadow-2xs">
+                          <div className="flex items-center gap-2 font-bold">
                             <Calendar className="w-4 h-4 text-orange-600 shrink-0" />
                             <span>
                               Hạn chót <strong>{task.suggestedDeadline}</strong> đã ở quá khứ (do AI hiểu nhầm năm).
@@ -842,14 +860,14 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
 
                       {/* 3. Cảnh báo vắng mặt */}
                       {isAbsent && (
-                        <div className="mb-3.5 p-3 bg-red-50 border border-red-300 rounded-xl text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-red-900">
+                        <div className="mb-3.5 p-3 bg-red-100/90 border border-red-400 rounded-xl text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-red-950 shadow-2xs">
                           <div className="flex items-center gap-2 font-bold">
                             <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
                             <span>
                               🚨 CẢNH BÁO VẮNG MẶT: <strong>{task.suggestedAssigneeName}</strong> nằm trong danh sách VẮNG HỌP của biên bản này!
                             </span>
                           </div>
-                          <span className="text-[11px] text-red-700 font-semibold self-start sm:self-auto">
+                          <span className="text-[11px] text-red-800 font-bold self-start sm:self-auto">
                             Cân nhắc chọn lại người khác bên dưới
                           </span>
                         </div>
@@ -859,7 +877,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs pt-1">
                         {/* Assignee Selector */}
                         <div>
-                          <label className="block text-slate-700 font-bold mb-1.5 flex items-center gap-1.5">
+                          <label className="block text-slate-800 font-bold mb-1.5 flex items-center gap-1.5">
                             <UserCheck className="w-3.5 h-3.5 text-blue-600" />
                             <span>Người phụ trách (chọn nhiều người hoặc cả ban):</span>
                           </label>
@@ -876,14 +894,14 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                               })
                             }
                           />
-                          <p className="text-[10px] text-slate-400 mt-1">
+                          <p className="text-[10px] text-slate-500 font-medium mt-1">
                             Người đầu tiên được chọn là người phụ trách chính nhận đôn đốc.
                           </p>
                         </div>
 
                         {/* Deadline Selector */}
                         <div>
-                          <label className="block text-slate-700 font-bold mb-1.5 flex items-center justify-between">
+                          <label className="block text-slate-800 font-bold mb-1.5 flex items-center justify-between">
                             <span className="flex items-center gap-1.5">
                               <Calendar className="w-3.5 h-3.5 text-blue-600" />
                               <span>Hạn chót cụ thể (Deadline):</span>
@@ -902,7 +920,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                                 suggestedDeadline: e.target.value,
                               })
                             }
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-500 shadow-2xs"
+                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-600 shadow-2xs"
                           />
                         </div>
                       </div>
@@ -916,7 +934,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
               <button
                 type="button"
                 onClick={handleAddNewTask}
-                className="w-full py-3.5 rounded-2xl border-2 border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50/40 text-slate-600 hover:text-blue-700 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer"
+                className="w-full py-3.5 rounded-2xl border-2 border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50/50 text-slate-700 hover:text-blue-700 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer bg-white"
               >
                 <Plus className="w-4 h-4 text-blue-600" />
                 <span>Thêm công việc thủ công nếu AI trích xuất thiếu</span>
@@ -929,9 +947,9 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
         {/* 5. Modal Footer */}
         <div className="px-6 py-3.5 border-t border-slate-200 bg-white flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           <div className="text-xs text-slate-600 flex items-center gap-2">
-            <span className="font-bold text-slate-800">Đã kiểm tra {tasks.length} công việc.</span>
+            <span className="font-bold text-slate-800">Đã kiểm tra {safeTasks.length} công việc.</span>
             <span className="text-slate-400 hidden md:inline">|</span>
-            <span className="text-amber-700 font-medium hidden md:inline">
+            <span className="text-amber-800 font-semibold hidden md:inline">
               Nhiệm vụ tuần trước chưa xong sẽ tự động được kế thừa (Quy tắc Sticky Task).
             </span>
           </div>
