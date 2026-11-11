@@ -275,9 +275,12 @@ export function App() {
   const handleParserSuccess = (
     meetingData: Partial<Meeting>,
     extractedTasks: ExtractedDraftTask[],
-    _rawText: string
+    rawText: string
   ) => {
-    setParsedMeetingData(meetingData);
+    setParsedMeetingData({
+      ...meetingData,
+      rawContent: rawText || meetingData.rawContent || '',
+    });
     setParsedDraftTasks(extractedTasks);
     setIsParserOpen(false);
     setIsFilterOpen(true);
