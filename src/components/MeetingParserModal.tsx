@@ -147,26 +147,80 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
 
       await new Promise((resolve) => setTimeout(resolve, 400));
 
+      // Helper sanitize text string
+      const toSafeString = (v: any, fallback = ''): string => {
+        if (v == null) return fallback;
+        if (typeof v === 'string') return v;
+        if (Array.isArray(v)) return v.map((item) => toSafeString(item)).join('\n');
+        if (typeof v === 'object') return JSON.stringify(v, null, 2);
+        return String(v);
+      };
+
+      // Helper sanitize string array
+      const toSafeStringArray = (v: any): string[] => {
+        if (!v) return [];
+        if (typeof v === 'string') return [v];
+        if (!Array.isArray(v)) return [toSafeString(v)];
+        return v
+          .map((item: any) => {
+            if (typeof item === 'string') return item;
+            if (item && typeof item === 'object') return item.name || item.title || JSON.stringify(item);
+            return String(item || '');
+          })
+          .filter(Boolean);
+      };
+
       const meetingData: Partial<Meeting> = {
-        title: data.meeting?.title || 'Biên bản họp Ban Điều Hành',
-        date: data.meeting?.date || meetingDate,
-        chairperson: data.meeting?.chairperson || 'Lê Hồng Phúc Minh',
-        secretary: data.meeting?.secretary || 'Nguyễn Thị Ngọc Ánh',
-        attendees: data.meeting?.attendees || [],
-        absentees: data.meeting?.absentees || [],
-        latecomers: data.meeting?.latecomers || [],
-        objectives: data.meeting?.objectives || '',
-        discussionSummary: data.meeting?.discussionSummary || '',
-        actionPlan: data.meeting?.actionPlan || '',
+        title: toSafeString(data?.meeting?.title, 'Biên bản họp Ban Điều Hành'),
+        date: toSafeString(data?.meeting?.date, meetingDate),
+        chairperson: toSafeString(data?.meeting?.chairperson, 'Lê Hồng Phúc Minh'),
+        secretary: toSafeString(data?.meeting?.secretary, 'Nguyễn Thị Ngọc Ánh'),
+        attendees: toSafeStringArray(data?.meeting?.attendees),
+        absentees: toSafeStringArray(data?.meeting?.absentees),
+        latecomers: toSafeStringArray(data?.meeting?.latecomers),
+        objectives: toSafeString(data?.meeting?.objectives, ''),
+        discussionSummary: toSafeString(data?.meeting?.discussionSummary, ''),
+        actionPlan: toSafeString(data?.meeting?.actionPlan, ''),
         rawContent: bbhText,
       };
 
-      const extractedTasks: ExtractedDraftTask[] = data.tasks || [];
+      const rawTasks = Array.isArray(data?.tasks)
+        ? data.tasks
+        : data?.tasks && typeof data.tasks === 'object'
+        ? Object.values(data.tasks)
+        : [];
+
+      const extractedTasks: ExtractedDraftTask[] = rawTasks.map((t: any, idx: number) => ({
+        tempId: t.tempId || `draft-${Date.now()}-${idx}`,
+        title: toSafeString(t.title, `Nhiệm vụ #${idx + 1}`),
+        description: toSafeString(t.description, ''),
+        rawAssigneeText: toSafeString(t.rawAssigneeText, 'Ban Điều Hành'),
+        suggestedAssigneeId: toSafeString(t.suggestedAssigneeId, ''),
+        suggestedAssigneeName: toSafeString(t.suggestedAssigneeName, ''),
+        suggestedAssigneeIds: Array.isArray(t.suggestedAssigneeIds)
+          ? t.suggestedAssigneeIds.filter((x: any) => typeof x === 'string')
+          : t.suggestedAssigneeId
+          ? [t.suggestedAssigneeId]
+          : [],
+        suggestedDepartment: t.suggestedDepartment || 'Ban Chủ nhiệm',
+        rawDeadlinetext: toSafeString(t.rawDeadlinetext, ''),
+        suggestedDeadline: toSafeString(t.suggestedDeadline, meetingDate),
+        verificationType: t.verificationType === 'report_required' ? 'report_required' : 'link_required',
+        hasAmbiguity: Boolean(t.hasAmbiguity),
+        ambiguityMatches: Array.isArray(t.ambiguityMatches) ? t.ambiguityMatches : [],
+        isAbsentee: Boolean(t.isAbsentee),
+        absenteeName: toSafeString(t.absenteeName, ''),
+        warningMessages: toSafeStringArray(t.warningMessages),
+        approved: true,
+        priority: t.priority === 'normal' || t.priority === 'medium' ? t.priority : 'high',
+        reasoning: toSafeString(t.reasoning, ''),
+      }));
 
       onExtractionSuccess(meetingData, extractedTasks, bbhText);
     } catch (err: any) {
       console.error('Error analyzing BBH:', err);
       setErrorMsg(err.message || 'Không thể trích xuất biên bản họp. Vui lòng thử lại.');
+    } finally {
       setIsLoading(false);
     }
   };

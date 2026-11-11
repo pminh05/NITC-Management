@@ -28,21 +28,24 @@ export const AssigneeMultiSelect: React.FC<AssigneeMultiSelectProps> = ({
     return () => document.removeEventListener('mousedown', onDoc);
   }, []);
 
-  const allSelected = members.length > 0 && members.every((m) => selectedIds.includes(m.id));
-  const firstName = members.find((m) => m.id === selectedIds[0])?.name;
+  const safeMembers = Array.isArray(members) ? members : [];
+  const safeSelectedIds = Array.isArray(selectedIds) ? selectedIds : [];
+
+  const allSelected = safeMembers.length > 0 && safeMembers.every((m) => safeSelectedIds.includes(m.id));
+  const firstName = safeMembers.find((m) => m.id === safeSelectedIds[0])?.name;
 
   const summary = (() => {
-    if (selectedIds.length === 0) return '-- Chưa chọn người phụ trách --';
-    if (allSelected) return `👥 Cả ban (${members.length} người)`;
-    if (selectedIds.length === 1) return firstName || '1 người';
-    return `${firstName} +${selectedIds.length - 1} người`;
+    if (safeSelectedIds.length === 0) return '-- Chưa chọn người phụ trách --';
+    if (allSelected) return `👥 Cả ban (${safeMembers.length} người)`;
+    if (safeSelectedIds.length === 1) return firstName || '1 người';
+    return `${firstName} +${safeSelectedIds.length - 1} người`;
   })();
 
   const toggle = (id: string) => {
-    if (selectedIds.includes(id)) {
-      onChange(selectedIds.filter((x) => x !== id));
+    if (safeSelectedIds.includes(id)) {
+      onChange(safeSelectedIds.filter((x) => x !== id));
     } else {
-      onChange([...selectedIds, id]);
+      onChange([...safeSelectedIds, id]);
     }
   };
 
@@ -67,8 +70,8 @@ export const AssigneeMultiSelect: React.FC<AssigneeMultiSelectProps> = ({
           <div className="sticky top-0 bg-slate-50/95 backdrop-blur px-2.5 py-2 flex items-center gap-1.5 border-b border-slate-200 z-10">
             <button
               type="button"
-              onClick={() => onChange(members.map((m) => m.id))}
-              disabled={members.length === 0}
+              onClick={() => onChange(safeMembers.map((m) => m.id))}
+              disabled={safeMembers.length === 0}
               className={`flex-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1 ${
                 allSelected
                   ? 'bg-blue-600 text-white shadow-xs'
@@ -76,26 +79,26 @@ export const AssigneeMultiSelect: React.FC<AssigneeMultiSelectProps> = ({
               }`}
             >
               <Users className="w-3 h-3" />
-              Chọn tất cả ({members.length})
+              Chọn tất cả ({safeMembers.length})
             </button>
             <button
               type="button"
               onClick={() => onChange([])}
-              disabled={selectedIds.length === 0}
+              disabled={safeSelectedIds.length === 0}
               className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-40 transition cursor-pointer border border-slate-200"
             >
               Bỏ chọn
             </button>
           </div>
 
-          {members.length === 0 && (
+          {safeMembers.length === 0 && (
             <div className="px-3 py-4 text-xs text-slate-400 text-center">
               Ban này chưa có thành viên
             </div>
           )}
           <div className="py-1">
-            {members.map((m) => {
-              const checked = selectedIds.includes(m.id);
+            {safeMembers.map((m) => {
+              const checked = safeSelectedIds.includes(m.id);
               return (
                 <button
                   key={m.id}
@@ -118,7 +121,7 @@ export const AssigneeMultiSelect: React.FC<AssigneeMultiSelectProps> = ({
                     {m.name}
                     <span className="text-slate-400 font-normal ml-1">({m.role})</span>
                   </span>
-                  {selectedIds[0] === m.id && (
+                  {safeSelectedIds[0] === m.id && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold shrink-0 border border-amber-200">
                       phụ trách chính
                     </span>

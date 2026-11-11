@@ -19,6 +19,7 @@ import { LoginPage } from './components/LoginPage';
 import { TaskBoard } from './components/TaskBoard';
 import { MeetingParserModal } from './components/MeetingParserModal';
 import { PresidentialFilterModal } from './components/PresidentialFilterModal';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { EvidenceSubmitModal } from './components/EvidenceSubmitModal';
 import { EvidenceReviewModal } from './components/EvidenceReviewModal';
 import { TheNagWeeklyReport } from './components/TheNagWeeklyReport';
@@ -960,15 +961,17 @@ export function App() {
 
       {/* Modal 2: Presidential Filter (Quy tắc trùng tên, Cảnh báo vắng mặt, Phê duyệt) */}
       {canManageMeetings && (
-        <PresidentialFilterModal
-          isOpen={isFilterOpen}
-          onClose={() => setIsFilterOpen(false)}
-          meetingData={parsedMeetingData || {}}
-          draftTasks={parsedDraftTasks}
-          members={members}
-          authMember={authMember!}
-          onPublishTasks={handlePublishTasks}
-        />
+        <ErrorBoundary fallbackTitle="Lỗi hiển thị Màn hình Đối soát nhiệm vụ">
+          <PresidentialFilterModal
+            isOpen={isFilterOpen}
+            onClose={() => setIsFilterOpen(false)}
+            meetingData={parsedMeetingData || {}}
+            draftTasks={parsedDraftTasks}
+            members={members}
+            authMember={authMember!}
+            onPublishTasks={handlePublishTasks}
+          />
+        </ErrorBoundary>
       )}
 
       {/* Modal 3: Evidence Submission (Link URL vs 2-Sentence Report) */}

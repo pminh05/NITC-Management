@@ -47,13 +47,15 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
   authMember,
   onPublishTasks,
 }) => {
-  const isDeptHead = authMember.role === 'Trưởng ban' || authMember.role === 'Phó ban';
+  const isDeptHead = authMember?.role === 'Trưởng ban' || authMember?.role === 'Phó ban';
+  const myDepartment = authMember?.department || 'Ban Chủ nhiệm';
   const allowedDepartments: Department[] = isDeptHead
-    ? [authMember.department]
+    ? [myDepartment]
     : ['Học thuật', 'Truyền thông', 'Sự kiện', 'Đối ngoại', 'Ban Chủ nhiệm'];
 
-  const [tasks, setTasks] = useState<ExtractedDraftTask[]>(initialDraftTasks);
-  const [meeting, setMeeting] = useState<Partial<Meeting>>(meetingData);
+  const safeInitialTasks = Array.isArray(initialDraftTasks) ? initialDraftTasks : [];
+  const [tasks, setTasks] = useState<ExtractedDraftTask[]>(safeInitialTasks);
+  const [meeting, setMeeting] = useState<Partial<Meeting>>(meetingData || {});
   const [crossDeptRemoved, setCrossDeptRemoved] = useState(0);
 
   // Split screen and tabs
@@ -65,22 +67,37 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
   const [taskFilter, setTaskFilter] = useState<'all' | 'issues'>('all');
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
 
+  // Safe helpers for string values
+  const rawAttendees = Array.isArray(meeting.attendees)
+    ? meeting.attendees.map((x: any) => (typeof x === 'string' ? x : x?.name || JSON.stringify(x))).filter(Boolean)
+    : [];
+  const rawAbsentees = Array.isArray(meeting.absentees)
+    ? meeting.absentees.map((x: any) => (typeof x === 'string' ? x : x?.name || JSON.stringify(x))).filter(Boolean)
+    : [];
+  const rawLatecomers = Array.isArray(meeting.latecomers)
+    ? meeting.latecomers.map((x: any) => (typeof x === 'string' ? x : x?.name || JSON.stringify(x))).filter(Boolean)
+    : [];
+  const safeObjectives = typeof meeting.objectives === 'string' ? meeting.objectives : '';
+  const safeDiscussion = typeof meeting.discussionSummary === 'string' ? meeting.discussionSummary : '';
+  const safeRawContent = typeof meeting.rawContent === 'string' ? meeting.rawContent : '';
+
   // Sync initial draft tasks
   React.useEffect(() => {
+    const rawList = Array.isArray(initialDraftTasks) ? initialDraftTasks : [];
     if (isDeptHead) {
-      const kept = initialDraftTasks.filter(
-        (t) => t.suggestedDepartment === authMember.department || t.hasAmbiguity
+      const kept = rawList.filter(
+        (t) => t && (t.suggestedDepartment === myDepartment || t.hasAmbiguity)
       );
-      const removedCount = initialDraftTasks.length - kept.length;
-      setTasks(kept.map((t) => ({ ...t, suggestedDepartment: authMember.department })));
+      const removedCount = rawList.length - kept.length;
+      setTasks(kept.map((t) => ({ ...t, suggestedDepartment: myDepartment })));
       setCrossDeptRemoved(removedCount);
     } else {
-      setTasks(initialDraftTasks);
+      setTasks(rawList);
     }
-  }, [initialDraftTasks, isDeptHead, authMember.department]);
+  }, [initialDraftTasks, isDeptHead, myDepartment]);
 
   React.useEffect(() => {
-    setMeeting(meetingData);
+    setMeeting(meetingData || {});
   }, [meetingData]);
 
   if (!isOpen) return null;
@@ -109,23 +126,27 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
             updated.suggestedDepartment = selectedMember.department;
             updated.hasAmbiguity = false;
 
-            // Kiểm tra vắng mặt
-            const isAbs = (meeting.absentees || []).some(
+            // Kiểm tra vắng mặt an toàn
+            const absenteesList = Array.isArray(meeting.absentees)
+              ? meeting.absentees.map((a: any) => (typeof a === 'string' ? a : a?.name || String(a || ''))).filter(Boolean)
+              : [];
+            const isAbs = absenteesList.some(
               (abs) =>
                 abs.toLowerCase().includes(selectedMember.name.toLowerCase()) ||
                 selectedMember.name.toLowerCase().includes(abs.toLowerCase())
             );
             updated.isAbsentee = isAbs;
+            const currentWarnings = Array.isArray(updated.warningMessages) ? updated.warningMessages : [];
             if (isAbs) {
-              if (!updated.warningMessages.some((m) => m.includes('VẮNG HỌP'))) {
+              if (!currentWarnings.some((m) => m.includes('VẮNG HỌP'))) {
                 updated.warningMessages = [
-                  ...updated.warningMessages,
+                  ...currentWarnings,
                   `🚨 Cảnh báo: ${selectedMember.name} VẮNG HỌP!`,
                 ];
               }
             } else {
-              updated.warningMessages = updated.warningMessages.filter(
-                (m) => !m.includes('VẮNG HỌP') && !m.includes('Quy tắc "Minh"')
+              updated.warningMessages = currentWarnings.filter(
+                (m) => !m.includes('VẮNG HỌP') && !m.includes('Quy tắc "Minh"') && !m.includes('TRÙNG TÊN')
               );
             }
           }
@@ -207,12 +228,13 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
   };
 
   // Metrics
-  const issueCount = tasks.filter(
+  const validTasks = Array.isArray(tasks) ? tasks.filter(Boolean) : [];
+  const issueCount = validTasks.filter(
     (t) => t.hasAmbiguity || t.isAbsentee || (t.suggestedDeadline && t.suggestedDeadline < todayISO())
   ).length;
 
   const filteredTasks = useMemo(() => {
-    return tasks.filter((t) => {
+    return validTasks.filter((t) => {
       if (taskFilter === 'issues') {
         const hasIssue =
           t.hasAmbiguity ||
@@ -226,7 +248,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
       }
       return true;
     });
-  }, [tasks, taskFilter, departmentFilter]);
+  }, [validTasks, taskFilter, departmentFilter]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/60 backdrop-blur-sm overflow-hidden">
@@ -311,20 +333,20 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {meeting.absentees && meeting.absentees.length > 0 && (
+            {rawAbsentees.length > 0 && (
               <div className="flex items-center gap-1.5 bg-red-50 text-red-700 px-2.5 py-1 rounded-lg border border-red-200">
                 <AlertTriangle className="w-3.5 h-3.5 text-red-600 shrink-0" />
                 <span>
-                  <strong>Vắng mặt:</strong> {meeting.absentees.join(', ')}
+                  <strong>Vắng mặt:</strong> {rawAbsentees.join(', ')}
                 </span>
               </div>
             )}
 
-            {meeting.latecomers && meeting.latecomers.length > 0 && (
+            {rawLatecomers.length > 0 && (
               <div className="flex items-center gap-1.5 bg-amber-50 text-amber-800 px-2.5 py-1 rounded-lg border border-amber-200">
                 <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                 <span>
-                  <strong>Đi muộn:</strong> {meeting.latecomers.join(', ')}
+                  <strong>Đi muộn:</strong> {rawLatecomers.join(', ')}
                 </span>
               </div>
             )}
@@ -453,19 +475,27 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {leftTab === 'raw' ? (
                   <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs font-mono text-xs text-slate-800 whitespace-pre-wrap leading-relaxed select-text">
-                    {meeting.rawContent ? (
-                      searchTerm ? (
-                        meeting.rawContent.split(new RegExp(`(${searchTerm})`, 'gi')).map((part, i) =>
-                          part.toLowerCase() === searchTerm.toLowerCase() ? (
-                            <mark key={i} className="bg-yellow-200 text-slate-900 px-0.5 rounded font-bold">
-                              {part}
-                            </mark>
-                          ) : (
-                            part
-                          )
-                        )
+                    {safeRawContent ? (
+                      searchTerm.trim() ? (
+                        (() => {
+                          try {
+                            const escaped = searchTerm.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            const regex = new RegExp(`(${escaped})`, 'gi');
+                            return safeRawContent.split(regex).map((part, i) =>
+                              part.toLowerCase() === searchTerm.trim().toLowerCase() ? (
+                                <mark key={i} className="bg-yellow-200 text-slate-900 px-0.5 rounded font-bold">
+                                  {part}
+                                </mark>
+                              ) : (
+                                part
+                              )
+                            );
+                          } catch {
+                            return safeRawContent;
+                          }
+                        })()
                       ) : (
-                        meeting.rawContent
+                        safeRawContent
                       )
                     ) : (
                       <div className="text-slate-400 italic py-8 text-center font-sans">
@@ -476,13 +506,13 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                 ) : (
                   <div className="space-y-4 text-xs">
                     {/* Objectives */}
-                    {meeting.objectives && (
+                    {safeObjectives && (
                       <div className="bg-white rounded-xl border border-slate-200 p-3.5 space-y-1 shadow-2xs">
                         <h4 className="font-bold text-slate-900 flex items-center gap-1.5">
                           <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                           <span>Mục tiêu cuộc họp</span>
                         </h4>
-                        <p className="text-slate-700 leading-relaxed">{meeting.objectives}</p>
+                        <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">{safeObjectives}</p>
                       </div>
                     )}
 
@@ -496,11 +526,11 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                       <div className="space-y-2">
                         <div>
                           <span className="text-[11px] font-semibold text-slate-500 block mb-1">
-                            Có mặt tham gia ({meeting.attendees?.length || 0}):
+                            Có mặt tham gia ({rawAttendees.length}):
                           </span>
                           <div className="flex flex-wrap gap-1.5">
-                            {meeting.attendees && meeting.attendees.length > 0 ? (
-                              meeting.attendees.map((name, i) => (
+                            {rawAttendees.length > 0 ? (
+                              rawAttendees.map((name, i) => (
                                 <span
                                   key={i}
                                   className="px-2 py-0.5 bg-slate-100 text-slate-800 rounded-md text-[11px] font-medium border border-slate-200"
@@ -514,13 +544,13 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                           </div>
                         </div>
 
-                        {meeting.absentees && meeting.absentees.length > 0 && (
+                        {rawAbsentees.length > 0 && (
                           <div className="pt-1">
                             <span className="text-[11px] font-semibold text-red-600 block mb-1">
-                              Vắng mặt ({meeting.absentees.length}):
+                              Vắng mặt ({rawAbsentees.length}):
                             </span>
                             <div className="flex flex-wrap gap-1.5">
-                              {meeting.absentees.map((name, i) => (
+                              {rawAbsentees.map((name, i) => (
                                 <span
                                   key={i}
                                   className="px-2 py-0.5 bg-red-50 text-red-700 rounded-md text-[11px] font-bold border border-red-200"
@@ -535,11 +565,11 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                     </div>
 
                     {/* Discussion & Action plan */}
-                    {meeting.discussionSummary && (
+                    {safeDiscussion && (
                       <div className="bg-white rounded-xl border border-slate-200 p-3.5 space-y-1 shadow-2xs">
                         <h4 className="font-bold text-slate-900">Tóm tắt nội dung thảo luận</h4>
                         <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">
-                          {meeting.discussionSummary}
+                          {safeDiscussion}
                         </p>
                       </div>
                     )}
@@ -738,30 +768,34 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                             Biên bản họp ghi: <em>"{task.rawAssigneeText}"</em>. AI không tự ý suy đoán. Vui lòng bấm chọn người phụ trách cụ thể bên dưới:
                           </p>
                           <div className="flex flex-wrap gap-2 pt-0.5">
-                            {task.ambiguityMatches.length > 0 ? (
-                              task.ambiguityMatches.map((match) => (
+                            {Array.isArray(task.ambiguityMatches) && task.ambiguityMatches.length > 0 ? (
+                              task.ambiguityMatches.map((match: any) => (
                                 <button
-                                  key={match.id}
+                                  key={match.id || match.name}
                                   type="button"
                                   onClick={() =>
                                     handleUpdateTask(task.tempId, {
-                                      suggestedAssigneeId: match.id,
-                                      suggestedAssigneeName: match.name,
-                                      suggestedDepartment: match.department,
-                                      suggestedAssigneeIds: [match.id],
+                                      suggestedAssigneeId: match.id || '',
+                                      suggestedAssigneeName: match.name || '',
+                                      suggestedDepartment: match.department || task.suggestedDepartment,
+                                      suggestedAssigneeIds: match.id ? [match.id] : [],
                                       hasAmbiguity: false,
                                     })
                                   }
                                   className="px-3 py-1.5 rounded-lg bg-white hover:bg-amber-600 hover:text-white text-amber-900 border border-amber-300 text-xs font-bold flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-2xs"
                                 >
                                   <UserCheck className="w-3.5 h-3.5 text-amber-600" />
-                                  <span>{match.name}</span>
-                                  <span className="opacity-80 font-normal">({match.department} - {match.role})</span>
+                                  <span>{match.name || 'Thành viên'}</span>
+                                  {match.department && (
+                                    <span className="opacity-80 font-normal">
+                                      ({match.department}{match.role ? ` - ${match.role}` : ''})
+                                    </span>
+                                  )}
                                 </button>
                               ))
                             ) : (
-                              members
-                                .filter((m) => m.name.toLowerCase().includes('minh'))
+                              (members || [])
+                                .filter((m) => m && m.name && m.name.toLowerCase().includes('minh'))
                                 .map((m) => (
                                   <button
                                     key={m.id}
