@@ -3,10 +3,12 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// Áp dụng giao diện sáng/tối đã lưu (mặc định: tối)
-const savedTheme = localStorage.getItem('nitc_theme') || 'dark';
-if (savedTheme === 'dark') {
-  document.documentElement.classList.add('dark');
+// Bỏ chế độ tối, khóa giao diện ở chế độ sáng chuẩn của NITC Command Center
+try {
+  localStorage.removeItem('nitc_theme');
+  document.documentElement.classList.remove('dark');
+} catch {
+  // ignore
 }
 
 createRoot(document.getElementById('root')!).render(

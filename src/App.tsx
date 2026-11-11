@@ -67,38 +67,6 @@ export function App() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationChannel, setNotificationChannel] = useState('in_app');
 
-  // ===== 1d. Quản trị Theme Sáng/Tối đồng bộ toàn hệ thống =====
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('nitc_theme');
-      if (saved) return saved === 'dark';
-      return document.documentElement.classList.contains('dark');
-    }
-    return true;
-  });
-
-  const handleToggleTheme = useCallback(() => {
-    setIsDark((prev) => {
-      const next = !prev;
-      if (next) {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('nitc_theme', 'dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('nitc_theme', 'light');
-      }
-      return next;
-    });
-  }, []);
-
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDark]);
-
   // Boot: khôi phục phiên đăng nhập từ token
   useEffect(() => {
     const boot = async () => {
@@ -615,23 +583,23 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F1F5F9] dark:bg-[#0B1120] text-slate-900 dark:text-slate-100 flex flex-col font-sans antialiased selection:bg-[#2C69FF] selection:text-white transition-colors duration-150">
+    <div className="min-h-screen bg-[#F1F5F9] dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans antialiased selection:bg-[#2C69FF]/100 selection:text-white">
 
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300">
           <div className={`p-4 rounded-xl shadow-2xl border flex items-start gap-3 max-w-sm ${
             toastMessage.type === 'warn'
-              ? 'bg-amber-50 dark:bg-amber-950/80 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200'
+              ? 'bg-amber-50 border-amber-300 text-amber-900'
               : toastMessage.type === 'info'
-              ? 'bg-blue-50 dark:bg-blue-950/80 border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-200'
-              : 'bg-white dark:bg-slate-850 border-emerald-400 dark:border-emerald-600 text-slate-900 dark:text-slate-100 shadow-emerald-100'
+              ? 'bg-blue-50 border-blue-300 text-blue-900'
+              : 'bg-white border-emerald-400 text-slate-900 dark:text-slate-100 shadow-emerald-100'
           }`}>
-            <div className="p-1 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400">
+            <div className="p-1 rounded-lg bg-emerald-100 text-emerald-700">
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
-              <h5 className="font-bold text-sm text-slate-900 dark:text-slate-100">{toastMessage.title}</h5>
+              <h5 className="font-bold text-sm text-slate-900">{toastMessage.title}</h5>
               <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">{toastMessage.desc}</p>
             </div>
           </div>
@@ -659,12 +627,10 @@ export function App() {
         onOpenNagModal={() => setIsNagOpen(true)}
         onOpenRosterModal={() => setIsRosterOpen(true)}
         onOpenDataSyncModal={() => setIsDataSyncOpen(true)}
-        isDark={isDark}
-        onToggleTheme={handleToggleTheme}
       />
 
       {/* Thanh điều hướng cho điện thoại (sidebar ẩn trên màn nhỏ) */}
-      <div className="lg:hidden bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700/60 px-2 py-2 flex items-center gap-1.5 overflow-x-auto">
+      <div className="lg:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-2 py-2 flex items-center gap-1.5 overflow-x-auto">
         {[
           { icon: '🤖', label: 'AI đọc BBH', action: () => setIsParserOpen(true), show: canManageMeetings },
           { icon: '🏆', label: 'Xếp hạng', action: () => setIsLeaderboardOpen(true), show: true },
@@ -679,7 +645,7 @@ export function App() {
             <button
               key={item.label}
               onClick={item.action}
-              className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600/60 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer shrink-0 shadow-xs"
+              className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer shrink-0"
             >
               <span className="text-base leading-none">{item.icon}</span>
               <span className="text-[9px] font-semibold whitespace-nowrap">{item.label}</span>
@@ -691,9 +657,9 @@ export function App() {
       <div className="flex flex-1 w-full overflow-x-hidden">
 
         {/* High Density Desktop Sidebar */}
-        <aside className="w-60 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700/60 hidden lg:flex flex-col shrink-0 transition-colors duration-150">
+        <aside className="w-60 bg-white border-r border-slate-200 dark:border-slate-800 hidden lg:flex flex-col shrink-0">
           <div className="p-4 space-y-1">
-            <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-2">
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">
               Hệ thống
             </div>
             <button
@@ -703,15 +669,15 @@ export function App() {
               }}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition cursor-pointer ${
                 sidebarDeptFilter === 'all' && sidebarStatusFilter === 'all'
-                  ? 'bg-[#2C69FF]/10 dark:bg-[#2C69FF]/20 text-[#1E4FC4] dark:text-[#8FB2FF] font-bold border border-[#2C69FF]/30 dark:border-[#2C69FF]/40'
-                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60'
+                  ? 'bg-[#2C69FF]/10 text-[#1E4FC4] font-bold border border-[#2C69FF]/30'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50'
               }`}
             >
               <div className="flex items-center gap-2.5">
                 <span>📊</span>
                 <span>Tổng quan</span>
               </div>
-              <span className="text-[10px] bg-slate-100 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded font-mono">
+              <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded font-mono">
                 {dataLoading ? '...' : totalTasksCount}
               </span>
             </button>
@@ -719,13 +685,13 @@ export function App() {
             {canManageMeetings && (
               <button
                 onClick={() => setIsParserOpen(true)}
-                className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-md text-xs transition cursor-pointer"
+                className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-900 rounded-md text-xs transition cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
                   <span>🤖</span>
                   <span>AI đọc biên bản họp</span>
                 </div>
-                <span className="text-[10px] bg-[#2C69FF]/15 text-[#1E4FC4] dark:text-[#8FB2FF] px-1.5 py-0.5 rounded font-bold">
+                <span className="text-[10px] bg-[#2C69FF]/15 text-[#1E4FC4] px-1.5 py-0.5 rounded font-bold">
                   Mới
                 </span>
               </button>
@@ -733,14 +699,14 @@ export function App() {
 
             <button
               onClick={() => setIsNagOpen(true)}
-              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-md text-xs transition cursor-pointer"
+              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-900 rounded-md text-xs transition cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
                 <span>🚨</span>
                 <span>Việc quá hạn</span>
               </div>
               {overdueCount > 0 && (
-                <span className="text-[10px] bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded font-bold animate-pulse">
+                <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold animate-pulse">
                   {overdueCount}
                 </span>
               )}
@@ -748,7 +714,7 @@ export function App() {
 
             <button
               onClick={() => setIsDashOpen(true)}
-              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-md text-xs transition cursor-pointer"
+              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-md text-xs transition cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
                 <span>📊</span>
@@ -758,20 +724,20 @@ export function App() {
 
             <button
               onClick={() => setIsLeaderboardOpen(true)}
-              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-md text-xs transition cursor-pointer"
+              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-900 rounded-md text-xs transition cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
                 <span>🏆</span>
                 <span>Bảng xếp hạng</span>
               </div>
-              <span className="text-[10px] bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded font-bold">
+              <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold">
                 KPI
               </span>
             </button>
 
             <button
               onClick={() => setIsCalendarOpen(true)}
-              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-md text-xs transition cursor-pointer"
+              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-900 rounded-md text-xs transition cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
                 <span>📅</span>
@@ -781,7 +747,7 @@ export function App() {
 
             <button
               onClick={() => setIsDocsOpen(true)}
-              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-md text-xs transition cursor-pointer"
+              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-900 rounded-md text-xs transition cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
                 <span>📚</span>
@@ -790,8 +756,8 @@ export function App() {
             </button>
           </div>
 
-          <div className="p-4 space-y-1 border-t border-slate-200 dark:border-slate-700/60">
-            <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-2">
+          <div className="p-4 space-y-1 border-t border-slate-100">
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">
               Ban Điều Hành
             </div>
 
@@ -818,15 +784,15 @@ export function App() {
                   }}
                   className={`w-full flex items-center justify-between px-3 py-1.5 rounded-md text-xs transition cursor-pointer ${
                     isSelected
-                      ? 'bg-slate-100 dark:bg-slate-700/80 text-slate-900 dark:text-slate-100 font-bold'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60'
+                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50'
                   }`}
                 >
                   <span className="flex items-center gap-2 truncate">
                     <span>{emoji}</span>
                     <span className="truncate">{dept}</span>
                   </span>
-                  <span className="text-[10px] bg-slate-100 dark:bg-slate-700/80 px-1.5 py-0.5 rounded font-mono text-slate-600 dark:text-slate-300">
+                  <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono text-slate-600">
                     {count}
                   </span>
                 </button>
@@ -834,15 +800,15 @@ export function App() {
             })}
           </div>
 
-          <div className="mt-auto p-4 border-t border-slate-200 dark:border-slate-700/60 space-y-2">
+          <div className="mt-auto p-4 border-t border-slate-100 space-y-2">
             <button
               onClick={() => setIsMeetingHistoryOpen(true)}
-              className="w-full py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer shadow-sm"
+              className="w-full py-2 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-slate-900 flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer shadow-sm"
             >
               <span>📤</span>
               <span>Xuất PDF biên bản</span>
             </button>
-            <div className="text-[11px] text-slate-400 dark:text-slate-500 text-center font-medium">
+            <div className="text-[11px] text-slate-400 text-center font-medium">
               CLB CNTT NITC &bull; v3.0
             </div>
           </div>
@@ -854,56 +820,56 @@ export function App() {
           {/* Top 4 KPI Metric Cards (High Density) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
             {/* Card 1: Total Tasks */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col justify-between transition-colors duration-150">
+            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
               <div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center justify-between">
+                <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
                   <span>Tổng nhiệm vụ</span>
-                  <span className="text-[10px] bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded font-bold">
+                  <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded font-bold">
                     {currentRole === 'Chủ nhiệm' ? 'Toàn CLB' : currentDepartment}
                   </span>
                 </div>
-                <div className="text-2xl font-bold text-slate-900 dark:text-slate-50 mt-1">{totalTasksCount}</div>
+                <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{totalTasksCount}</div>
               </div>
-              <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-2 flex items-center gap-1">
+              <div className="text-[10px] text-emerald-600 font-medium mt-2 flex items-center gap-1">
                 <span>↑ {completionRate}% hoàn thành toàn trình</span>
               </div>
             </div>
 
             {/* Card 2: In Progress */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col justify-between transition-colors duration-150">
+            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
               <div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center justify-between">
+                <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
                   <span>Đang thực hiện</span>
-                  <span className="text-[10px] bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 px-1.5 py-0.5 rounded font-bold">Active</span>
+                  <span className="text-[10px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-bold">Active</span>
                 </div>
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">{inProgressCount}</div>
+                <div className="text-2xl font-bold text-blue-600 mt-1">{inProgressCount}</div>
               </div>
-              <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-700/60 rounded-full mt-3 overflow-hidden">
+              <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full mt-3 overflow-hidden">
                 <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${inProgressPct}%` }}></div>
               </div>
             </div>
 
             {/* Card 3: The Nag Overdue */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm border-l-4 border-l-red-500 flex flex-col justify-between transition-colors duration-150">
+            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm border-l-4 border-l-red-500 flex flex-col justify-between">
               <div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center justify-between">
+                <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
                   <span>Việc quá hạn</span>
                   {overdueCount > 0 ? (
-                    <span className="text-[10px] bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/60 px-1.5 py-0.5 rounded font-bold animate-pulse">Cần nhắc</span>
+                    <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold animate-pulse">Cần nhắc</span>
                   ) : (
-                    <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 px-1.5 py-0.5 rounded font-bold">Tốt</span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">Tốt</span>
                   )}
                 </div>
-                <div className="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">
+                <div className="text-2xl font-bold text-red-600 mt-1">
                   {overdueCount}
                 </div>
               </div>
               <div className="mt-2 flex items-center justify-between text-[10px]">
-                <span className="text-slate-400 dark:text-slate-500 italic">Nhắc tự động hàng ngày</span>
+                <span className="text-slate-400 italic">Nhắc tự động hàng ngày</span>
                 {overdueCount > 0 && (
                   <button
                     onClick={() => setIsNagOpen(true)}
-                    className="font-bold text-red-600 dark:text-red-400 hover:underline cursor-pointer"
+                    className="font-bold text-red-600 hover:underline cursor-pointer"
                   >
                     Gửi mail ngay &rarr;
                   </button>
@@ -912,13 +878,13 @@ export function App() {
             </div>
 
             {/* Card 4: Evidence Review Pending */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col justify-between transition-colors duration-150">
+            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
               <div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center justify-between">
+                <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
                   <span>Đợi duyệt bằng chứng</span>
-                  <span className="text-[10px] bg-[#2C69FF]/10 dark:bg-[#2C69FF]/20 text-[#1E4FC4] dark:text-[#8FB2FF] border border-[#2C69FF]/20 dark:border-[#2C69FF]/40 px-1.5 py-0.5 rounded font-bold">Chủ nhiệm</span>
+                  <span className="text-[10px] bg-[#2C69FF]/15 text-[#1E4FC4] px-1.5 py-0.5 rounded font-bold">Chủ nhiệm</span>
                 </div>
-                <div className="text-2xl font-bold text-[#2C69FF] dark:text-[#6C9BFF] mt-1">
+                <div className="text-2xl font-bold text-[#2C69FF] mt-1">
                   {pendingApprovalsCount}
                 </div>
               </div>
@@ -931,12 +897,12 @@ export function App() {
                       setSidebarStatusFilter('pending_approval');
                       document.getElementById('task-board')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }}
-                    className="text-[11px] font-bold text-[#1F56D6] dark:text-[#6C9BFF] hover:underline cursor-pointer"
+                    className="text-[11px] font-bold text-[#1F56D6] hover:text-[#1E4FC4] underline cursor-pointer"
                   >
                     Kiểm tra ngay &rarr;
                   </button>
                 ) : (
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500">Không có việc tồn đọng</span>
+                  <span className="text-[10px] text-slate-400">Không có việc tồn đọng</span>
                 )}
               </div>
             </div>
@@ -967,11 +933,11 @@ export function App() {
       </div>
 
       {/* 4. Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-3 text-center text-xs text-slate-500 dark:text-slate-400 transition-colors duration-150">
+      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white py-3 text-center text-xs text-slate-500">
         <div className="w-full px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>NITC Command Center &copy; 2026 {clubName}</span>
-          <div className="flex items-center gap-4 text-[11px] text-slate-400 dark:text-slate-500">
-            <span className="text-emerald-600 dark:text-emerald-400 font-medium">● Server + AI Engine Active</span>
+          <div className="flex items-center gap-4 text-[11px] text-slate-400">
+            <span className="text-emerald-600 font-medium">● Server + AI Engine Active</span>
             <span>Phiên bản v3.0 Multi-user</span>
           </div>
         </div>
