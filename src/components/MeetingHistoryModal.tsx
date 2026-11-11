@@ -310,7 +310,7 @@ export const MeetingHistoryModal: React.FC<MeetingHistoryModalProps> = ({
                       <p className="font-semibold text-slate-900">{selectedMeeting.secretary || 'Nguyễn Thị Ngọc Ánh'}</p>
                     </div>
                     <div>
-                      <p className="font-bold">CHỦ TỊCH CLB NITC</p>
+                      <p className="font-bold">CHỦ NHIỆM CLB NITC</p>
                       <p className="text-[11px] italic text-slate-500">(Ký và ghi rõ họ tên)</p>
                       <div className="h-12"></div>
                       <p className="font-semibold text-slate-900">{selectedMeeting.chairperson || 'Lê Hồng Phúc Minh'}</p>

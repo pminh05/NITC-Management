@@ -103,7 +103,7 @@ export function exportMeetingToPdf(meeting: Meeting, tasks: Task[] = []): void {
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   doc.text('THƯ KÝ CUỘC HỌP', 40, y, { align: 'center' });
-  doc.text('CHỦ TỊCH CLB NITC', pageWidth - 40, y, { align: 'center' });
+  doc.text('CHỦ NHIỆM CLB NITC', pageWidth - 40, y, { align: 'center' });
   y += 20;
   doc.setFont('helvetica', 'normal');
   doc.text(meeting.secretary || 'Nguyễn Thị Ngọc Ánh', 40, y, { align: 'center' });

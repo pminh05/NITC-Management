@@ -241,7 +241,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
-                  Bộ Lọc Của Chủ Tịch (Presidential Filter)
+                  Đối Soát & Chuẩn Hóa Nhiệm Vụ
                 </h2>
                 <div className="flex items-center gap-1.5">
                   <span className="bg-blue-50 text-blue-700 text-xs px-2.5 py-0.5 rounded-full font-bold border border-blue-200">
@@ -261,7 +261,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
                 </div>
               </div>
               <p className="text-xs text-slate-500 hidden sm:block">
-                Giao diện đối soát song song: Đối chiếu văn bản gốc, giải quyết tên "Minh", cảnh báo người vắng họp & chuẩn hóa deadline
+                Giao diện đối soát song song: Đối chiếu văn bản gốc, kiểm tra người phụ trách, cảnh báo người vắng họp & chuẩn hóa deadline trước khi ban hành
               </p>
             </div>
           </div>
@@ -549,7 +549,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
             </div>
           )}
 
-          {/* CỘT PHẢI: Danh sách việc trích xuất & Bộ lọc Chủ tịch */}
+          {/* CỘT PHẢI: Danh sách việc trích xuất & Chuẩn hóa */}
           <div
             className={`flex flex-col bg-slate-50/30 overflow-hidden ${
               isSplitScreen ? 'lg:col-span-7' : 'lg:col-span-12'
@@ -727,15 +727,15 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
 
                       {/* SPECIAL AI LOGIC WARNINGS */}
                       
-                      {/* 1. Quy tắc "Minh" Ambiguity Warning */}
+                      {/* 1. Trùng tên thành viên Warning */}
                       {isMinhAmbiguity && (
                         <div className="mb-3.5 p-3.5 bg-amber-50 border border-amber-300 rounded-xl text-xs space-y-2.5 animate-in fade-in duration-150">
                           <div className="flex items-center gap-2 font-bold text-amber-900">
                             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                            <span>⚠️ QUY TẮC "MINH": Phát hiện tên "Minh" trùng với nhiều thành viên!</span>
+                            <span>⚠️ PHÁT HIỆN TRÙNG TÊN: Tên "{task.rawAssigneeText}" trùng với nhiều thành viên!</span>
                           </div>
                           <p className="text-amber-800">
-                            Biên bản họp ghi: <em>"{task.rawAssigneeText}"</em>. AI không được tự ý suy đoán. Chủ nhiệm vui lòng bấm chọn người phụ trách cụ thể bên dưới:
+                            Biên bản họp ghi: <em>"{task.rawAssigneeText}"</em>. AI không tự ý suy đoán. Vui lòng bấm chọn người phụ trách cụ thể bên dưới:
                           </p>
                           <div className="flex flex-wrap gap-2 pt-0.5">
                             {task.ambiguityMatches.length > 0 ? (

@@ -222,7 +222,7 @@ export const EvidenceSubmitModal: React.FC<EvidenceSubmitModalProps> = ({
               className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold flex items-center gap-1.5 shadow-md transition active:scale-95 cursor-pointer"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>Gửi Chủ Tịch Duyệt</span>
+              <span>Gửi Ban Chủ Nhiệm Duyệt</span>
             </button>
           </div>
 

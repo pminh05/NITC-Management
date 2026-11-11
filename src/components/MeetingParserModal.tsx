@@ -46,15 +46,9 @@ const AI_STEPS = [
   },
   {
     step: 3,
-    title: 'Bóc tách đầu việc & Chuẩn hóa Deadline',
-    desc: 'Quy đổi ngôn ngữ tự nhiên ("thứ 2 tới", "sau 3 ngày") sang mốc ngày cụ thể',
+    title: 'Bóc tách nhiệm vụ & Chuẩn hóa Deadline',
+    desc: 'Quy đổi mốc thời gian, xác định người phụ trách & yêu cầu minh chứng',
     icon: Clock,
-  },
-  {
-    step: 4,
-    title: 'Đối soát Quy tắc Chủ tịch & Trùng tên',
-    desc: 'Áp dụng quy tắc "Minh", phát hiện giao việc cho người vắng họp',
-    icon: ShieldCheck,
   },
 ];
 
@@ -82,26 +76,20 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
   useEffect(() => {
     let timer1: any;
     let timer2: any;
-    let timer3: any;
 
     if (isLoading) {
       setCurrentStep(1);
-      setProgressPercent(20);
+      setProgressPercent(25);
 
       timer1 = setTimeout(() => {
         setCurrentStep(2);
-        setProgressPercent(45);
-      }, 900);
+        setProgressPercent(60);
+      }, 1000);
 
       timer2 = setTimeout(() => {
         setCurrentStep(3);
-        setProgressPercent(75);
-      }, 2100);
-
-      timer3 = setTimeout(() => {
-        setCurrentStep(4);
-        setProgressPercent(90);
-      }, 3400);
+        setProgressPercent(88);
+      }, 2300);
     } else {
       setCurrentStep(1);
       setProgressPercent(15);
@@ -110,7 +98,6 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
-      clearTimeout(timer3);
     };
   }, [isLoading]);
 
@@ -154,8 +141,8 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
             : { bbhText, members, meetingDate },
       });
 
-      // Quick visual finish on step 4
-      setCurrentStep(4);
+      // Quick visual finish on step 3
+      setCurrentStep(3);
       setProgressPercent(100);
 
       await new Promise((resolve) => setTimeout(resolve, 400));
@@ -605,7 +592,7 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
             ) : (
               <>
                 <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>Phân tích & Mở Bộ lọc Chủ tịch</span>
+                <span>Phân tích & Mở Màn hình Đối soát</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
