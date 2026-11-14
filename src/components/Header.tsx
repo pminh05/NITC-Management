@@ -10,6 +10,8 @@ import {
   LogOut,
   Calendar,
   Settings as SettingsIcon,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { AppNotification, Member, Task } from '../types';
 import { NotificationBell } from './NotificationBell';
@@ -19,6 +21,7 @@ interface HeaderProps {
   onLogout: () => void;
   onOpenSettings: () => void;
   onOpenCalendar: () => void;
+  clubName?: string;
   tasks: Task[];
   notifications: AppNotification[];
   unreadCount: number;
@@ -33,6 +36,8 @@ interface HeaderProps {
   onOpenNagModal: () => void;
   onOpenRosterModal: () => void;
   onOpenDataSyncModal: () => void;
+  isSidebarOpen?: boolean;
+  onToggleSidebar?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -54,6 +59,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenNagModal,
   onOpenRosterModal,
   onOpenDataSyncModal,
+  isSidebarOpen = true,
+  onToggleSidebar,
 }) => {
   const isPresident = authMember.role === 'Chủ nhiệm';
   const isLeadership = authMember.role === 'Chủ nhiệm' || authMember.role === 'Phó Chủ nhiệm';
@@ -69,10 +76,10 @@ export const Header: React.FC<HeaderProps> = ({
   const roleLabel = isPresident
     ? 'Chào Chủ nhiệm,'
     : authMember.role === 'Phó Chủ nhiệm'
-    ? 'Chào Phó Chủ nhiệm,'
-    : authMember.role === 'Trưởng ban' || authMember.role === 'Phó ban'
-    ? `${authMember.role} ${authMember.department},`
-    : `Thành viên ${authMember.department},`;
+      ? 'Chào Phó Chủ nhiệm,'
+      : authMember.role === 'Trưởng ban' || authMember.role === 'Phó ban'
+        ? `${authMember.role} ${authMember.department},`
+        : `Thành viên ${authMember.department},`;
   const roleIcon = isPresident ? '👑' : authMember.department.charAt(0);
 
   const ghostBtn =
@@ -83,14 +90,28 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="w-full px-3 sm:px-4 md:px-6">
         {/* Hàng chính */}
         <div className="flex items-center justify-between gap-2 h-14">
-          {/* Logo */}
+          {/* Logo & Sidebar Toggle */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {onToggleSidebar && (
+              <button
+                onClick={onToggleSidebar}
+                className="hidden lg:inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent hover:border-slate-700 transition cursor-pointer"
+                title={isSidebarOpen ? "Thu gọn thanh bên" : "Mở thanh bên"}
+              >
+                {isSidebarOpen ? (
+                  <PanelLeftClose className="w-4 h-4" />
+                ) : (
+                  <PanelLeftOpen className="w-4 h-4 text-[#8FB2FF]" />
+                )}
+              </button>
+            )}
             <div className="w-8 h-8 bg-[#2C69FF] rounded flex items-center justify-center font-bold text-white shadow-sm shrink-0">
               N
             </div>
             <div className="flex items-center gap-2">
-              <h1 className="text-white font-bold tracking-tight text-sm sm:text-base md:text-lg uppercase whitespace-nowrap">
-                NITC Command Center
+              <h1 className="text-white font-bold tracking-tight text-xs sm:text-base md:text-lg uppercase whitespace-nowrap">
+                <span className="hidden sm:inline">NITC Command Center</span>
+                <span className="sm:hidden">NITC CC</span>
               </h1>
               <span className="hidden lg:inline-flex bg-[#2C69FF]/20 text-[#8FB2FF] text-[10px] font-bold px-2 py-0.5 rounded border border-[#2C69FF]/30 uppercase tracking-wide whitespace-nowrap">
                 v3.0

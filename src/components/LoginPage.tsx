@@ -6,10 +6,12 @@ interface LoginPageProps {
   onLogin: (member: Member) => void;
 }
 
-// Bộ tài khoản test (mật khẩu chung: nitc123) — đúng 3 vai trò chính
+// Bộ tài khoản test demo (mật khẩu chung: nitc123) — đầy đủ 5 vai trò và ban bộ phận
 const DEMO_ACCOUNTS: { label: string; email: string; icon: string }[] = [
   { label: 'Chủ nhiệm — Phạm Phúc Minh', email: 'phamphucminhlehong@gmail.com', icon: '👑' },
+  { label: 'Phó Chủ nhiệm — Trần Thị Hoài Thương', email: 'thuongqlht02@gmail.com', icon: '🌟' },
   { label: 'Trưởng ban Sự kiện — Đoàn Anh Tú', email: 'anhtud143@gmail.com', icon: '📅' },
+  { label: 'Trưởng ban Học thuật — Lê Ngọc Anh Thư', email: 'anhthulengoc00@gmail.com', icon: '🎓' },
   { label: 'Thành viên Truyền thông — Chu Hà My', email: 'chuhamy1107@gmail.com', icon: '📢' },
 ];
 

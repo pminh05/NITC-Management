@@ -577,6 +577,77 @@ apiRouter.delete('/tasks/:id', requirePresident, async (req: Request, res: Respo
   return res.json({ success: true });
 });
 
+/**
+ * POST /tasks/:id/remind — Nhắc nộp minh chứng công việc
+ * Quyền:
+ *  - Ban lãnh đạo (Chủ nhiệm, Phó Chủ nhiệm): nhắc mọi nhiệm vụ
+ *  - Trưởng ban, Phó ban: nhắc nhiệm vụ thuộc ban của mình
+ */
+apiRouter.post('/tasks/:id/remind', requireAuth, async (req: Request, res: Response) => {
+  const me = req.authMember!;
+  const { id } = req.params;
+  const { note } = (req.body as { note?: string }) || {};
+
+  const task = await prisma.task.findUnique({ where: { id } });
+  if (!task) return res.status(404).json({ error: 'Không tìm thấy nhiệm vụ' });
+
+  const canManage = isLeadership(me) || canManageDepartment(me, task.department);
+  if (!canManage) {
+    return res.status(403).json({ error: 'Bạn không có quyền nhắc nộp nhiệm vụ này' });
+  }
+
+  // Parse tất cả người được giao (assigneeIds + assigneeId)
+  let memberIds: string[] = [task.assigneeId];
+  if (task.assigneeIds) {
+    try {
+      const parsed = JSON.parse(task.assigneeIds);
+      if (Array.isArray(parsed)) {
+        const extra = parsed
+          .map((item: any) => (typeof item === 'object' && item !== null && item.id ? String(item.id) : String(item)))
+          .filter(Boolean);
+        memberIds = Array.from(new Set([...memberIds, ...extra]));
+      }
+    } catch {}
+  }
+
+  const now = new Date();
+  const isOverdue = task.status === 'overdue' || (task.deadline && task.deadline < now.toISOString().slice(0, 10));
+  const prefix = isOverdue ? '🚨 [KHẨN] Nhắc nộp minh chứng quá hạn' : '🔔 Nhắc nộp minh chứng công việc';
+  const customNoteStr = typeof note === 'string' && note.trim() ? ` Lời nhắn: "${note.trim()}".` : '';
+
+  for (const memberId of memberIds) {
+    await notify({
+      memberId,
+      type: isOverdue ? 'overdue' : 'task_assigned',
+      title: `${prefix}: ${task.title}`,
+      body: `${me.name} (${me.role} - ${me.department}) vừa gửi lời nhắc nộp minh chứng cho việc "${task.title}". Hạn chót: ${task.deadline}.${customNoteStr} Vui lòng nộp sớm!`,
+      taskId: task.id,
+      dedupeKey: `remind:${task.id}:${memberId}:${now.getTime()}`,
+    });
+  }
+
+  // Ghi nhật ký Nag Engine
+  await prisma.notificationLog.create({
+    data: {
+      type: 'overdue_nag',
+      recipientName: task.assigneeName,
+      recipientEmail: 'in-app',
+      department: task.department,
+      subject: `${prefix}: ${task.title}`,
+      content: `Người nhắc: ${me.name} (${me.role}). Nhiệm vụ: "${task.title}". Hạn chót: ${task.deadline}.${customNoteStr} Đã gửi đến ${memberIds.length} người phụ trách.`,
+      status: 'sent',
+      sentAt: now,
+      taskCount: 1,
+    },
+  });
+
+  return res.json({
+    success: true,
+    message: `Đã gửi lời nhắc nộp minh chứng đến ${task.assigneeName}!`,
+    remindedCount: memberIds.length,
+  });
+});
+
 // ============ MEETINGS (Kho BBH) ============
 
 apiRouter.get('/meetings', async (req: Request, res: Response) => {

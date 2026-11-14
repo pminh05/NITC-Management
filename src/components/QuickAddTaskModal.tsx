@@ -184,3 +184,4 @@ export const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
     </div>
   );
 };
+

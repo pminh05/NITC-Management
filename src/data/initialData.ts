@@ -1,6 +1,7 @@
 import { Member, Task, Meeting, NotificationLog } from '../types';
 
 export const INITIAL_MEMBERS: Member[] = [
+  // Ban Chủ nhiệm
   {
     id: 'mem-1',
     name: 'Lê Hồng Phúc Minh',
@@ -8,7 +9,10 @@ export const INITIAL_MEMBERS: Member[] = [
     department: 'Ban Chủ nhiệm',
     email: 'phamphucminhlehong@gmail.com',
     phone: '0901234567',
+    studentId: '11220001',
+    className: 'IT65A',
   },
+  // Ban Học thuật
   {
     id: 'mem-2',
     name: 'Nguyễn Đức Minh',
@@ -16,7 +20,30 @@ export const INITIAL_MEMBERS: Member[] = [
     department: 'Học thuật',
     email: 'ducminh.nitc@gmail.com',
     phone: '0912345678',
+    studentId: '11220002',
+    className: 'IT65B',
   },
+  {
+    id: 'mem-9',
+    name: 'Vũ Đình Trọng',
+    role: 'Phó ban',
+    department: 'Học thuật',
+    email: 'dinhtrong.nitc@gmail.com',
+    phone: '0989012345',
+    studentId: '11220009',
+    className: 'CS66A',
+  },
+  {
+    id: 'mem-12',
+    name: 'Nguyễn Việt Hoàng',
+    role: 'Thành viên',
+    department: 'Học thuật',
+    email: 'viethoang.nitc@gmail.com',
+    phone: '0981112233',
+    studentId: '11220012',
+    className: 'IT66A',
+  },
+  // Ban Truyền thông
   {
     id: 'mem-3',
     name: 'Trần Hoàng Nam',
@@ -24,22 +51,18 @@ export const INITIAL_MEMBERS: Member[] = [
     department: 'Truyền thông',
     email: 'hoangnam.nitc@gmail.com',
     phone: '0923456789',
+    studentId: '11220003',
+    className: 'MKT65A',
   },
   {
-    id: 'mem-4',
-    name: 'Đặng Thu Thảo',
-    role: 'Trưởng ban',
-    department: 'Sự kiện',
-    email: 'thuthao.nitc@gmail.com',
-    phone: '0934567890',
-  },
-  {
-    id: 'mem-5',
-    name: 'Phạm Minh Anh',
-    role: 'Trưởng ban',
-    department: 'Đối ngoại',
-    email: 'minhanh.nitc@gmail.com',
-    phone: '0945678901',
+    id: 'mem-11',
+    name: 'Chu Hà My',
+    role: 'Phó ban',
+    department: 'Truyền thông',
+    email: 'hamy.nitc@gmail.com',
+    phone: '0982223344',
+    studentId: '11220011',
+    className: 'PR66B',
   },
   {
     id: 'mem-6',
@@ -48,30 +71,29 @@ export const INITIAL_MEMBERS: Member[] = [
     department: 'Truyền thông',
     email: 'quangminh.nitc@gmail.com',
     phone: '0956789012',
+    studentId: '11220006',
+    className: 'MKT66A',
+  },
+  // Ban Sự kiện
+  {
+    id: 'mem-4',
+    name: 'Đặng Thu Thảo',
+    role: 'Trưởng ban',
+    department: 'Sự kiện',
+    email: 'thuthao.nitc@gmail.com',
+    phone: '0934567890',
+    studentId: '11220004',
+    className: 'QTKD65A',
   },
   {
     id: 'mem-7',
     name: 'Hoàng Nhật Minh',
-    role: 'Thành viên',
+    role: 'Phó ban',
     department: 'Sự kiện',
     email: 'nhatminh.nitc@gmail.com',
     phone: '0967890123',
-  },
-  {
-    id: 'mem-8',
-    name: 'Nguyễn Thị Ngọc Ánh',
-    role: 'Thành viên',
-    department: 'Đối ngoại',
-    email: 'ngocanh.nitc@gmail.com',
-    phone: '0978901234',
-  },
-  {
-    id: 'mem-9',
-    name: 'Vũ Đình Trọng',
-    role: 'Thành viên',
-    department: 'Học thuật',
-    email: 'dinhtrong.nitc@gmail.com',
-    phone: '0989012345',
+    studentId: '11220007',
+    className: 'QTKD66B',
   },
   {
     id: 'mem-10',
@@ -80,13 +102,56 @@ export const INITIAL_MEMBERS: Member[] = [
     department: 'Sự kiện',
     email: 'khanhhuyen.nitc@gmail.com',
     phone: '0990123456',
+    studentId: '11220010',
+    className: 'LUAT66A',
+  },
+  {
+    id: 'mem-14',
+    name: 'Đoàn Anh Tú',
+    role: 'Thành viên',
+    department: 'Sự kiện',
+    email: 'anhtu.nitc@gmail.com',
+    phone: '0984445566',
+    studentId: '11220014',
+    className: 'QTKD66A',
+  },
+  // Ban Đối ngoại
+  {
+    id: 'mem-5',
+    name: 'Phạm Minh Anh',
+    role: 'Trưởng ban',
+    department: 'Đối ngoại',
+    email: 'minhanh.nitc@gmail.com',
+    phone: '0945678901',
+    studentId: '11220005',
+    className: 'TCKT65A',
+  },
+  {
+    id: 'mem-13',
+    name: 'Trịnh Thị Ngọc Hoa',
+    role: 'Phó ban',
+    department: 'Đối ngoại',
+    email: 'ngochoa.nitc@gmail.com',
+    phone: '0983334455',
+    studentId: '11220013',
+    className: 'KDQT66A',
+  },
+  {
+    id: 'mem-8',
+    name: 'Nguyễn Thị Ngọc Ánh',
+    role: 'Thành viên',
+    department: 'Đối ngoại',
+    email: 'ngocanh.nitc@gmail.com',
+    phone: '0978901234',
+    studentId: '11220008',
+    className: 'NNA66B',
   },
 ];
 
 export const SAMPLE_BBH_TEMPLATES = [
   {
     id: 'sample-bbh-1',
-    title: 'Họp BCN — Chuẩn bị Ngày Câu lạc bộ (NCD) & Tuyển Gen 8',
+    title: 'Họp BCN — Chuẩn bị Ngày Câu lạc bộ (NCD 20/11) & Tuyển Gen 8',
     date: '2026-11-03',
     content: `BBH BCN
 
@@ -94,82 +159,78 @@ I. THỜI GIAN, ĐỊA ĐIỂM, THÀNH PHẦN THAM GIA
 1. Thời gian: 20h00, Thứ Ba, ngày 03/11/2026
 2. Địa điểm: Google Meeting
 3. Thành phần tham gia:
-- Có mặt: Phạm Phúc Minh, Trần Thị Hoài Thương, Vũ Quang Thái, Lê Ngọc Anh Thư, Trần Thị Huyền Trang, Đoàn Anh Tú, Hoàng Thanh Tú, Chu Hà My, Phạm Duy Anh
+- Có mặt: Lê Hồng Phúc Minh, Nguyễn Đức Minh, Trần Hoàng Nam, Đặng Thu Thảo, Phạm Minh Anh, Vũ Đình Trọng, Chu Hà My, Trịnh Thị Ngọc Hoa
 - Vắng: Nguyễn Việt Hoàng (Học thuật - có phép)
-- Muộn: 1 (Hoàng Thanh Tú)
+- Muộn: 1 (Hoàng Nhật Minh)
 
 II. MỤC TIÊU BUỔI HỌP
-Chốt kế hoạch Ngày Câu lạc bộ (NCD 20/11) và khởi động quy trình tuyển Gen 8: concept, key visual, form đăng ký.
+Chốt kế hoạch Ngày Câu lạc bộ (NCD 20/11) và khởi động quy trình tuyển Gen 8: concept, key visual, form đăng ký và barem bài test.
 
 III. NỘI DUNG CHÍNH
 1. Báo cáo từng ban
-- Ban Học thuật: Coding challenge đã có 120 lượt tham gia; ICPC đang khảo sát nguyện vọng bằng form; NITC project: điền form + add group.
-- Ban Truyền thông: còn thiếu ảnh thầy cố vấn cho bài tốt nghiệp; đăng 2 bài tri ân (Chủ nhiệm và Phó Chủ nhiệm chung 1 bài); core tuyển gen: Chu Hà My, Phạm Duy Anh.
-- Ban Sự kiện: chờ chốt ngân sách quà NCD, dự trù 400k chưa tính tuyển gen.
-- Ban Đối ngoại: core tuyển gen (Trịnh Thị Ngọc Hoa, Hoàng Thanh Tú); không kịp mời tài trợ cho NCD năm nay.
-2. Thảo luận
-- NCD: sinh viên qua gian CLB lấy điểm đoàn, điều kiện nhận dấu là follow + like page.
-- Quà NCD đặt trước tối đa 2 ngày, phải dán hình CLB; chốt ngân sách và dự trù.
-- Xin quà của khoa; làm sheet phân công trực bàn và trang trí gian hàng.
-- Làm form thông tin tuyển gen (họ tên, msv, lớp, gmail, ban mong muốn) — Đối ngoại phụ trách form.
-3. Kế hoạch sắp tới
-- Họp chốt ngày tổ chức tuyển Gen 8 sau khi có concept và key visual.
+- Ban Học thuật: Coding challenge đã có 120 lượt quan tâm; cần hoàn thiện Test case và barem chi tiết; chuẩn bị đề cương Git Bootcamp.
+- Ban Truyền thông: Triển khai bộ Key Visual và ấn phẩm fanpage; chuẩn bị mở form tuyển Gen 8.
+- Ban Sự kiện: Khảo sát hội trường B1, dự trù ngân sách quà tặng NCD và phân công trực gian hàng.
+- Ban Đối ngoại: Lên Sponsorship Deck tiếp cận 10 doanh nghiệp IT; làm việc với Thầy Cố vấn và Đoàn trường.
 
 IV. DEADLINES
-1. Chung: Báo cáo kế hoạch NCD gửi Thầy cố vấn trước 10/11/2026.
-2. Thiết kế key visual NCD và bộ ấn phẩm fanpage — Ban Truyền thông (Chu Hà My). Deadline: 14/11/2026.
-3. Làm form đăng ký tuyển Gen 8 — Trịnh Thị Ngọc Hoa (Đối ngoại). Deadline: 12/11/2026.
-4. Chốt ngân sách quà NCD và đặt quà — Đoàn Anh Tú. Deadline: 15/11/2026.
-5. Lên sheet phân công trực bàn gian hàng NCD — Ban Sự kiện. Deadline: 17/11/2026.
+1. Thiết kế bộ Key Visual & Ấn phẩm truyền thông NCD 20/11 — Ban Truyền thông (Trần Hoàng Nam, Trần Quang Minh, Chu Hà My). Deadline: 18/11/2026.
+2. Biên soạn Test case & Đề thi NITC Coding Challenge 2026 — Ban Học thuật (Nguyễn Đức Minh, Vũ Đình Trọng, Nguyễn Việt Hoàng). Deadline: 20/11/2026.
+3. Tiếp cận 10 doanh nghiệp công nghệ xin tài trợ học bổng — Ban Đối ngoại (Phạm Minh Anh, Trịnh Thị Ngọc Hoa). Deadline: 22/11/2026.
+4. Lên sheet phân công trực bàn gian hàng NCD và trang trí — Ban Sự kiện (Đặng Thu Thảo, Hoàng Nhật Minh, Đoàn Anh Tú). Deadline: 17/11/2026.
 
 Người lập biên bản
 Đoàn Anh Tú`,
   },
   {
     id: 'sample-bbh-2',
-    title: 'Họp BCN — Sơ kết tháng 11 & Đôn đốc tiến độ',
+    title: 'Họp BCN — Sơ kết tiến độ tháng 11',
     date: '2026-11-10',
     content: `BBH BCN
 
 I. THỜI GIAN, ĐỊA ĐIỂM, THÀNH PHẦN THAM GIA
 1. Thời gian: 21h00, Thứ Ba, ngày 10/11/2026
-2. Địa điểm: Phòng tự học A2, NEU
+2. Địa điểm: Phòng A2 - NEU
 3. Thành phần tham gia:
-- Có mặt: Phạm Phúc Minh, Trần Thị Hoài Thương, Lê Ngọc Anh Thư, Trần Thị Huyền Trang, Đoàn Anh Tú, Nguyễn Minh Hiếu
-- Vắng: Hoàng Thanh Tú (Đối ngoại), Phạm Quang Minh (Học thuật)
-- Muộn: 0
+- Có mặt: Lê Hồng Phúc Minh, Nguyễn Đức Minh, Trần Hoàng Nam, Đặng Thu Thảo, Phạm Minh Anh, Đoàn Anh Tú
+- Vắng: 0
 
-II. MỤC TIÊU BUỔI HỌP
-Sơ kết tiến độ tuyển Gen 8 và NCD; phân công các đầu việc tuần tiếp theo.
-
-III. NỘI DUNG CHÍNH
-1. Báo cáo từng ban
-- Ban Học thuật: Coding challenge cần barem chấm điểm chi tiết.
-- Ban Truyền thông: key visual NCD đã xong, cần cắt bộ ảnh recap.
-- Ban Sự kiện: trực bàn NCD chạy tốt, cần tổng kết số lượng điểm đoàn.
-- Ban Đối ngoại: form tuyển gen đã mở, cần tổng hợp ứng viên mỗi tuần.
-2. Thảo luận
-- Tuyển gen 8: cần chốt core trước thứ Sáu để gọi ứng viên phỏng vấn.
-- Cần nhắc lại việc sheet trực bàn còn thiếu ca tối.
-3. Kế hoạch sắp tới
-- Đêm sự kiện WiE tháng 12: bắt đầu lên concept.
-
-IV. DEADLINES
-1. Minh hoàn thiện barem chấm điểm Coding Challenge. Deadline: Thứ Hai tới.
-2. Nguyễn Minh Hiếu cắt bộ ảnh recap NCD đăng fanpage. Deadline: 14/11/2026.
-3. Tổng kết số điểm đoàn NCD — Đoàn Anh Tú. Deadline: 13/11/2026.
-4. Tổng hợp danh sách ứng viên tuyển Gen 8 tuần 1 — Ban Đối ngoại. Deadline: 16/11/2026.
-
-Người lập biên bản
-Nguyễn Minh Hiếu`,
+II. NỘI DUNG CHÍNH
+Đôn đốc tiến độ nộp minh chứng các đầu việc đang quá hạn và duyệt các sản phẩm chờ nghiệm thu.`,
   },
 ];
 
 export const INITIAL_MEETINGS: Meeting[] = [
   {
     id: 'meet-1',
-    title: 'BBH Họp Ban Điều Hành Tuần 33 - Sơ kết hoạt động đầu tháng 8',
-    date: '2026-08-11',
+    title: 'BBH Họp BCN — Chuẩn bị Ngày Câu lạc bộ (NCD 20/11) & Tuyển Gen 8',
+    date: '2026-11-03',
+    chairperson: 'Lê Hồng Phúc Minh',
+    secretary: 'Đoàn Anh Tú',
+    attendees: [
+      'Lê Hồng Phúc Minh',
+      'Nguyễn Đức Minh',
+      'Trần Hoàng Nam',
+      'Đặng Thu Thảo',
+      'Phạm Minh Anh',
+      'Vũ Đình Trọng',
+      'Chu Hà My',
+      'Trịnh Thị Ngọc Hoa',
+    ],
+    absentees: ['Nguyễn Việt Hoàng'],
+    discussionSummary:
+      'Chốt kế hoạch toàn diện cho Ngày Câu lạc bộ NCD 20/11 và chiến dịch tuyển thành viên khóa mới Gen 8.',
+    actionPlan:
+      '1. Ban Truyền thông thiết kế Key Visual NCD và chạy bài fanpage.\n2. Ban Học thuật biên soạn đề thi Coding Challenge.\n3. Ban Sự kiện khảo sát hội trường B1.\n4. Ban Đối ngoại liên hệ doanh nghiệp tài trợ.',
+    rawContent: SAMPLE_BBH_TEMPLATES[0].content,
+    taskCount: 6,
+    completedTaskCount: 2,
+    createdAt: '2026-11-03T20:00:00.000Z',
+  },
+  {
+    id: 'meet-2',
+    title: 'BBH Họp BCN — Sơ kết tiến độ & Đôn đốc công việc tháng 11',
+    date: '2026-11-10',
     chairperson: 'Lê Hồng Phúc Minh',
     secretary: 'Nguyễn Thị Ngọc Ánh',
     attendees: [
@@ -179,126 +240,318 @@ export const INITIAL_MEETINGS: Meeting[] = [
       'Đặng Thu Thảo',
       'Phạm Minh Anh',
     ],
-    absentees: ['Vũ Đình Trọng', 'Hoàng Nhật Minh'],
+    absentees: ['Trần Quang Minh'],
     discussionSummary:
-      'Đánh giá hiệu quả truyền thông bài đăng tuyển thành viên và phân bổ nguồn lực chuẩn bị sự kiện lớn quý 3.',
+      'Rà soát các đầu việc quá hạn, nghiệm thu các sản phẩm đã nộp minh chứng và nhắc nhở thành viên.',
     actionPlan:
-      '1. Ban Truyền thông tổng hợp số liệu tương tác fanpage.\n2. Ban Học thuật biên soạn đề kiểm tra đầu vào.\n3. Ban Đối ngoại tìm kiếm nhà tài trợ nước uống.',
+      '1. Gửi mail nhắc nợ việc quá hạn.\n2. Phê duyệt bộ ấn phẩm banner tuyển Gen 8.\n3. Hoàn tất báo cáo gửi Đoàn trường.',
     rawContent: SAMPLE_BBH_TEMPLATES[1].content,
-    taskCount: 4,
-    completedTaskCount: 2,
-    createdAt: '2026-08-11T21:00:00.000Z',
+    taskCount: 5,
+    completedTaskCount: 1,
+    createdAt: '2026-11-10T21:00:00.000Z',
   },
 ];
 
-// Initial Tasks demonstrating the Sticky Task rule, Pending Approval, Overdue, and Completed states
+// 16 Tasks đầy đủ mọi trạng thái, đặc biệt hỗ trợ nhiều người cùng phụ trách (assigneeIds)
 export const INITIAL_TASKS: Task[] = [
+  // --- 1. ĐANG THỰC HIỆN (in_progress) ---
   {
-    id: 'task-sticky-1',
-    title: 'Biên soạn giáo trình chi tiết 6 buổi Bootcamp Web Dev 2026',
-    description: 'Bao gồm slide, bài tập thực hành GitHub và tài liệu tham khảo cho học viên',
-    assigneeId: 'mem-2',
-    assigneeName: 'Nguyễn Đức Minh',
-    department: 'Học thuật',
-    deadline: '2026-08-17',
-    status: 'overdue',
-    verificationType: 'link_required',
-    sourceMeetingId: 'meet-1',
-    sourceMeetingTitle: 'BBH Họp Ban Điều Hành Tuần 33',
-    isSticky: true, // Nhiệm vụ lưu chuyển từ tuần trước chưa xong
-    stickyWeeksCount: 1,
-    priority: 'high',
-    createdAt: '2026-08-11T21:00:00.000Z',
-    updatedAt: '2026-08-18T10:00:00.000Z',
-  },
-  {
-    id: 'task-sticky-2',
-    title: 'Gặp Thầy Cố vấn Đoàn trường xin phê duyệt kinh phí và chữ ký mộc',
-    description: 'Trình kế hoạch chi tiêu TechFest và xin con dấu xác nhận của Đoàn trường',
-    assigneeId: 'mem-5',
-    assigneeName: 'Phạm Minh Anh',
-    department: 'Đối ngoại',
-    deadline: '2026-08-14',
-    status: 'overdue',
-    verificationType: 'report_required',
-    sourceMeetingId: 'meet-1',
-    sourceMeetingTitle: 'BBH Họp Ban Điều Hành Tuần 33',
-    isSticky: true, // Nhiệm vụ lưu chuyển
-    stickyWeeksCount: 1,
-    priority: 'high',
-    createdAt: '2026-08-11T21:00:00.000Z',
-    updatedAt: '2026-08-18T10:00:00.000Z',
-  },
-  {
-    id: 'task-pending-1',
-    title: 'Thiết kế Bộ nhận diện Key Visual và Banner tuyển sinh Bootcamp',
-    description: 'Thiết kế trên Canva/Figma đúng bộ màu chủ đạo NITC',
+    id: 'task-prog-1',
+    title: 'Thiết kế bộ Key Visual & Ấn phẩm truyền thông NCD 20/11',
+    description: 'Bao gồm avatar, cover fanpage, poster in ấn A0 và bộ frame ảnh check-in sự kiện',
     assigneeId: 'mem-3',
     assigneeName: 'Trần Hoàng Nam',
+    assigneeIds: ['mem-3', 'mem-6', 'mem-11'],
     department: 'Truyền thông',
-    deadline: '2026-08-19',
-    status: 'pending_approval',
-    verificationType: 'link_required',
-    evidenceLink: 'https://www.figma.com/file/nitc-keyvisual-techfest-2026',
-    evidenceSubmittedAt: '2026-08-19T14:30:00.000Z',
-    sourceMeetingId: 'meet-1',
-    sourceMeetingTitle: 'BBH Họp Ban Điều Hành Tuần 33',
-    priority: 'high',
-    createdAt: '2026-08-11T21:00:00.000Z',
-    updatedAt: '2026-08-19T14:30:00.000Z',
-  },
-  {
-    id: 'task-pending-2',
-    title: 'Liên hệ BQL Giảng đường B1 để khảo sát âm thanh ánh sáng',
-    description: 'Kiểm tra mic không dây, máy chiếu và hệ thống loa cho ngày hội',
-    assigneeId: 'mem-4',
-    assigneeName: 'Đặng Thu Thảo',
-    department: 'Sự kiện',
-    deadline: '2026-08-20',
-    status: 'pending_approval',
-    verificationType: 'report_required',
-    evidenceReport: 'Đã gặp anh Tuấn quản lý hội trường B1 sáng nay. Âm thanh tốt, máy chiếu sắc nét, đã nhận chìa khóa test trước 1 ngày.',
-    evidenceSubmittedAt: '2026-08-20T10:15:00.000Z',
-    sourceMeetingId: 'meet-1',
-    sourceMeetingTitle: 'BBH Họp Ban Điều Hành Tuần 33',
-    priority: 'medium',
-    createdAt: '2026-08-11T21:00:00.000Z',
-    updatedAt: '2026-08-20T10:15:00.000Z',
-  },
-  {
-    id: 'task-in-progress-1',
-    title: 'Tạo Google Form đăng ký và kết nối tự động với Google Sheets',
-    description: 'Thu thập thông tin sinh viên tham gia TechFest 2026',
-    assigneeId: 'mem-3',
-    assigneeName: 'Trần Hoàng Nam',
-    department: 'Truyền thông',
-    deadline: '2026-08-22',
+    deadline: '2026-11-18',
     status: 'in_progress',
     verificationType: 'link_required',
     sourceMeetingId: 'meet-1',
-    sourceMeetingTitle: 'BBH Họp Ban Điều Hành Tuần 33',
-    priority: 'medium',
-    createdAt: '2026-08-11T21:00:00.000Z',
-    updatedAt: '2026-08-11T21:00:00.000Z',
+    sourceMeetingTitle: 'BBH Họp BCN — Chuẩn bị NCD',
+    priority: 'high',
+    createdAt: '2026-11-03T20:00:00.000Z',
+    updatedAt: '2026-11-03T20:00:00.000Z',
   },
   {
-    id: 'task-completed-1',
-    title: 'Lập danh sách 15 doanh nghiệp IT tiềm năng tài trợ TechFest',
-    description: 'Bao gồm người liên hệ, email, số điện thoại và mức tài trợ đề xuất',
+    id: 'task-prog-2',
+    title: 'Biên soạn Test case & Đề thi NITC Coding Challenge 2026',
+    description: 'Xây dựng 5 bài toán thuật toán từ dễ đến khó trên hệ thống HackerRank kèm test case tự động',
+    assigneeId: 'mem-2',
+    assigneeName: 'Nguyễn Đức Minh',
+    assigneeIds: ['mem-2', 'mem-9', 'mem-12'],
+    department: 'Học thuật',
+    deadline: '2026-11-20',
+    status: 'in_progress',
+    verificationType: 'link_required',
+    sourceMeetingId: 'meet-1',
+    sourceMeetingTitle: 'BBH Họp BCN — Chuẩn bị NCD',
+    priority: 'high',
+    createdAt: '2026-11-03T20:00:00.000Z',
+    updatedAt: '2026-11-03T20:00:00.000Z',
+  },
+  {
+    id: 'task-prog-3',
+    title: 'Tiếp cận 10 doanh nghiệp công nghệ xin tài trợ học bổng',
+    description: 'Gửi thư mời và hồ sơ tài trợ tới các đối tác FPT, Viettel, VNG, VNPT, Momo...',
     assigneeId: 'mem-5',
     assigneeName: 'Phạm Minh Anh',
+    assigneeIds: ['mem-5', 'mem-13'],
     department: 'Đối ngoại',
-    deadline: '2026-08-15',
+    deadline: '2026-11-22',
+    status: 'in_progress',
+    verificationType: 'report_required',
+    sourceMeetingId: 'meet-1',
+    sourceMeetingTitle: 'BBH Họp BCN — Chuẩn bị NCD',
+    priority: 'high',
+    createdAt: '2026-11-03T20:00:00.000Z',
+    updatedAt: '2026-11-03T20:00:00.000Z',
+  },
+  {
+    id: 'task-prog-4',
+    title: 'Lên sheet phân công trực bàn gian hàng NCD và trang trí',
+    description: 'Chia 4 ca trực từ 7h30 đến 17h30, phân bổ 2 người/ca kèm danh sách vật phẩm mang theo',
+    assigneeId: 'mem-4',
+    assigneeName: 'Đặng Thu Thảo',
+    assigneeIds: ['mem-4', 'mem-7', 'mem-14'],
+    department: 'Sự kiện',
+    deadline: '2026-11-17',
+    status: 'in_progress',
+    verificationType: 'link_required',
+    sourceMeetingId: 'meet-1',
+    sourceMeetingTitle: 'BBH Họp BCN — Chuẩn bị NCD',
+    priority: 'medium',
+    createdAt: '2026-11-03T20:00:00.000Z',
+    updatedAt: '2026-11-03T20:00:00.000Z',
+  },
+  {
+    id: 'task-prog-5',
+    title: 'Rà soát quy chế điểm rèn luyện và chính sách khen thưởng Gen 8',
+    description: 'Cập nhật barem điểm danh, thưởng điểm KPI mỗi kỳ và báo cáo Đoàn Thanh niên',
+    assigneeId: 'mem-1',
+    assigneeName: 'Lê Hồng Phúc Minh',
+    assigneeIds: ['mem-1'],
+    department: 'Ban Chủ nhiệm',
+    deadline: '2026-11-25',
+    status: 'in_progress',
+    verificationType: 'report_required',
+    sourceMeetingId: 'meet-1',
+    sourceMeetingTitle: 'BBH Họp BCN — Chuẩn bị NCD',
+    priority: 'normal',
+    createdAt: '2026-11-03T20:00:00.000Z',
+    updatedAt: '2026-11-03T20:00:00.000Z',
+  },
+
+  // --- 2. CHỜ DUYỆT MINH CHỨNG (pending_approval) ---
+  {
+    id: 'task-pend-1',
+    title: 'Banner tuyển CTV và Form đăng ký tuyển sinh Gen 8',
+    description: 'Thiết kế ảnh bìa fanpage và chuẩn bị link form Google Form kết nối tự động',
+    assigneeId: 'mem-11',
+    assigneeName: 'Chu Hà My',
+    assigneeIds: ['mem-11', 'mem-6'],
+    department: 'Truyền thông',
+    deadline: '2026-11-14',
+    status: 'pending_approval',
+    verificationType: 'link_required',
+    evidenceLink: 'https://www.figma.com/file/nitc-tuyen-gen8-banner-final',
+    evidenceSubmittedAt: '2026-11-12T14:30:00.000Z',
+    sourceMeetingId: 'meet-1',
+    sourceMeetingTitle: 'BBH Họp BCN — Chuẩn bị NCD',
+    priority: 'high',
+    createdAt: '2026-11-03T20:00:00.000Z',
+    updatedAt: '2026-11-12T14:30:00.000Z',
+  },
+  {
+    id: 'task-pend-2',
+    title: 'Khảo sát và đặt thuê dàn âm thanh ánh sáng hội trường B1',
+    description: 'Kiểm tra 4 micro không dây, máy chiếu 4K, loa hội trường và ánh sáng sân khấu',
+    assigneeId: 'mem-7',
+    assigneeName: 'Hoàng Nhật Minh',
+    assigneeIds: ['mem-7', 'mem-10'],
+    department: 'Sự kiện',
+    deadline: '2026-11-15',
+    status: 'pending_approval',
+    verificationType: 'report_required',
+    evidenceReport: 'Đã làm việc với BQL Hội trường B1: xác nhận giữ lịch ngày 20/11, micro và loa kiểm tra hoạt động tốt, đã ký biên bản bàn giao tạm và nhận chìa khóa test trước 1 ngày.',
+    evidenceSubmittedAt: '2026-11-13T09:15:00.000Z',
+    sourceMeetingId: 'meet-1',
+    sourceMeetingTitle: 'BBH Họp BCN — Chuẩn bị NCD',
+    priority: 'high',
+    createdAt: '2026-11-03T20:00:00.000Z',
+    updatedAt: '2026-11-13T09:15:00.000Z',
+  },
+  {
+    id: 'task-pend-3',
+    title: 'Hồ sơ mời tài trợ (Sponsorship Deck) TechFest 2026',
+    description: 'Slide thuyết trình 15 trang gồm giới thiệu CLB, quyền lợi tài trợ Kim Cương/Vàng/Bạc',
+    assigneeId: 'mem-13',
+    assigneeName: 'Trịnh Thị Ngọc Hoa',
+    assigneeIds: ['mem-13', 'mem-8'],
+    department: 'Đối ngoại',
+    deadline: '2026-11-16',
+    status: 'pending_approval',
+    verificationType: 'link_required',
+    evidenceLink: 'https://docs.google.com/presentation/d/nitc-sponsorship-deck-2026-final',
+    evidenceSubmittedAt: '2026-11-13T16:45:00.000Z',
+    sourceMeetingId: 'meet-1',
+    sourceMeetingTitle: 'BBH Họp BCN — Chuẩn bị NCD',
+    priority: 'high',
+    createdAt: '2026-11-03T20:00:00.000Z',
+    updatedAt: '2026-11-13T16:45:00.000Z',
+  },
+  {
+    id: 'task-pend-4',
+    title: 'Bài giảng lý thuyết & Bài tập thực hành Git/GitHub Bootcamp',
+    description: 'Kho lưu trữ GitHub mẫu với 6 bài thực hành nhánh, pull request, merge conflict',
+    assigneeId: 'mem-9',
+    assigneeName: 'Vũ Đình Trọng',
+    assigneeIds: ['mem-9', 'mem-12'],
+    department: 'Học thuật',
+    deadline: '2026-11-14',
+    status: 'pending_approval',
+    verificationType: 'link_required',
+    evidenceLink: 'https://github.com/nitc-club/git-bootcamp-2026-practice',
+    evidenceSubmittedAt: '2026-11-13T20:00:00.000Z',
+    sourceMeetingId: 'meet-1',
+    sourceMeetingTitle: 'BBH Họp BCN — Chuẩn bị NCD',
+    priority: 'medium',
+    createdAt: '2026-11-03T20:00:00.000Z',
+    updatedAt: '2026-11-13T20:00:00.000Z',
+  },
+
+  // --- 3. QUÁ HẠN (overdue) ---
+  {
+    id: 'task-over-1',
+    title: 'Báo cáo kế hoạch NCD 20/11 gửi Thầy Cố vấn & Đoàn trường',
+    description: 'Trình duyệt kế hoạch tổ chức, xin con dấu xác nhận và kinh phí hỗ trợ từ Đoàn',
+    assigneeId: 'mem-5',
+    assigneeName: 'Phạm Minh Anh',
+    assigneeIds: ['mem-5', 'mem-1'],
+    department: 'Đối ngoại',
+    deadline: '2026-11-10',
+    status: 'overdue',
+    verificationType: 'report_required',
+    sourceMeetingId: 'meet-1',
+    sourceMeetingTitle: 'BBH Họp BCN — Chuẩn bị NCD',
+    isSticky: true,
+    stickyWeeksCount: 1,
+    priority: 'high',
+    createdAt: '2026-11-03T20:00:00.000Z',
+    updatedAt: '2026-11-11T08:00:00.000Z',
+  },
+  {
+    id: 'task-over-2',
+    title: 'Biên soạn Bareme chấm điểm Coding Challenge vòng 1',
+    description: 'Chi tiết thang điểm thuật toán, độ tối ưu thời gian/bộ nhớ và phong cách code',
+    assigneeId: 'mem-2',
+    assigneeName: 'Nguyễn Đức Minh',
+    assigneeIds: ['mem-2', 'mem-9'],
+    department: 'Học thuật',
+    deadline: '2026-11-09',
+    status: 'overdue',
+    verificationType: 'link_required',
+    sourceMeetingId: 'meet-1',
+    sourceMeetingTitle: 'BBH Họp BCN — Chuẩn bị NCD',
+    isSticky: true,
+    stickyWeeksCount: 1,
+    priority: 'high',
+    createdAt: '2026-11-03T20:00:00.000Z',
+    updatedAt: '2026-11-10T08:00:00.000Z',
+  },
+  {
+    id: 'task-over-3',
+    title: 'Chốt ngân sách mua quà tặng NCD và đặt in sticker logo CLB',
+    description: 'Dự trù 500k quà tặng, 200 sticker dán máy tính mang logo NITC trao cho tân sinh viên',
+    assigneeId: 'mem-14',
+    assigneeName: 'Đoàn Anh Tú',
+    assigneeIds: ['mem-14', 'mem-4'],
+    department: 'Sự kiện',
+    deadline: '2026-11-11',
+    status: 'overdue',
+    verificationType: 'report_required',
+    sourceMeetingId: 'meet-1',
+    sourceMeetingTitle: 'BBH Họp BCN — Chuẩn bị NCD',
+    priority: 'medium',
+    createdAt: '2026-11-03T20:00:00.000Z',
+    updatedAt: '2026-11-12T08:00:00.000Z',
+  },
+  {
+    id: 'task-over-4',
+    title: 'Bài đăng tri ân Thầy Cố vấn và Cựu Ban Chủ nhiệm khóa trước',
+    description: 'Soạn thảo caption bài viết, chụp ảnh lưu niệm và thiết kế thiệp chúc mừng điện tử',
+    assigneeId: 'mem-6',
+    assigneeName: 'Trần Quang Minh',
+    assigneeIds: ['mem-6'],
+    department: 'Truyền thông',
+    deadline: '2026-11-08',
+    status: 'overdue',
+    verificationType: 'link_required',
+    sourceMeetingId: 'meet-1',
+    sourceMeetingTitle: 'BBH Họp BCN — Chuẩn bị NCD',
+    priority: 'medium',
+    createdAt: '2026-11-03T20:00:00.000Z',
+    updatedAt: '2026-11-09T08:00:00.000Z',
+  },
+
+  // --- 4. ĐÃ HOÀN THÀNH (completed) ---
+  {
+    id: 'task-comp-1',
+    title: 'Tổng hợp danh sách 25 cựu thành viên tiêu biểu tham gia Gala',
+    description: 'Bao gồm họ tên, khóa học, công ty hiện tại, email và số điện thoại liên lạc',
+    assigneeId: 'mem-8',
+    assigneeName: 'Nguyễn Thị Ngọc Ánh',
+    assigneeIds: ['mem-8', 'mem-5'],
+    department: 'Đối ngoại',
+    deadline: '2026-11-06',
     status: 'completed',
     verificationType: 'link_required',
-    evidenceLink: 'https://docs.google.com/spreadsheets/d/1nitc_sponsors_list_2026',
-    evidenceSubmittedAt: '2026-08-15T09:00:00.000Z',
-    approvalNote: 'Chủ nhiệm đã duyệt: Danh sách rất tốt, ưu tiên tiếp cận 3 đơn vị Top 1.',
+    evidenceLink: 'https://docs.google.com/spreadsheets/d/nitc-alumni-list-2026-verified',
+    evidenceSubmittedAt: '2026-11-06T10:00:00.000Z',
+    approvalNote: 'Chủ nhiệm đã duyệt: Danh sách rất đầy đủ thông tin liên hệ các anh chị khóa trước.',
     sourceMeetingId: 'meet-1',
-    sourceMeetingTitle: 'BBH Họp Ban Điều Hành Tuần 33',
+    sourceMeetingTitle: 'BBH Họp BCN — Chuẩn bị NCD',
     priority: 'high',
-    createdAt: '2026-08-11T21:00:00.000Z',
-    updatedAt: '2026-08-15T16:00:00.000Z',
+    createdAt: '2026-11-03T20:00:00.000Z',
+    updatedAt: '2026-11-06T15:00:00.000Z',
+  },
+  {
+    id: 'task-comp-2',
+    title: 'Biên bản họp Đại hội trù bị & Phân công nhân sự tháng 11',
+    description: 'Soạn thảo và xuất bản biên bản chính thức buổi họp đầu tháng 11 của CLB',
+    assigneeId: 'mem-1',
+    assigneeName: 'Lê Hồng Phúc Minh',
+    assigneeIds: ['mem-1'],
+    department: 'Ban Chủ nhiệm',
+    deadline: '2026-11-04',
+    status: 'completed',
+    verificationType: 'report_required',
+    evidenceReport: 'Đã hoàn tất biên bản họp số 01/BBH-NITC và gửi file PDF lưu trữ vào Kho tài liệu số của CLB.',
+    approvalNote: 'Đã lưu trữ biên bản chuẩn vào Kho tài liệu NITC.',
+    sourceMeetingId: 'meet-1',
+    sourceMeetingTitle: 'BBH Họp BCN — Chuẩn bị NCD',
+    priority: 'normal',
+    createdAt: '2026-11-03T20:00:00.000Z',
+    updatedAt: '2026-11-04T16:00:00.000Z',
+  },
+  {
+    id: 'task-comp-3',
+    title: 'Cắt bộ ảnh Recap sự kiện Chào Tân sinh viên K66 đăng fanpage',
+    description: 'Chỉnh màu 30 bức ảnh đẹp nhất trong buổi giao lưu đầu năm học',
+    assigneeId: 'mem-11',
+    assigneeName: 'Chu Hà My',
+    assigneeIds: ['mem-11', 'mem-3'],
+    department: 'Truyền thông',
+    deadline: '2026-11-07',
+    status: 'completed',
+    verificationType: 'link_required',
+    evidenceLink: 'https://drive.google.com/drive/folders/nitc-recap-k66-approved',
+    evidenceSubmittedAt: '2026-11-07T11:00:00.000Z',
+    approvalNote: 'Ảnh lên bài fanpage đạt hơn 800 lượt tương tác, màu sắc nhận diện rất chuẩn.',
+    sourceMeetingId: 'meet-1',
+    sourceMeetingTitle: 'BBH Họp BCN — Chuẩn bị NCD',
+    priority: 'medium',
+    createdAt: '2026-11-03T20:00:00.000Z',
+    updatedAt: '2026-11-07T17:00:00.000Z',
   },
 ];
 
@@ -308,21 +561,33 @@ export const INITIAL_LOGS: NotificationLog[] = [
     type: 'weekly_summary',
     recipientName: 'Toàn thể Ban Điều Hành NITC',
     recipientEmail: 'bdh-nitc-club@googlegroups.com',
-    subject: '[NITC BÁO CÁO TUẦN 33] Tổng kết tiến độ công việc & Việc tồn đọng',
-    content: 'Kính gửi BĐH NITC,\nHệ thống tổng kết: 6 việc đã giao, 1 hoàn thành, 2 chờ duyệt, 2 quá hạn. Đề nghị các Trưởng ban kiểm tra và đôn đốc thành viên nộp minh chứng.',
-    sentAt: '2026-08-16T20:00:00.000Z',
+    subject: '[NITC BÁO CÁO TUẦN 45] Tổng kết tiến độ công việc & Đôn đốc NCD',
+    content: 'Kính gửi BĐH NITC,\nHệ thống tổng kết: 16 việc đã giao trong tháng, 3 hoàn thành, 4 chờ duyệt, 4 quá hạn, 5 đang thực hiện. Đề nghị các Trưởng ban kiểm tra và đôn đốc thành viên nộp minh chứng đúng hạn.',
+    sentAt: '2026-11-08T20:00:00.000Z',
     status: 'sent',
-    taskCount: 6,
+    taskCount: 16,
   },
   {
     id: 'log-2',
     type: 'overdue_nag',
+    recipientName: 'Phạm Minh Anh (Trưởng ban Đối ngoại)',
+    recipientEmail: 'minhanh.nitc@gmail.com',
+    department: 'Đối ngoại',
+    subject: '🚨 [NITC NHẮC VIỆC QUÁ HẠN] Công việc "Báo cáo kế hoạch NCD 20/11 gửi Thầy Cố vấn" đã quá hạn!',
+    content: 'Chào Minh Anh, Công việc của bạn đã quá hạn từ ngày 10/11/2026. Vui lòng nộp báo cáo tiến độ gấp để Chủ nhiệm phê duyệt.',
+    sentAt: '2026-11-11T08:00:00.000Z',
+    status: 'sent',
+    taskCount: 1,
+  },
+  {
+    id: 'log-3',
+    type: 'overdue_nag',
     recipientName: 'Nguyễn Đức Minh (Trưởng ban Học thuật)',
     recipientEmail: 'ducminh.nitc@gmail.com',
     department: 'Học thuật',
-    subject: '🚨 [NITC NHẮC VIỆC QUÁ HẠN] Công việc "Biên soạn giáo trình 6 buổi" đã trễ 3 ngày!',
-    content: 'Chào Đức Minh, Công việc của bạn đã quá hạn từ ngày 17/08/2026. Vui lòng nộp link tài liệu hoặc báo cáo tiến độ gấp để Chủ nhiệm phê duyệt.',
-    sentAt: '2026-08-20T08:00:00.000Z',
+    subject: '🚨 [NITC NHẮC VIỆC QUÁ HẠN] Công việc "Biên soạn Bareme chấm điểm Coding Challenge" đã quá hạn!',
+    content: 'Chào Đức Minh, Công việc của bạn đã quá hạn từ ngày 09/11/2026. Vui lòng nộp link barem chấm điểm để Ban Chủ nhiệm nghiệm thu.',
+    sentAt: '2026-11-12T08:00:00.000Z',
     status: 'sent',
     taskCount: 1,
   },

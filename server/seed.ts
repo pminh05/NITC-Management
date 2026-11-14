@@ -76,6 +76,7 @@ async function seedDemoData(): Promise<void> {
         description: t.description ?? null,
         assigneeId: t.assigneeId,
         assigneeName: t.assigneeName,
+        assigneeIds: JSON.stringify(t.assigneeIds && t.assigneeIds.length > 0 ? t.assigneeIds : [t.assigneeId]),
         department: t.department,
         deadline: t.deadline,
         status: t.status,

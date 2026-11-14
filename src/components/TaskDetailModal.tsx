@@ -1,35 +1,68 @@
 import React from 'react';
-import { X, User, Users, Calendar, FileText, Link as LinkIcon, CheckCircle2, RotateCcw, FileCheck, Flag } from 'lucide-react';
-import { Member, Task } from '../types';
+import { X, User, Users, Calendar, FileText, Link as LinkIcon, CheckCircle2, RotateCcw, FileCheck, Flag, Send, Bell, ShieldCheck } from 'lucide-react';
+import { Member, Task, Role, Department } from '../types';
 import { formatDateVN, formatDateTimeVN, getDaysRemaining } from '../utils/dateUtils';
 
 interface TaskDetailModalProps {
   task: Task | null;
   members: Member[];
   onClose: () => void;
+  currentUserId?: string;
+  currentRole?: Role;
+  currentDepartment?: Department;
+  onOpenSubmitModal?: (task: Task) => void;
+  onOpenReviewModal?: (task: Task) => void;
+  onRemindTask?: (task: Task) => void;
 }
 
-export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, members, onClose }) => {
+export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
+  task,
+  members,
+  onClose,
+  currentUserId,
+  currentRole,
+  currentDepartment,
+  onOpenSubmitModal,
+  onOpenReviewModal,
+  onRemindTask,
+}) => {
   if (!task) return null;
 
   // Danh sách TẤT CẢ người phụ trách (assigneeIds, fallback 1 người)
   let assigneeIds: string[] = [task.assigneeId];
   if (Array.isArray(task.assigneeIds) && task.assigneeIds.length > 0) {
-    assigneeIds = task.assigneeIds;
+    assigneeIds = task.assigneeIds.map((item: any) =>
+      typeof item === 'object' && item !== null && item.id ? String(item.id) : String(item)
+    );
   }
   const assignees = assigneeIds
     .map((id) => members.find((m) => m.id === id))
     .filter(Boolean) as Member[];
 
+  const isPresident = currentRole === 'Chủ nhiệm';
+  const isVicePresident = currentRole === 'Phó Chủ nhiệm';
+  const isLeadership = isPresident || isVicePresident;
+  const isDeptHead =
+    (currentRole === 'Trưởng ban' || currentRole === 'Phó ban') && currentDepartment === task.department;
+  const isManager = isLeadership || isDeptHead;
+  const isAssignee = currentUserId ? assigneeIds.includes(currentUserId) : false;
+
+  const canSubmit = isAssignee;
+  const canRemind = isManager && !isAssignee;
+  const canReview = isManager;
+
   const days = getDaysRemaining(task.deadline);
   const meta = TYPE_META(task);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] flex flex-col justify-end sm:justify-center sm:items-center sm:p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto" onClick={onClose}>
       <div
-        className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-xs"
+        className="bg-slate-900 border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-2xl w-full sm:max-w-lg max-h-[88vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom-5 sm:slide-in-from-bottom-0 sm:fade-in sm:zoom-in-95 duration-200 text-xs"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Drag Handle */}
+        <div className="sm:hidden w-12 h-1 bg-slate-600 rounded-full mx-auto my-2.5 shrink-0" />
+
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-800 flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
@@ -187,9 +220,42 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, members,
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-slate-800 bg-slate-900 flex items-center justify-between">
-          <span className="text-slate-500">Chi tiết công việc</span>
-          <button onClick={onClose} className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-semibold cursor-pointer">
+        <div className="px-5 py-3 border-t border-slate-800 bg-slate-900 flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            {canSubmit && task.status !== 'completed' && task.status !== 'pending_approval' && onOpenSubmitModal && (
+              <button
+                onClick={() => onOpenSubmitModal(task)}
+                className="px-3.5 py-1.5 rounded-lg bg-[#2C69FF] hover:bg-[#1F56D6] text-white font-bold flex items-center gap-1.5 cursor-pointer shadow-sm transition active:scale-95 text-xs"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Nộp minh chứng</span>
+              </button>
+            )}
+
+            {canRemind && (task.status === 'in_progress' || task.status === 'overdue') && onRemindTask && (
+              <button
+                onClick={() => onRemindTask(task)}
+                className={`px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-1.5 cursor-pointer shadow-sm transition active:scale-95 text-xs ${
+                  task.status === 'overdue' ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-amber-500 hover:bg-amber-600 text-white'
+                }`}
+              >
+                <Bell className="w-3.5 h-3.5" />
+                <span>Nhắc nộp việc này</span>
+              </button>
+            )}
+
+            {task.status === 'pending_approval' && canReview && onOpenReviewModal && (
+              <button
+                onClick={() => onOpenReviewModal(task)}
+                className="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold flex items-center gap-1.5 cursor-pointer shadow-sm transition active:scale-95 text-xs"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Kiểm tra minh chứng</span>
+              </button>
+            )}
+          </div>
+
+          <button onClick={onClose} className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-semibold cursor-pointer text-xs">
             Đóng
           </button>
         </div>

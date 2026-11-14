@@ -2,7 +2,16 @@
 // (giữ nguyên kiểu dữ liệu của src/types.ts để UI ít phải sửa)
 
 function parseIds(raw: string | null): string[] {
-  try { return raw ? JSON.parse(raw) : []; } catch { return []; }
+  try {
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((item: any) => (typeof item === 'object' && item !== null && item.id ? String(item.id) : String(item)))
+      .filter((x: string) => typeof x === 'string' && x.length > 0);
+  } catch {
+    return [];
+  }
 }
 
 export function serializeTask(t: {

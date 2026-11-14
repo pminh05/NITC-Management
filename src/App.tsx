@@ -34,10 +34,13 @@ import { DashboardModal } from './components/DashboardModal';
 import { TaskDetailModal } from './components/TaskDetailModal';
 import { UpdateRequestFlowModal } from './components/UpdateRequestFlowModal';
 import { QuickAddTaskModal } from './components/QuickAddTaskModal';
+import { RemindConfirmModal } from './components/RemindConfirmModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import {
   Pin,
   CheckCircle2,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 
 export function App() {
@@ -114,7 +117,7 @@ export function App() {
       setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n)));
       setUnreadCount((c) => Math.max(0, c - 1));
     }
-    await api(`/notifications/${id}/read`, { method: 'POST' }).catch(() => {});
+    await api(`/notifications/${id}/read`, { method: 'POST' }).catch(() => { });
   }, [notifications]);
 
   // Bấm thông báo có gắn công việc -> mở chi tiết (tải lại nếu chưa có trong state)
@@ -138,12 +141,12 @@ export function App() {
   const handleMarkAllRead = useCallback(async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, readAt: n.readAt || new Date().toISOString() })));
     setUnreadCount(0);
-    await api('/notifications/read-all', { method: 'POST' }).catch(() => {});
+    await api('/notifications/read-all', { method: 'POST' }).catch(() => { });
   }, []);
 
   const handleChangeNotificationChannel = useCallback(async (channel: string) => {
     setNotificationChannel(channel);
-    await api('/notifications/prefs', { method: 'PUT', body: { channel } }).catch(() => {});
+    await api('/notifications/prefs', { method: 'PUT', body: { channel } }).catch(() => { });
     showToast('Đã lưu cài đặt', 'Kênh nhận thông báo của bạn đã được cập nhật.', 'info');
   }, []);
 
@@ -198,7 +201,7 @@ export function App() {
     if (!authMember) return;
     api<{ clubName: string }>('/settings')
       .then((s) => setClubName(s.clubName))
-      .catch(() => {});
+      .catch(() => { });
   }, [authMember]);
 
   // Trung tâm thông báo: tải ban đầu + SSE realtime + polling dự phòng 45s
@@ -255,6 +258,7 @@ export function App() {
   const [isDashOpen, setIsDashOpen] = useState(false);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [detailTask, setDetailTask] = useState<Task | null>(null);
+  const [remindTask, setRemindTask] = useState<Task | null>(null);
   const [updateReqTask, setUpdateReqTask] = useState<{ task: Task; mode: 'request' | 'respond' } | null>(null);
   const [clubName, setClubName] = useState('CLB Công nghệ thông tin NITC');
 
@@ -427,6 +431,25 @@ export function App() {
     }
   };
 
+  // Bấm nút Nhắc nộp -> mở Modal Xác nhận (tránh bấm nhầm)
+  const handleOpenRemindConfirm = (task: Task) => {
+    setRemindTask(task);
+  };
+
+  // Xác nhận gửi nhắc nộp từ Modal
+  const handleConfirmRemind = async (task: Task, note?: string) => {
+    try {
+      const res = await api<{ success: boolean; message: string; remindedCount: number }>(
+        `/tasks/${task.id}/remind`,
+        { method: 'POST', body: { note } }
+      );
+      showToast('Đã gửi lời nhắc! 🔔', res.message || `Đã gửi thông báo đôn đốc cho ${task.assigneeName}!`, 'info');
+      refreshNotifications();
+    } catch (e) {
+      showError(e);
+    }
+  };
+
   // Delete Task
   const handleDeleteTask = async (taskId: string) => {
     if (!confirm('Bạn có chắc chắn muốn xóa nhiệm vụ này?')) return;
@@ -570,6 +593,26 @@ export function App() {
   const [sidebarDeptFilter, setSidebarDeptFilter] = useState<string>('all');
   const [sidebarStatusFilter, setSidebarStatusFilter] = useState<string>('all');
 
+  // Trạng thái hiển thị thanh sidebar (cho phép ẩn/hiện, lưu vào localStorage)
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('nitc_sidebar_open');
+      return saved !== null ? saved === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const handleToggleSidebar = () => {
+    setIsSidebarOpen((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('nitc_sidebar_open', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
   // ===== Render =====
 
   if (booting) {
@@ -595,13 +638,12 @@ export function App() {
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300">
-          <div className={`p-4 rounded-xl shadow-2xl border flex items-start gap-3 max-w-sm ${
-            toastMessage.type === 'warn'
+          <div className={`p-4 rounded-xl shadow-2xl border flex items-start gap-3 max-w-sm ${toastMessage.type === 'warn'
               ? 'bg-amber-50 border-amber-300 text-amber-900'
               : toastMessage.type === 'info'
-              ? 'bg-blue-50 border-blue-300 text-blue-900'
-              : 'bg-white border-emerald-400 text-slate-900 dark:text-slate-100 shadow-emerald-100'
-          }`}>
+                ? 'bg-blue-50 border-blue-300 text-blue-900'
+                : 'bg-white border-emerald-400 text-slate-900 dark:text-slate-100 shadow-emerald-100'
+            }`}>
             <div className="p-1 rounded-lg bg-emerald-100 text-emerald-700">
               <CheckCircle2 className="w-5 h-5" />
             </div>
@@ -634,27 +676,50 @@ export function App() {
         onOpenNagModal={() => setIsNagOpen(true)}
         onOpenRosterModal={() => setIsRosterOpen(true)}
         onOpenDataSyncModal={() => setIsDataSyncOpen(true)}
+        isSidebarOpen={isSidebarOpen}
+        onToggleSidebar={handleToggleSidebar}
       />
 
       {/* 2. High Density Dashboard Layout: Sidebar + Main Area */}
-      <div className="flex flex-1 w-full overflow-x-hidden">
+      <div className="flex flex-1 w-full relative">
 
-        {/* High Density Desktop Sidebar */}
-        <aside className="w-60 bg-white border-r border-slate-200 dark:border-slate-800 hidden lg:flex flex-col shrink-0">
-          <div className="p-4 space-y-1">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">
-              Hệ thống
-            </div>
+        {/* Nút nổi mở nhanh thanh bên khi Sidebar bị ẩn */}
+        {!isSidebarOpen && (
+          <button
+            onClick={handleToggleSidebar}
+            className="hidden lg:flex fixed left-3 top-18 z-30 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-md text-slate-700 dark:text-slate-200 hover:text-[#2C69FF] hover:border-[#2C69FF] transition items-center gap-2 text-xs font-semibold cursor-pointer animate-in fade-in slide-in-from-left-2 duration-150"
+            title="Mở thanh bên (Sidebar)"
+          >
+            <PanelLeftOpen className="w-4 h-4 text-[#2C69FF]" />
+            <span>Mở menu</span>
+          </button>
+        )}
+
+        {/* High Density Desktop Sidebar - Cố định khi cuộn trang, cho phép ẩn/hiện */}
+        {isSidebarOpen && (
+          <aside className="w-60 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 hidden lg:flex flex-col shrink-0 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto z-20 animate-in fade-in duration-200">
+            <div className="p-4 space-y-1">
+              <div className="flex items-center justify-between mb-2 px-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Hệ thống
+                </span>
+                <button
+                  onClick={handleToggleSidebar}
+                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                  title="Thu gọn thanh bên"
+                >
+                  <PanelLeftClose className="w-3.5 h-3.5" />
+                </button>
+              </div>
             <button
               onClick={() => {
                 setSidebarDeptFilter('all');
                 setSidebarStatusFilter('all');
               }}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition cursor-pointer ${
-                sidebarDeptFilter === 'all' && sidebarStatusFilter === 'all'
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition cursor-pointer ${sidebarDeptFilter === 'all' && sidebarStatusFilter === 'all'
                   ? 'bg-[#2C69FF]/10 text-[#1E4FC4] font-bold border border-[#2C69FF]/30'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50'
-              }`}
+                }`}
             >
               <div className="flex items-center gap-2.5">
                 <span>📊</span>
@@ -739,7 +804,7 @@ export function App() {
             </button>
           </div>
 
-          <div className="p-4 space-y-1 border-t border-slate-100">
+          <div className="p-4 space-y-1 border-t border-slate-100 dark:border-slate-800">
             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">
               Ban Điều Hành
             </div>
@@ -751,12 +816,12 @@ export function App() {
                 dept === 'Học thuật'
                   ? '💻'
                   : dept === 'Truyền thông'
-                  ? '📢'
-                  : dept === 'Sự kiện'
-                  ? '📅'
-                  : dept === 'Đối ngoại'
-                  ? '🤝'
-                  : '👑';
+                    ? '📢'
+                    : dept === 'Sự kiện'
+                      ? '📅'
+                      : dept === 'Đối ngoại'
+                        ? '🤝'
+                        : '👑';
 
               return (
                 <button
@@ -765,11 +830,10 @@ export function App() {
                     setSidebarDeptFilter(dept);
                     setSidebarStatusFilter('all');
                   }}
-                  className={`w-full flex items-center justify-between px-3 py-1.5 rounded-md text-xs transition cursor-pointer ${
-                    isSelected
+                  className={`w-full flex items-center justify-between px-3 py-1.5 rounded-md text-xs transition cursor-pointer ${isSelected
                       ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold'
                       : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50'
-                  }`}
+                    }`}
                 >
                   <span className="flex items-center gap-2 truncate">
                     <span>{emoji}</span>
@@ -783,7 +847,8 @@ export function App() {
             })}
           </div>
 
-          <div className="mt-auto p-4 border-t border-slate-100 space-y-2">
+          {/* Xuất PDF biên bản & Phiên bản - Được đẩy lên ngay dưới danh sách ban, luôn hiển thị */}
+          <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
             <button
               onClick={() => setIsMeetingHistoryOpen(true)}
               className="w-full py-2 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-slate-900 flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer shadow-sm"
@@ -796,14 +861,15 @@ export function App() {
             </div>
           </div>
         </aside>
+      )}
 
         {/* Main Content Pane */}
-        <main className="flex-1 flex flex-col p-3 sm:p-5 md:p-6 gap-4 sm:gap-5 max-w-full overflow-x-hidden pb-24 lg:pb-6">
+        <main className="flex-1 min-w-0 flex flex-col p-3 sm:p-5 md:p-6 gap-4 sm:gap-5 max-w-full overflow-x-hidden pb-24 lg:pb-6">
 
-          {/* Top 4 KPI Metric Cards (High Density) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
+          {/* Top 4 KPI Metric Cards (Mobile: Vuốt ngang snap-x tiết kiệm 350px dọc; Desktop: Lưới 4 cột) */}
+          <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 shrink-0 overflow-x-auto snap-x snap-mandatory pb-1 sm:pb-0 [scrollbar-width:none]">
             {/* Card 1: Total Tasks */}
-            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between w-[75vw] max-w-[280px] sm:w-auto shrink-0 snap-start">
               <div>
                 <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
                   <span>Tổng nhiệm vụ</span>
@@ -819,7 +885,7 @@ export function App() {
             </div>
 
             {/* Card 2: In Progress */}
-            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between w-[75vw] max-w-[280px] sm:w-auto shrink-0 snap-start">
               <div>
                 <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
                   <span>Đang thực hiện</span>
@@ -833,7 +899,7 @@ export function App() {
             </div>
 
             {/* Card 3: The Nag Overdue */}
-            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm border-l-4 border-l-red-500 flex flex-col justify-between">
+            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm border-l-4 border-l-red-500 flex flex-col justify-between w-[75vw] max-w-[280px] sm:w-auto shrink-0 snap-start">
               <div>
                 <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
                   <span>Việc quá hạn</span>
@@ -861,7 +927,7 @@ export function App() {
             </div>
 
             {/* Card 4: Evidence Review Pending */}
-            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between w-[75vw] max-w-[280px] sm:w-auto shrink-0 snap-start">
               <div>
                 <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
                   <span>Đợi duyệt bằng chứng</span>
@@ -910,6 +976,7 @@ export function App() {
             onAddNewManualTask={handleAddNewManualTask}
             onOpenDetail={setDetailTask}
             onUpdateRequest={(task) => setUpdateReqTask({ task, mode: isLeadership ? 'respond' : 'request' })}
+            onRemindTask={handleOpenRemindConfirm}
           />
 
         </main>
@@ -1042,7 +1109,32 @@ export function App() {
       )}
 
       {/* Modal: Chi tiết công việc */}
-      <TaskDetailModal task={detailTask} members={members} onClose={() => setDetailTask(null)} />
+      <TaskDetailModal
+        task={detailTask}
+        members={members}
+        currentUserId={currentUserId}
+        currentRole={currentRole}
+        currentDepartment={currentDepartment}
+        onClose={() => setDetailTask(null)}
+        onOpenSubmitModal={(task) => {
+          setDetailTask(null);
+          handleOpenSubmitModal(task);
+        }}
+        onOpenReviewModal={(task) => {
+          setDetailTask(null);
+          handleOpenReviewModal(task);
+        }}
+        onRemindTask={handleOpenRemindConfirm}
+      />
+
+      {/* Modal: Xác nhận nhắc nộp minh chứng (tránh ấn nhầm) */}
+      <RemindConfirmModal
+        isOpen={Boolean(remindTask)}
+        task={remindTask}
+        members={members}
+        onClose={() => setRemindTask(null)}
+        onConfirm={handleConfirmRemind}
+      />
 
       {/* Modal: Lịch tổng deadline & họp */}
       <CalendarModal
@@ -1050,6 +1142,7 @@ export function App() {
         onClose={() => setIsCalendarOpen(false)}
         tasks={tasks}
         meetings={meetings}
+        onOpenDetail={setDetailTask}
       />
 
       {/* Modal: Dashboard phân tích */}
