@@ -158,6 +158,19 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
 
   const departments: Department[] = ['Học thuật', 'Truyền thông', 'Sự kiện', 'Đối ngoại', 'Ban Chủ nhiệm'];
 
+  // Tab ban cạnh "Việc của tôi": ban nhiều việc hơn đứng trước (bằng nhau thì giữ thứ tự gốc)
+  const departmentTabs = useMemo(() => {
+    const count = new Map<Department, number>(departments.map((d) => [d, 0]));
+    for (const t of tasks) {
+      const d = t.department as Department;
+      if (count.has(d)) count.set(d, count.get(d)! + 1);
+    }
+    return departments
+      .map((dept, order) => ({ dept, total: count.get(dept)!, order }))
+      .sort((a, b) => b.total - a.total || a.order - b.order);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks]);
+
   const isPresident = currentRole === 'Chủ nhiệm';
 
   // Nhãn màu ban
@@ -220,8 +233,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
               Toàn CLB ({tasks.length})
             </button>
 
-            {departments.map((dept) => {
-              const deptTasks = tasks.filter((t) => t.department === dept);
+            {departmentTabs.map(({ dept, total }) => {
               const isActive = !onlyMyTasks && selectedDept === dept;
               return (
                 <button
@@ -235,7 +247,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                     }`}
                 >
-                  Ban {dept} ({deptTasks.length})
+                  {dept === 'Ban Chủ nhiệm' ? dept : `Ban ${dept}`} ({total})
                 </button>
               );
             })}
