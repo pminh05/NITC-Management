@@ -34,6 +34,8 @@ interface MobileBottomNavProps {
   onOpenLeaderboard: () => void;
   onOpenDocs: () => void;
   onOpenNag: () => void;
+  /** Có quyền mở hộp Nhắc việc quá hạn (Ban lãnh đạo, Trưởng/Phó ban) */
+  canNag?: boolean;
   onOpenMeetingHistory: () => void;
   onOpenRoster: () => void;
   onOpenDataSync: () => void;
@@ -55,6 +57,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   onOpenLeaderboard,
   onOpenDocs,
   onOpenNag,
+  canNag = false,
   onOpenMeetingHistory,
   onOpenRoster,
   onOpenDataSync,
@@ -256,7 +259,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                 <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
               </button>
 
-              {/* Option 4: Đôn đốc việc quá hạn (The Nag) */}
+              {/* Option 4: Đôn đốc việc quá hạn (The Nag) — không có với thành viên */}
+              {canNag && (
               <button
                 type="button"
                 onClick={() => {
@@ -283,6 +287,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                 </div>
                 <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
               </button>
+              )}
             </div>
           </div>
         </div>
@@ -362,7 +367,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                 <ChevronRight className="w-4 h-4 text-slate-400" />
               </button>
 
-              {/* Việc quá hạn */}
+              {/* Việc quá hạn — không có với thành viên */}
+              {canNag && (
               <button
                 type="button"
                 onClick={() => {
@@ -385,6 +391,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                   <ChevronRight className="w-4 h-4 text-slate-400" />
                 )}
               </button>
+              )}
 
               {/* Khu vực Quản trị dành cho Ban Lãnh đạo */}
               {isLeadership && (

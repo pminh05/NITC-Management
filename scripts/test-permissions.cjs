@@ -124,10 +124,10 @@ async function mainSuite() {
     { const r = await call(T.TB_SK, 'GET', '/members'); const priv = (x) => x.phone || x.birthday || x.studentId; check('V4', 'TB_SK', 'Trưởng ban thấy hồ sơ đầy đủ của ban mình, không thấy của ban khác', r.data.some((x) => x.department === 'Sự kiện' && x.id !== mTB_SK.id && priv(x)) && !r.data.some((x) => x.department !== 'Sự kiện' && priv(x))); }
     { const r = await call(T.PCN, 'GET', '/members'); check('V4', 'PCN', 'Ban lãnh đạo thấy hồ sơ đầy đủ', r.data.filter((x) => x.phone).length === members.filter((x) => x.phone).length); }
     { const r = await call(T.PCN, 'GET', '/auth/me'); const c = r.data?.capabilities || {}; check('V7', 'PCN', '/auth/me trả capabilities đúng ma trận (toàn CLB, không cấu hình/xóa/nhiệm kỳ)', c.scope === 'all' && c.manageRoster === true && c.manageSettings === false && c.deleteTask === false && c.manageTerms === false && c.destructiveAdmin === false); }
-    { const r = await call(T.TV_TT, 'GET', '/auth/me'); const c = r.data?.capabilities || {}; check('V7', 'TV_TT', 'capabilities của thành viên thường: không có quyền quản lý nào', c.scope === 'department' && !c.createTask && !c.manageRoster && !c.viewLogs); }
+    { const r = await call(T.TV_TT, 'GET', '/auth/me'); const c = r.data?.capabilities || {}; check('V7', 'TV_TT', 'capabilities của thành viên thường: không có quyền quản lý, không nhắc việc, không báo cáo tuần', c.scope === 'department' && !c.createTask && !c.manageRoster && !c.viewLogs && !c.nag && !c.weeklyReport); }
     rec('V5', 'TV_TT', 'GET /logs', 403, await call(T.TV_TT, 'GET', '/logs'));
     rec('V5', 'PCN', 'GET /logs', 200, await call(T.PCN, 'GET', '/logs'));
-    rec('V6', 'TB_SK', 'POST /logs (ghi nhật ký dù không được đọc)', 403, await call(T.TB_SK, 'POST', '/logs', { subject: 'test', recipientEmail: 'x@y.z' }));
+    rec('V6', 'TB_SK', 'POST /logs (nhật ký tự do / báo cáo tuần — chỉ lãnh đạo)', 403, await call(T.TB_SK, 'POST', '/logs', { subject: 'test', recipientEmail: 'x@y.z' }));
     rec('V6', 'PCN', 'POST /logs', 201, await call(T.PCN, 'POST', '/logs', { subject: '[TEST] nhật ký', recipientEmail: 'x@y.z' }));
 
     // ---- Dữ liệu thử
@@ -215,6 +215,11 @@ async function mainSuite() {
     // ---- Nhắc việc / quản trị
     rec('R1', 'TV_SK', 'POST remind', 403, await call(T.TV_SK, 'POST', `/tasks/${tSK2.id}/remind`, {}));
     rec('R2', 'PB_SK', 'POST remind ban mình', 200, await call(T.PB_SK, 'POST', `/tasks/${tSK2.id}/remind`, {}));
+    await call(T.TB_HT, 'POST', `/tasks/${tHT2.id}/remind`, {});
+    { const r = await call(T.TB_SK, 'GET', '/logs'); check('L1', 'TB_SK', 'Trưởng ban xem nhật ký: chỉ nhật ký của ban mình', r.status === 200 && r.data.length > 0 && r.data.every((l) => l.department === 'Sự kiện'), `${r.data?.length} dòng`); }
+    { const r = await call(T.PCN, 'GET', '/logs'); check('L1', 'PCN', 'Ban lãnh đạo xem nhật ký mọi ban', r.status === 200 && r.data.some((l) => l.department === 'Sự kiện') && r.data.some((l) => l.department === 'Học thuật')); }
+    { const r = await call(T.TB_SK, 'GET', '/auth/me'); const c = r.data?.capabilities || {}; check('L2', 'TB_SK', 'Trưởng ban: có Nhắc việc + Nhật ký, không có Báo cáo tuần', c.nag === true && c.viewLogs === true && c.weeklyReport === false); }
+    { const r = await call(T.PCN, 'GET', '/auth/me'); const c = r.data?.capabilities || {}; check('L2', 'PCN', 'Ban lãnh đạo: có Báo cáo tuần', c.nag === true && c.weeklyReport === true); }
     rec('Q1', 'PCN', 'PUT /settings (chỉ Chủ nhiệm; UI đã ẩn nút)', 403, await call(T.PCN, 'PUT', '/settings', { clubName: 'x' }));
     rec('Q1', 'CN', 'PUT /settings', 200, await call(T.CN, 'PUT', '/settings', { clubName: 'CLB Công nghệ thông tin NITC' }));
     rec('Q2', 'PCN', 'DELETE việc', 403, await call(T.PCN, 'DELETE', `/tasks/${tSK2.id}`));

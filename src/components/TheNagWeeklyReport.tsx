@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { Department, Member, NotificationLog, Task } from '../types';
 import { formatDateVN, isTaskOverdue } from '../utils/dateUtils';
+import { Actor, canRemindTask, canViewWeeklyReport } from '../../shared/permissions';
+import { todayVN } from '../../shared/time';
 
 interface TheNagWeeklyReportProps {
   isOpen: boolean;
@@ -26,6 +28,10 @@ interface TheNagWeeklyReportProps {
   members: Member[];
   logs: NotificationLog[];
   onSendNotification: (log: Omit<NotificationLog, 'id' | 'sentAt'>) => void;
+  /** Người đang mở hộp — quyết định tab nào hiện và việc nào được nhắc */
+  actor: Actor;
+  /** Nhắc thật (POST /tasks/:id/remind: thông báo trong ứng dụng cho mọi người phụ trách + ghi nhật ký) */
+  onRemindTask: (task: Task) => Promise<boolean>;
 }
 
 export const TheNagWeeklyReport: React.FC<TheNagWeeklyReportProps> = ({
@@ -35,8 +41,13 @@ export const TheNagWeeklyReport: React.FC<TheNagWeeklyReportProps> = ({
   members,
   logs,
   onSendNotification,
+  actor,
+  onRemindTask,
 }) => {
-  const [activeTab, setActiveTab] = useState<'weekly' | 'overdue' | 'logs'>('weekly');
+  // Báo cáo tuần chỉ Ban lãnh đạo; Trưởng/Phó ban vào thẳng tab Nhắc việc
+  const canWeekly = canViewWeeklyReport(actor);
+  const [activeTab, setActiveTab] = useState<'weekly' | 'overdue' | 'logs'>(canWeekly ? 'weekly' : 'overdue');
+  const [sendingIds, setSendingIds] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
@@ -66,11 +77,17 @@ export const TheNagWeeklyReport: React.FC<TheNagWeeklyReportProps> = ({
   const totalTasks = tasks.length;
   const totalCompleted = tasks.filter((t) => t.status === 'completed').length;
   const totalOverdue = tasks.filter((t) => t.status === 'overdue').length;
-  const totalSticky = tasks.filter((t) => t.isSticky && t.status !== 'completed').length;
-  const overdueTasks = tasks.filter((t) => t.status === 'overdue');
+  const overdueTasks = tasks.filter((t) => t.status === 'overdue' && canRemindTask(actor, t));
 
   // Generate Sunday Weekly Report Email
-  const currentWeekNumber = 34;
+  const currentWeekNumber = (() => {
+    // Tuần ISO-8601 của hôm nay (giờ Việt Nam)
+    const d = new Date(`${todayVN()}T00:00:00Z`);
+    const day = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - day);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  })();
   const sundayEmailContent = `Kính gửi Toàn thể Ban Điều Hành CLB NITC,
 
 Hệ thống NITC Command Center xin gửi Báo cáo Tổng kết Tiến độ Công việc Tuần ${currentWeekNumber} (Mốc Tối Chủ Nhật):
@@ -81,7 +98,6 @@ Hệ thống NITC Command Center xin gửi Báo cáo Tổng kết Tiến độ C
 - Đang triển khai: ${tasks.filter((t) => t.status === 'in_progress').length} việc
 - Chờ duyệt: ${tasks.filter((t) => t.status === 'pending_approval').length} việc
 - Quá hạn / Còn nợ: ${totalOverdue} việc
-- Nhiệm vụ Sticky (lưu chuyển từ kỳ trước chưa xong): ${totalSticky} việc
 
 2. TIẾN ĐỘ THEO TỪNG BAN:
 ${deptStats
@@ -133,36 +149,28 @@ Hệ thống NITC Command Center`;
     }, 600);
   };
 
-  const handleNagSingleTask = (task: Task) => {
-    const member = members.find((m) => m.id === task.assigneeId);
-    const email = member?.email || `${task.assigneeName.toLowerCase().replace(/\s+/g, '')}@nitc.vn`;
-
-    const subject = `🚨 [NITC NHẮC VIỆC QUÁ HẠN] Công việc "${task.title}" đã quá hạn!`;
-    const content = `Chào ${task.assigneeName},\n\nHệ thống NITC Command Center nhận thấy công việc "${task.title}" của bạn đã quá hạn từ ngày ${formatDateVN(task.deadline)}.\n\nVui lòng truy cập hệ thống để nộp ${task.verificationType === 'link_required' ? 'Link sản phẩm (Figma/Sheet/Doc)' : 'Báo cáo ngắn 2 câu'} ngay hôm nay để Chủ nhiệm phê duyệt.\n\nTrân trọng,\nChủ nhiệm NITC.`;
-
-    onSendNotification({
-      type: 'overdue_nag',
-      recipientName: `${task.assigneeName} (${task.department})`,
-      recipientEmail: email,
-      department: task.department,
-      subject,
-      content,
-      taskCount: 1,
-      status: 'sent',
+  const handleNagSingleTask = async (task: Task) => {
+    setSendingIds((s) => new Set(s).add(task.id));
+    const ok = await onRemindTask(task);
+    setSendingIds((s) => {
+      const next = new Set(s);
+      next.delete(task.id);
+      return next;
     });
-
-    setSuccessNotice(`Đã gửi email nhắc việc gấp tới ${task.assigneeName}!`);
-    setTimeout(() => setSuccessNotice(null), 3000);
+    if (ok) {
+      setSuccessNotice(`Đã gửi nhắc việc tới ${task.assigneeName}!`);
+      setTimeout(() => setSuccessNotice(null), 3000);
+    }
+    return ok;
   };
 
-  const handleNagAllOverdue = () => {
+  const handleNagAllOverdue = async () => {
     if (overdueTasks.length === 0) return;
-    
-    overdueTasks.forEach((task) => {
-      handleNagSingleTask(task);
-    });
-
-    setSuccessNotice(`Đã kích hoạt gửi email nhắc nợ tự động tới toàn bộ ${overdueTasks.length} thành viên có việc quá hạn!`);
+    let sent = 0;
+    for (const task of overdueTasks) {
+      if (await onRemindTask(task)) sent += 1;
+    }
+    setSuccessNotice(`Đã gửi nhắc việc tới người phụ trách của ${sent}/${overdueTasks.length} việc quá hạn!`);
     setTimeout(() => setSuccessNotice(null), 4000);
   };
 
@@ -179,14 +187,16 @@ Hệ thống NITC Command Center`;
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-white tracking-tight">
-                  Nhắc việc quá hạn & Báo cáo tuần
+                  {canWeekly ? 'Nhắc việc quá hạn & Báo cáo tuần' : `Nhắc việc quá hạn — Ban ${actor.department}`}
                 </h2>
                 <span className="bg-red-500/20 text-red-300 text-xs px-2.5 py-0.5 rounded-full font-semibold border border-red-500/30">
-                  {totalOverdue} Quá hạn
+                  {overdueTasks.length} Quá hạn
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Tự động gửi Báo cáo tối Chủ nhật & Email nhắc nợ hàng ngày cho các đầu việc trễ hạn
+                {canWeekly
+                  ? 'Báo cáo tối Chủ nhật cho Ban điều hành & nhắc việc trễ hạn toàn CLB'
+                  : 'Nhắc người phụ trách các việc trễ hạn của ban bạn và xem nhật ký đã gửi'}
               </p>
             </div>
           </div>
@@ -202,6 +212,7 @@ Hệ thống NITC Command Center`;
         {/* Tab Navigation */}
         <div className="px-6 py-2 bg-slate-950 border-b border-slate-800 flex items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
+            {canWeekly && (
             <button
               onClick={() => setActiveTab('weekly')}
               className={`px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition ${
@@ -213,6 +224,7 @@ Hệ thống NITC Command Center`;
               <Calendar className="w-3.5 h-3.5" />
               <span>Báo Cáo Tối Chủ Nhật (Weekly Summary)</span>
             </button>
+            )}
 
             <button
               onClick={() => setActiveTab('overdue')}
@@ -223,7 +235,7 @@ Hệ thống NITC Command Center`;
               }`}
             >
               <AlertTriangle className="w-3.5 h-3.5" />
-              <span>Nhắc Việc Quá Hạn ({totalOverdue})</span>
+              <span>Nhắc Việc Quá Hạn ({overdueTasks.length})</span>
             </button>
 
             <button
@@ -249,7 +261,7 @@ Hệ thống NITC Command Center`;
         )}
 
         {/* Tab 1: Sunday Weekly Report */}
-        {activeTab === 'weekly' && (
+        {canWeekly && activeTab === 'weekly' && (
           <div className="p-6 overflow-y-auto space-y-5 flex-1 text-slate-200 text-xs">
             
             {/* Department Leaderboard Cards */}
@@ -351,7 +363,7 @@ Hệ thống NITC Command Center`;
                   <span>Phát hiện {overdueTasks.length} nhiệm vụ đang ở trạng thái Quá hạn</span>
                 </h4>
                 <p className="text-slate-400 text-xs mt-0.5">
-                  Gửi email nhắc nhở đôn đốc khẩn cấp tới từng cá nhân phụ trách.
+                  Gửi thông báo nhắc việc tới mọi người phụ trách (kèm email nếu họ bật nhận email).
                 </p>
               </div>
 
@@ -396,10 +408,11 @@ Hệ thống NITC Command Center`;
 
                     <button
                       onClick={() => handleNagSingleTask(task)}
-                      className="px-3.5 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white border border-red-500/40 font-semibold flex items-center gap-1.5 transition active:scale-95 shrink-0"
+                      disabled={sendingIds.has(task.id)}
+                      className="px-3.5 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white border border-red-500/40 font-semibold flex items-center gap-1.5 transition active:scale-95 shrink-0 disabled:opacity-60 disabled:cursor-wait"
                     >
                       <Bell className="w-3.5 h-3.5" />
-                      <span>Gửi Nhắc Việc Gấp</span>
+                      <span>{sendingIds.has(task.id) ? 'Đang gửi…' : 'Gửi Nhắc Việc Gấp'}</span>
                     </button>
                   </div>
                 ))}

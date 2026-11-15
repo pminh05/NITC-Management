@@ -27,6 +27,7 @@ import {
   canViewMeeting,
   canViewTask,
   canWriteLogs,
+  logDepartmentScope,
   isLeadership,
   isPresident,
   taskAssigneeIds,
@@ -941,10 +942,20 @@ apiRouter.post('/meetings/publish', requireCan(canPublishMeeting, ONLY_MANAGERS)
 
 // ============ LOGS (Nhật ký Nag) ============
 
-apiRouter.get('/logs', requireCan(canViewLogs, 'Chỉ Ban lãnh đạo được xem nhật ký'), async (_req: Request, res: Response) => {
-  const logs = await prisma.notificationLog.findMany({ orderBy: { sentAt: 'desc' }, take: 100 });
-  res.json(logs.map(serializeLog));
-});
+// Ban lãnh đạo xem nhật ký toàn CLB; Trưởng/Phó ban chỉ xem nhật ký nhắc việc của ban mình
+apiRouter.get(
+  '/logs',
+  requireCan(canViewLogs, 'Chỉ Ban lãnh đạo hoặc Trưởng/Phó ban được xem nhật ký'),
+  async (req: Request, res: Response) => {
+    const department = logDepartmentScope(req.authMember!);
+    const logs = await prisma.notificationLog.findMany({
+      where: department ? { department } : undefined,
+      orderBy: { sentAt: 'desc' },
+      take: 100,
+    });
+    res.json(logs.map(serializeLog));
+  }
+);
 
 apiRouter.post('/logs', requireCan(canWriteLogs, 'Chỉ Ban lãnh đạo được ghi nhật ký'), async (req: Request, res: Response) => {
   const b = validate(logCreateSchema, req.body);

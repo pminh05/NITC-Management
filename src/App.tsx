@@ -71,6 +71,7 @@ import {
   canResetMemberPassword,
   canReviewTask,
   canViewLogs,
+  canUseNag,
   isLeadership as isLeadershipRole,
 } from '../shared/permissions';
 import {
@@ -535,6 +536,22 @@ export function App() {
     setRemindTask(task);
   };
 
+  // Nhắc việc từ hộp "Nhắc việc quá hạn" (không hỏi lại — người dùng đã chủ động bấm trong hộp)
+  const handleNagRemind = async (task: Task): Promise<boolean> => {
+    try {
+      await api(`/tasks/${task.id}/remind`, { method: 'POST', body: {} });
+      try {
+        setLogs(await api<NotificationLog[]>('/logs'));
+      } catch {
+        // không đọc được nhật ký thì bỏ qua
+      }
+      return true;
+    } catch (e) {
+      showError(e);
+      return false;
+    }
+  };
+
   // Xác nhận gửi nhắc nộp từ Modal
   const handleConfirmRemind = async (task: Task, note?: string) => {
     try {
@@ -888,7 +905,15 @@ export function App() {
             )}
 
             <button
-              onClick={() => setIsNagOpen(true)}
+              onClick={() => {
+                if (canUseNag(actor)) {
+                  setIsNagOpen(true);
+                } else {
+                  setSidebarDeptFilter('all');
+                  setSidebarStatusFilter('overdue');
+                  document.getElementById('task-board')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
               className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-900 rounded-md text-xs transition cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
@@ -1057,7 +1082,7 @@ export function App() {
               </div>
               <div className="mt-2 flex items-center justify-between text-[10px]">
                 <span className="text-slate-400 italic">Nhắc tự động hàng ngày</span>
-                {overdueCount > 0 && (
+                {overdueCount > 0 && canUseNag(actor) && (
                   <button
                     onClick={() => setIsNagOpen(true)}
                     className="font-bold text-red-600 hover:underline cursor-pointer"
@@ -1187,8 +1212,10 @@ export function App() {
       />
 
       {/* Modal 5: The Nag & Sunday Weekly Report */}
-      {isNagOpen && (
+      {isNagOpen && canUseNag(actor) && (
       <TheNagWeeklyReport
+        actor={actor}
+        onRemindTask={handleNagRemind}
         isOpen={isNagOpen}
         onClose={() => setIsNagOpen(false)}
         tasks={tasks}
@@ -1360,6 +1387,7 @@ export function App() {
         onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
         onOpenDocs={() => setIsDocsOpen(true)}
         onOpenNag={() => setIsNagOpen(true)}
+        canNag={canUseNag(actor)}
         onOpenMeetingHistory={() => setIsMeetingHistoryOpen(true)}
         onOpenRoster={() => setIsRosterOpen(true)}
         onOpenDataSync={() => setIsDataSyncOpen(true)}

@@ -193,11 +193,32 @@ export function canDestructiveAdmin(a: Actor): boolean {
   return isPresident(a);
 }
 
-/** Nhật ký nhắc việc: đọc và ghi đều chỉ Ban lãnh đạo */
-export function canViewLogs(a: Actor): boolean {
+// ----- Nhắc việc quá hạn & Báo cáo tuần -----
+//   Ban lãnh đạo:   Báo cáo tuần + Nhắc việc + Nhật ký (toàn CLB)
+//   Trưởng/Phó ban: Nhắc việc + Nhật ký (chỉ ban mình)
+//   Thành viên:     không có
+
+/** Mở được hộp "Nhắc việc quá hạn" */
+export function canUseNag(a: Actor): boolean {
+  return isLeadership(a) || isDeptManager(a);
+}
+
+/** Báo cáo tuần toàn CLB (xem + gửi) */
+export function canViewWeeklyReport(a: Actor): boolean {
   return isLeadership(a);
 }
 
+/** Đọc nhật ký nhắc việc: lãnh đạo toàn CLB, Trưởng/Phó ban trong phạm vi ban mình (xem logDepartmentScope) */
+export function canViewLogs(a: Actor): boolean {
+  return isLeadership(a) || isDeptManager(a);
+}
+
+/** null = xem nhật ký mọi ban; còn lại = chỉ nhật ký của ban này */
+export function logDepartmentScope(a: Actor): string | null {
+  return isLeadership(a) ? null : a.department;
+}
+
+/** Ghi nhật ký tự do (Báo cáo tuần). Nhắc việc từng nhiệm vụ đi qua /tasks/:id/remind và tự ghi nhật ký. */
 export function canWriteLogs(a: Actor): boolean {
   return isLeadership(a);
 }
@@ -223,6 +244,8 @@ export interface Capabilities {
   manageSettings: boolean;
   destructiveAdmin: boolean;
   viewLogs: boolean;
+  nag: boolean;
+  weeklyReport: boolean;
 }
 
 export function capabilitiesOf(a: Actor): Capabilities {
@@ -240,5 +263,7 @@ export function capabilitiesOf(a: Actor): Capabilities {
     manageSettings: canManageSettings(a),
     destructiveAdmin: canDestructiveAdmin(a),
     viewLogs: canViewLogs(a),
+    nag: canUseNag(a),
+    weeklyReport: canViewWeeklyReport(a),
   };
 }
