@@ -11,6 +11,7 @@ import {
   Upload,
   RefreshCw,
   AlertCircle,
+  Plus,
 } from 'lucide-react';
 import { Department, ImportSummary, Member, Role, Term } from '../types';
 import { Actor, canDeleteMember, canEditMember, canManageTerms } from '../../shared/permissions';
@@ -28,6 +29,8 @@ interface RosterManagerModalProps {
   onUpdateMember: (id: string, updates: Partial<Member>) => void;
   onDeleteMember: (id: string) => void;
   onActivateTerm: (termId: string) => void;
+  /** Tạo nhiệm kỳ trống (không import) — chỉ người quản lý nhiệm kỳ */
+  onCreateTerm?: (name: string) => Promise<boolean>;
   /** Người đang thao tác — quyết định nút nào được hiện (cùng quy tắc với server) */
   viewer: Actor;
   /** Đặt lại mật khẩu về mặc định — chỉ truyền vào khi người dùng là Chủ nhiệm */
@@ -47,12 +50,16 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
   onUpdateMember,
   onDeleteMember,
   onActivateTerm,
+  onCreateTerm,
   onResetPassword,
   viewer,
 }) => {
   const mayManageTerms = canManageTerms(viewer);
   const mayDelete = canDeleteMember(viewer);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterDept, setFilterDept] = useState<string>('all');
+  const [filterRole, setFilterRole] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -126,6 +133,20 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
     handleCancelForm();
   };
 
+  // Tên nhiệm kỳ: YYYY-YYYY, năm sau = năm trước + 1
+  const termNameValid = (() => {
+    const m = /^(\d{4})-(\d{4})$/.exec(importTermName.trim());
+    return !!m && Number(m[2]) === Number(m[1]) + 1;
+  })();
+  const termExists = terms.some((t) => t.name === importTermName.trim());
+  const [creatingTerm, setCreatingTerm] = useState(false);
+  const handleCreateTermClick = async () => {
+    if (!onCreateTerm || !termNameValid || termExists) return;
+    setCreatingTerm(true);
+    await onCreateTerm(importTermName.trim());
+    setCreatingTerm(false);
+  };
+
   const handleFilePicked = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -141,15 +162,43 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
     }
   };
 
-  const filteredMembers = members.filter((m) =>
-    m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    m.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    m.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (m.className || '').toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   const departments: Department[] = ['Học thuật', 'Truyền thông', 'Sự kiện', 'Đối ngoại', 'Ban Chủ nhiệm'];
   const roles: Role[] = ['Chủ nhiệm', 'Phó Chủ nhiệm', 'Trưởng ban', 'Phó ban', 'Thành viên', 'Cố vấn'];
+
+  // Từ khóa khớp tên, MSV, lớp, email, SĐT, ban, vai trò (không phân biệt dấu hoa/thường)
+  const q = searchQuery.trim().toLowerCase();
+  const matchesSearch = (m: Member) =>
+    !q ||
+    [m.name, m.studentId, m.className, m.email, m.phone, m.department, m.role].some((v) =>
+      (v || '').toLowerCase().includes(q)
+    );
+  const filteredMembers = members.filter(
+    (m) =>
+      matchesSearch(m) &&
+      (filterDept === 'all' || m.department === filterDept) &&
+      (filterRole === 'all' || m.role === filterRole) &&
+      (filterStatus === 'all' || m.status === filterStatus)
+  );
+  // Số lượng hiện trong từng lựa chọn: tính theo các bộ lọc còn lại để biết chọn vào sẽ ra bao nhiêu người
+  const countBy = (key: 'department' | 'role' | 'status', value: string) =>
+    members.filter(
+      (m) =>
+        matchesSearch(m) &&
+        (key === 'department' || filterDept === 'all' || m.department === filterDept) &&
+        (key === 'role' || filterRole === 'all' || m.role === filterRole) &&
+        (key === 'status' || filterStatus === 'all' || m.status === filterStatus) &&
+        (value === 'all' || m[key] === value)
+    ).length;
+  const hasFilter = Boolean(q) || filterDept !== 'all' || filterRole !== 'all' || filterStatus !== 'all';
+  const clearFilters = () => {
+    setSearchQuery('');
+    setFilterDept('all');
+    setFilterRole('all');
+    setFilterStatus('all');
+  };
+  const STATUS_LABEL: Record<string, string> = { active: 'Đang hoạt động', inactive: 'Ngưng hoạt động', alumni: 'Cựu thành viên' };
+  const selectClass =
+    'px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-xs font-semibold [color-scheme:dark] focus:outline-none focus:border-emerald-500 cursor-pointer';
 
   const activeTerm = terms.find((t) => t.isActive);
 
@@ -221,22 +270,47 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
 
             {/* Import Excel — đổi nhiệm kỳ hiện hành nên chỉ Chủ nhiệm */}
             {mayManageTerms && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg">
-              <Upload className="w-3.5 h-3.5 text-sky-400" />
+            <div className="flex items-center gap-2 pl-3 pr-1.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg">
+              <label htmlFor="new-term-name" className="text-slate-300 font-semibold whitespace-nowrap">
+                Nhiệm kỳ mới:
+              </label>
               <input
+                id="new-term-name"
                 type="text"
                 value={importTermName}
                 onChange={(e) => setImportTermName(e.target.value)}
-                placeholder="2025-2026"
-                className="w-20 bg-transparent text-white placeholder-slate-500 focus:outline-none font-mono text-[11px]"
-                title="Tên nhiệm kỳ khi import"
+                placeholder="2026-2027"
+                className={`w-24 px-2 py-1 bg-slate-950 border rounded text-white placeholder-slate-500 focus:outline-none font-mono text-[11px] ${
+                  termNameValid || !importTermName ? 'border-slate-700 focus:border-sky-500' : 'border-red-500/70'
+                }`}
+                title="Định dạng YYYY-YYYY, VD: 2026-2027"
               />
+              {onCreateTerm && (
+                <button
+                  type="button"
+                  onClick={handleCreateTermClick}
+                  disabled={!termNameValid || termExists || creatingTerm}
+                  className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold transition active:scale-95 cursor-pointer whitespace-nowrap flex items-center gap-1"
+                  title={
+                    !termNameValid
+                      ? 'Nhập tên nhiệm kỳ dạng YYYY-YYYY'
+                      : termExists
+                      ? 'Nhiệm kỳ này đã có'
+                      : 'Tạo nhiệm kỳ trống (chưa có thành viên, chưa đặt làm hiện hành)'
+                  }
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  {creatingTerm ? 'Đang tạo…' : 'Tạo nhiệm kỳ'}
+                </button>
+              )}
               <button
                 onClick={() => fileInputRef.current?.click()}
-                disabled={importing}
-                className="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-semibold transition active:scale-95 cursor-pointer whitespace-nowrap"
+                disabled={importing || !termNameValid}
+                className="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold transition active:scale-95 cursor-pointer whitespace-nowrap flex items-center gap-1"
+                title="Import file Excel danh bạ vào nhiệm kỳ này và đặt làm nhiệm kỳ hiện hành"
               >
-                {importing ? 'Đang import...' : '📥 Import Excel'}
+                <Upload className="w-3.5 h-3.5" />
+                {importing ? 'Đang import...' : 'Import Excel'}
               </button>
               <input
                 ref={fileInputRef}
@@ -410,15 +484,54 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
 
         {/* Member Table */}
         <div className="p-6 overflow-y-auto flex-1">
-          <div className="mb-3 relative">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Tìm theo tên, ban, vai trò, lớp..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none"
-            />
+          {/* Tìm kiếm + bộ lọc */}
+          <div className="mb-3 flex flex-col lg:flex-row lg:items-center gap-2">
+            <div className="relative flex-1 min-w-0">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Tìm theo tên, MSV, lớp, email, SĐT…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <select value={filterDept} onChange={(e) => setFilterDept(e.target.value)} className={selectClass} title="Lọc theo ban">
+                <option value="all">Tất cả ban ({countBy('department', 'all')})</option>
+                {departments.map((d) => (
+                  <option key={d} value={d}>
+                    {d === 'Ban Chủ nhiệm' ? 'Chủ nhiệm' : d} ({countBy('department', d)})
+                  </option>
+                ))}
+              </select>
+              <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)} className={selectClass} title="Lọc theo vai trò">
+                <option value="all">Tất cả vai trò ({countBy('role', 'all')})</option>
+                {roles.map((r) => (
+                  <option key={r} value={r}>
+                    {r} ({countBy('role', r)})
+                  </option>
+                ))}
+              </select>
+              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className={selectClass} title="Lọc theo trạng thái">
+                <option value="all">Mọi trạng thái ({countBy('status', 'all')})</option>
+                {Object.entries(STATUS_LABEL).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label} ({countBy('status', value)})
+                  </option>
+                ))}
+              </select>
+              {hasFilter && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="px-3 py-2 rounded-lg text-xs font-semibold text-emerald-300 hover:text-white hover:bg-slate-800 flex items-center gap-1 transition cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Xóa lọc
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="border border-slate-800 rounded-xl overflow-hidden">
@@ -459,8 +572,8 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                           </span>
                         ) : '—'}
                       </td>
-                      <td className="p-3">
-                        <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                      <td className="p-3 whitespace-nowrap">
+                        <span className={`inline-block whitespace-nowrap px-2 py-0.5 rounded text-[11px] font-bold ${
                           isLeader
                             ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                             : m.role === 'Trưởng ban'
@@ -473,7 +586,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                         </span>
                       </td>
                       <td className="p-3 text-slate-300 font-medium whitespace-nowrap">
-                        {m.department === 'Ban Chủ nhiệm' ? '👑 BCN' : m.department}
+                        {m.department === 'Ban Chủ nhiệm' ? '👑 Chủ nhiệm' : m.department}
                       </td>
                       <td className="p-3 font-mono text-slate-400 whitespace-nowrap">
                         <div className="truncate max-w-[180px]" title={m.email}>{m.email}</div>
@@ -514,7 +627,9 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                 {filteredMembers.length === 0 && (
                   <tr>
                     <td colSpan={8} className="p-8 text-center text-slate-500">
-                      Không có thành viên nào trong phạm vi này. Import file Excel danh bạ hoặc thêm thủ công.
+                      {hasFilter
+                        ? 'Không có thành viên nào khớp bộ lọc.'
+                        : 'Không có thành viên nào trong phạm vi này. Import file Excel danh bạ hoặc thêm thủ công.'}
                     </td>
                   </tr>
                 )}
@@ -527,7 +642,8 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
         <div className="px-6 py-3 border-t border-slate-800 bg-slate-900 flex items-center justify-between text-slate-400">
           <span className="flex items-center gap-2">
             <Shield className="w-3.5 h-3.5" />
-            Đang xem <strong className="text-slate-300">{filteredMembers.length}</strong> thành viên
+            Đang xem <strong className="text-slate-300">{filteredMembers.length}</strong>
+            {hasFilter ? ` / ${members.length}` : ''} thành viên
             {selectedTermId === 'active' && activeTerm ? ` — nhiệm kỳ ${activeTerm.name}` : ''}
           </span>
           <button

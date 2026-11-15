@@ -187,7 +187,7 @@ Hệ thống NITC Command Center`;
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-white tracking-tight">
-                  {canWeekly ? 'Nhắc việc quá hạn & Báo cáo tuần' : `Nhắc việc quá hạn — Ban ${actor.department}`}
+                  {canWeekly ? 'Nhắc việc' : `Nhắc việc — Ban ${actor.department}`}
                 </h2>
                 <span className="bg-red-500/20 text-red-300 text-xs px-2.5 py-0.5 rounded-full font-semibold border border-red-500/30">
                   {overdueTasks.length} Quá hạn

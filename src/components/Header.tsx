@@ -38,6 +38,10 @@ interface HeaderProps {
   onOpenBBHParser: () => void;
   onOpenMeetingHistory: () => void;
   onOpenNagModal: () => void;
+  /** Hiện nút Nhắc việc (Ban Chủ nhiệm, Trưởng/Phó ban) */
+  canNag?: boolean;
+  /** Ban Chủ nhiệm: hộp có thêm Báo cáo tuần */
+  canWeeklyReport?: boolean;
   onOpenRosterModal: () => void;
   onOpenDataSyncModal: () => void;
   isSidebarOpen?: boolean;
@@ -62,6 +66,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenBBHParser,
   onOpenMeetingHistory,
   onOpenNagModal,
+  canNag = false,
+  canWeeklyReport = false,
   onOpenRosterModal,
   onOpenDataSyncModal,
   isSidebarOpen = true,
@@ -154,6 +160,17 @@ export const Header: React.FC<HeaderProps> = ({
               onChangeChannel={onChangeNotificationChannel}
             />
 
+            {canNag && (
+              <button
+                onClick={onOpenNagModal}
+                className={`${ghostBtn} hidden md:inline-flex`}
+                title={canWeeklyReport ? 'Nhắc việc quá hạn & Báo cáo tuần' : 'Nhắc việc quá hạn của ban'}
+              >
+                <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+                <span className="hidden md:inline">Nhắc việc</span>
+              </button>
+            )}
+
             <button onClick={onOpenCalendar} className={`${ghostBtn} hidden md:inline-flex`} title="Lịch deadline & kỳ họp">
               <Calendar className="w-3.5 h-3.5 text-violet-400" />
               <span className="hidden md:inline">Lịch</span>
@@ -218,7 +235,6 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-800 rounded border border-slate-700 whitespace-nowrap shrink-0 text-[11px]">
               {isLeadership ? '👑 Toàn CLB' : `Phạm vi: ${authMember.department}`}
             </span>
-            <span className="italic hidden md:inline">Dữ liệu đồng bộ thời gian thực qua máy chủ</span>
           </div>
 
           <div className="flex items-center gap-2 md:gap-3 text-slate-300 text-[11px] overflow-x-auto whitespace-nowrap">

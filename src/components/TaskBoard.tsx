@@ -22,6 +22,7 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
+  X,
 } from 'lucide-react';
 import { Department, Role, Task, Member } from '../types';
 import { canReviewTask } from '../../shared/permissions';
@@ -53,6 +54,36 @@ interface TaskBoardProps {
   onUpdateRequest?: (task: Task) => void;
   onRemindTask?: (task: Task) => void;
 }
+
+type StatusKey = 'all' | 'in_progress' | 'pending_approval' | 'overdue' | 'completed';
+
+/** Tab trạng thái: màu chấm, chữ và gạch chân khi đang chọn */
+const STATUS_TABS: { key: StatusKey; label: string; dot?: string; activeText: string; activeBar: string; badge: string }[] = [
+  { key: 'all', label: 'Tất cả', activeText: 'text-slate-900', activeBar: 'bg-slate-900', badge: 'bg-slate-900 text-white' },
+  { key: 'in_progress', label: 'Đang làm', dot: 'bg-blue-500', activeText: 'text-blue-700', activeBar: 'bg-blue-600', badge: 'bg-blue-100 text-blue-800' },
+  { key: 'pending_approval', label: 'Chờ duyệt', dot: 'bg-amber-500', activeText: 'text-amber-700', activeBar: 'bg-amber-500', badge: 'bg-amber-100 text-amber-800' },
+  { key: 'overdue', label: 'Quá hạn', dot: 'bg-red-500', activeText: 'text-red-700', activeBar: 'bg-red-600', badge: 'bg-red-100 text-red-700' },
+  { key: 'completed', label: 'Đã xong', dot: 'bg-emerald-500', activeText: 'text-emerald-700', activeBar: 'bg-emerald-600', badge: 'bg-emerald-100 text-emerald-800' },
+];
+
+const VIEW_OPTIONS: { mode: ViewMode; label: string; Icon: React.ComponentType<{ className?: string }>; color: string }[] = [
+  { mode: 'grid', label: 'Lưới', Icon: LayoutGrid, color: 'text-[#2C69FF]' },
+  { mode: 'kanban', label: 'Kanban', Icon: Kanban, color: 'text-amber-600' },
+  { mode: 'table', label: 'Bảng', Icon: TableIcon, color: 'text-emerald-600' },
+];
+
+const scopeChip =
+  'px-3.5 py-2 rounded-xl border text-sm font-semibold transition shrink-0 cursor-pointer flex items-center gap-2 whitespace-nowrap';
+
+const CountBadge: React.FC<{ value: number; active?: boolean }> = ({ value, active }) => (
+  <span
+    className={`min-w-[1.5rem] px-1.5 py-0.5 rounded-full text-xs font-bold text-center tabular-nums ${
+      active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+    }`}
+  >
+    {value}
+  </span>
+);
 
 export const TaskBoard: React.FC<TaskBoardProps> = ({
   tasks,
@@ -173,6 +204,29 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
 
   const isPresident = currentRole === 'Chủ nhiệm';
 
+  // Số việc mỗi trạng thái trong phạm vi đang xem (ban / Việc của tôi / từ khóa) — khớp với danh sách hiện ra
+  const statusCounts = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const scoped = baseTasks.filter(
+      (t) =>
+        (selectedDept === 'all' || t.department === selectedDept) &&
+        (!q || t.title.toLowerCase().includes(q) || t.assigneeName.toLowerCase().includes(q) || t.department.toLowerCase().includes(q))
+    );
+    const c: Record<StatusKey, number> = { all: scoped.length, in_progress: 0, pending_approval: 0, overdue: 0, completed: 0 };
+    for (const t of scoped) if (t.status in c) c[t.status as StatusKey] += 1;
+    return c;
+  }, [baseTasks, selectedDept, searchQuery]);
+
+  const hasActiveFilter =
+    onlyMyTasks || selectedDept !== 'all' || Boolean(searchQuery.trim()) || (viewMode !== 'kanban' && selectedStatus !== 'all');
+
+  const clearFilters = () => {
+    setOnlyMyTasks(false);
+    setDept('all');
+    setStatus('all');
+    setSearchQuery('');
+  };
+
   // Nhãn màu ban
   const departmentColorMap: Record<Department, string> = {
     'Học thuật': 'bg-sky-50 text-sky-700 border-sky-200',
@@ -194,225 +248,181 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
   return (
     <div id="task-board" className="space-y-4">
 
-      {/* Top Filter & Command Bar */}
-      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
+      {/* Thanh điều khiển bảng việc: 1) tìm kiếm + chế độ xem + giao việc  2) phạm vi ban  3) trạng thái */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm">
 
-        {/* Row 1: Search, Department pills & View Switcher */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        {/* Hàng 1: Tìm kiếm · Chế độ xem · Thêm việc */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 p-3 sm:p-4">
+          <div className="relative flex-1 min-w-0">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Tìm theo tên việc, người phụ trách hoặc ban…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#2C69FF] focus:ring-2 focus:ring-[#2C69FF]/15 transition"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition cursor-pointer"
+                title="Xóa từ khóa"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
 
-          {/* Department Pills & My Tasks Switcher */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 text-xs [scrollbar-width:none]">
-            {/* Nút 'Việc của tôi' */}
-            <button
-              onClick={() => {
-                setOnlyMyTasks(!onlyMyTasks);
-                if (!onlyMyTasks) setDept('all');
-              }}
-              className={`px-3 py-1.5 rounded-lg font-bold transition shrink-0 cursor-pointer flex items-center gap-1.5 ${onlyMyTasks
-                  ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-300'
-                  : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Chế độ xem */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl" role="tablist" aria-label="Chế độ xem">
+              {VIEW_OPTIONS.map(({ mode, label, Icon, color }) => (
+                <button
+                  key={mode}
+                  role="tab"
+                  aria-selected={viewMode === mode}
+                  onClick={() => handleSetViewMode(mode)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                    viewMode === mode ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                  title={label}
+                >
+                  <Icon className={`w-4 h-4 ${viewMode === mode ? color : ''}`} />
+                  <span className="hidden md:inline">{label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Giao việc nhanh: Ban lãnh đạo + Trưởng/Phó ban */}
+            {['Chủ nhiệm', 'Phó Chủ nhiệm', 'Trưởng ban', 'Phó ban'].includes(currentRole) && (
+              <button
+                onClick={() => setShowQuickAddModal(true)}
+                className="ml-auto sm:ml-0 px-3.5 py-2.5 rounded-xl bg-[#2C69FF] hover:bg-[#1F56D6] text-white text-sm font-bold flex items-center gap-1.5 transition cursor-pointer shadow-sm active:scale-[0.98]"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Thêm việc</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Hàng 2: Phạm vi — Việc của tôi · Toàn CLB · từng ban (ban nhiều việc đứng trước) */}
+        <div className="px-3 sm:px-4 pb-3 flex items-center gap-2 overflow-x-auto md:flex-wrap md:overflow-visible [scrollbar-width:none]">
+          <button
+            onClick={() => {
+              setOnlyMyTasks(!onlyMyTasks);
+              if (!onlyMyTasks) setDept('all');
+            }}
+            className={`${scopeChip} ${
+              onlyMyTasks
+                ? 'bg-amber-500 border-amber-500 text-white shadow-sm'
+                : 'bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100'
+            }`}
+            title="Chỉ hiển thị các công việc giao cho bạn"
+          >
+            <span aria-hidden>⭐</span>
+            <span>Việc của tôi</span>
+            <CountBadge value={myTasksCount} active={onlyMyTasks} />
+          </button>
+
+          <span className="h-6 w-px bg-slate-200 shrink-0" aria-hidden />
+
+          <button
+            onClick={() => {
+              setOnlyMyTasks(false);
+              setDept('all');
+            }}
+            className={`${scopeChip} ${
+              !onlyMyTasks && selectedDept === 'all'
+                ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
+                : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            <span>Toàn CLB</span>
+            <CountBadge value={tasks.length} active={!onlyMyTasks && selectedDept === 'all'} />
+          </button>
+
+          {departmentTabs.map(({ dept, total }) => {
+            const isActive = !onlyMyTasks && selectedDept === dept;
+            return (
+              <button
+                key={dept}
+                onClick={() => {
+                  setOnlyMyTasks(false);
+                  setDept(dept);
+                }}
+                className={`${scopeChip} ${
+                  isActive
+                    ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
+                    : total === 0
+                    ? 'bg-white border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                    : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
                 }`}
-              title="Chỉ hiển thị các công việc giao cho bạn"
-            >
-              <span>⭐</span>
-              <span>Việc của tôi ({myTasksCount})</span>
-            </button>
+              >
+                <span>{dept === 'Ban Chủ nhiệm' ? dept : `Ban ${dept}`}</span>
+                <CountBadge value={total} active={isActive} />
+              </button>
+            );
+          })}
+        </div>
 
-            <div className="h-4 w-px bg-slate-200 mx-0.5 shrink-0" />
-
-            <button
-              onClick={() => {
-                setOnlyMyTasks(false);
-                setDept('all');
-              }}
-              className={`px-3 py-1.5 rounded-lg font-bold transition shrink-0 cursor-pointer ${!onlyMyTasks && selectedDept === 'all'
-                  ? 'bg-[#2C69FF] text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
-            >
-              Toàn CLB ({tasks.length})
-            </button>
-
-            {departmentTabs.map(({ dept, total }) => {
-              const isActive = !onlyMyTasks && selectedDept === dept;
+        {/* Hàng 3: Trạng thái — tab gạch chân; số đếm theo phạm vi đang chọn. Kanban đã chia cột theo trạng thái nên ẩn hàng này. */}
+        {viewMode !== 'kanban' && (
+          <div className="border-t border-slate-100 px-1.5 sm:px-2.5 flex items-center gap-0.5 overflow-x-auto [scrollbar-width:none]" role="tablist" aria-label="Lọc theo trạng thái">
+            {STATUS_TABS.map(({ key, label, dot, activeText, activeBar, badge }) => {
+              const isActive = selectedStatus === key;
+              const n = statusCounts[key];
               return (
                 <button
-                  key={dept}
-                  onClick={() => {
-                    setOnlyMyTasks(false);
-                    setDept(dept);
-                  }}
-                  className={`px-3 py-1.5 rounded-lg font-semibold transition shrink-0 cursor-pointer ${isActive
-                      ? 'bg-slate-800 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                    }`}
+                  key={key}
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => setStatus(key)}
+                  className={`relative px-3 py-3 text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
+                    isActive ? activeText : 'text-slate-500 hover:text-slate-800'
+                  }`}
                 >
-                  {dept === 'Ban Chủ nhiệm' ? dept : `Ban ${dept}`} ({total})
+                  {dot && <span className={`w-2 h-2 rounded-full ${dot}`} aria-hidden />}
+                  <span>{label}</span>
+                  <span
+                    className={`min-w-[1.5rem] px-1.5 py-0.5 rounded-full text-xs font-bold text-center tabular-nums ${
+                      isActive ? badge : 'bg-slate-100 text-slate-500'
+                    }`}
+                  >
+                    {n}
+                  </span>
+                  <span
+                    className={`absolute left-2 right-2 -bottom-px h-0.5 rounded-full transition ${isActive ? activeBar : 'bg-transparent'}`}
+                    aria-hidden
+                  />
                 </button>
               );
             })}
           </div>
-
-          {/* Right: Search Box + View Switcher */}
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1 sm:w-60">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Tìm việc hoặc người làm..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#2C69FF] transition"
-              />
-            </div>
-
-            {/* View Switcher: Grid, Kanban, Table */}
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 shrink-0">
-              <button
-                onClick={() => handleSetViewMode('grid')}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${viewMode === 'grid'
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                title="Chế độ xem Thẻ (Grid)"
-              >
-                <LayoutGrid className="w-3.5 h-3.5 text-[#2C69FF]" />
-                <span className="hidden sm:inline">Lưới</span>
-              </button>
-
-              <button
-                onClick={() => handleSetViewMode('kanban')}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${viewMode === 'kanban'
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                title="Chế độ xem Kanban (Cột trạng thái)"
-              >
-                <Kanban className="w-3.5 h-3.5 text-amber-600" />
-                <span className="hidden sm:inline">Kanban</span>
-              </button>
-
-              <button
-                onClick={() => handleSetViewMode('table')}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${viewMode === 'table'
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                title="Chế độ xem Bảng danh sách (Table)"
-              >
-                <TableIcon className="w-3.5 h-3.5 text-emerald-600" />
-                <span className="hidden sm:inline">Bảng</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Row 2: Status tabs & Quick Add */}
-        <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-slate-100 flex-wrap">
-          {viewMode !== 'kanban' ? (
-            <div className="flex items-center gap-1.5 overflow-x-auto text-xs [scrollbar-width:none] pb-1 sm:pb-0">
-              <button
-                onClick={() => setStatus('all')}
-                className={`px-2.5 py-1 rounded-md font-semibold transition cursor-pointer ${selectedStatus === 'all'
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                  }`}
-              >
-                Tất cả ({countAll})
-              </button>
-
-              <button
-                onClick={() => setStatus('in_progress')}
-                className={`px-2.5 py-1 rounded-md font-semibold transition flex items-center gap-1 cursor-pointer ${selectedStatus === 'in_progress'
-                    ? 'bg-blue-50 text-blue-700 border border-blue-200 font-bold'
-                    : 'text-slate-600 hover:text-blue-700 hover:bg-slate-100'
-                  }`}
-              >
-                <span>Đang làm</span>
-                <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 rounded font-mono">
-                  {countInProgress}
-                </span>
-              </button>
-
-              <button
-                onClick={() => setStatus('pending_approval')}
-                className={`px-2.5 py-1 rounded-md font-semibold transition flex items-center gap-1 cursor-pointer ${selectedStatus === 'pending_approval'
-                    ? 'bg-amber-50 text-amber-800 border border-amber-300 font-bold'
-                    : 'text-slate-600 hover:text-amber-700 hover:bg-slate-100'
-                  }`}
-              >
-                <Clock className="w-3 h-3 text-amber-600" />
-                <span>Chờ duyệt</span>
-                <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 rounded font-bold">
-                  {countPending}
-                </span>
-              </button>
-
-              <button
-                onClick={() => setStatus('overdue')}
-                className={`px-2.5 py-1 rounded-md font-semibold transition flex items-center gap-1 cursor-pointer ${selectedStatus === 'overdue'
-                    ? 'bg-red-50 text-red-700 border border-red-300 font-bold'
-                    : 'text-slate-600 hover:text-red-700 hover:bg-slate-100'
-                  }`}
-              >
-                <AlertTriangle className="w-3 h-3 text-red-500" />
-                <span>Quá hạn</span>
-                {countOverdue > 0 && (
-                  <span className="text-[10px] bg-red-100 text-red-700 px-1.5 rounded font-bold animate-pulse">
-                    {countOverdue}
-                  </span>
-                )}
-              </button>
-
-              <button
-                onClick={() => setStatus('completed')}
-                className={`px-2.5 py-1 rounded-md font-semibold transition flex items-center gap-1 cursor-pointer ${selectedStatus === 'completed'
-                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 font-bold'
-                    : 'text-slate-600 hover:text-emerald-700 hover:bg-slate-100'
-                  }`}
-              >
-                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                <span>Đã xong ({countCompleted})</span>
-              </button>
-            </div>
-          ) : (
-            <div className="text-xs text-slate-500 flex items-center gap-2">
-              <span className="font-semibold text-slate-700">Dòng chảy công việc Kanban:</span>
-              <span>4 cột trạng thái hiển thị song song tự động cập nhật</span>
-            </div>
-          )}
-
-          {/* Giao việc nhanh: Ban lãnh đạo + Trưởng/Phó ban */}
-          {['Chủ nhiệm', 'Phó Chủ nhiệm', 'Trưởng ban', 'Phó ban'].includes(currentRole) && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowQuickAddModal(true)}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold flex items-center gap-1 transition cursor-pointer shadow-sm"
-              >
-                <Plus className="w-3.5 h-3.5 text-[#6C9BFF]" />
-                <span>Thêm việc nhanh</span>
-              </button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
-      {/* Banner thông báo khi đang lọc "Việc của tôi" */}
-      {onlyMyTasks && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs text-amber-900 shadow-xs animate-in fade-in duration-150">
-          <div className="flex items-center gap-2">
-            <span className="text-base">⭐</span>
-            <span>
-              Đang xem <strong>Việc của tôi</strong> —{' '}
-              {filteredTasks.length === 0 ? 'Hiện không có việc nào' : `${filteredTasks.length} nhiệm vụ được giao cho bạn`}
-            </span>
-          </div>
+      {/* Đang lọc → cho biết còn bao nhiêu việc và cách bỏ lọc nhanh */}
+      {hasActiveFilter && (
+        <div className="flex items-center justify-between gap-3 px-1 text-sm text-slate-600 animate-in fade-in duration-150">
+          <span>
+            {onlyMyTasks && <span className="mr-1">⭐</span>}
+            Đang hiển thị <strong className="text-slate-900">{filteredTasks.length}</strong> việc
+            {onlyMyTasks && ' được giao cho bạn'}
+            {selectedDept !== 'all' && !onlyMyTasks && (
+              <> của <strong className="text-slate-900">{selectedDept === 'Ban Chủ nhiệm' ? selectedDept : `Ban ${selectedDept}`}</strong></>
+            )}
+            {searchQuery.trim() && (
+              <> khớp “<strong className="text-slate-900">{searchQuery.trim()}</strong>”</>
+            )}
+          </span>
           <button
-            onClick={() => setOnlyMyTasks(false)}
-            className="text-amber-700 font-bold hover:underline cursor-pointer flex items-center gap-1"
+            onClick={clearFilters}
+            className="shrink-0 text-[#1F56D6] font-semibold hover:underline cursor-pointer flex items-center gap-1"
           >
-            <span>Xem toàn CLB</span>
-            <span>&times;</span>
+            <X className="w-3.5 h-3.5" />
+            Xóa bộ lọc
           </button>
         </div>
       )}
@@ -423,7 +433,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
       {viewMode === 'grid' && (
         <>
           {filteredTasks.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {filteredTasks.map((task) => (
                 <TaskCard
                   key={task.id}
@@ -646,7 +656,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                       <th className="py-3 px-3">Hạn chót</th>
                       <th className="py-3 px-3">Xác minh</th>
                       <th className="py-3 px-3">Trạng thái</th>
-                      <th className="py-3 px-4 text-right">Thao tác</th>
+                      <th className="py-3 px-4 text-center">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -683,13 +693,29 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                       return (
                         <tr
                           key={task.id}
-                          className="hover:bg-slate-50/80 transition group"
+                          // Bấm vào bất kỳ đâu trên hàng → mở chi tiết (trừ khi bấm vào nút/đường dẫn trong hàng)
+                          onClick={(e) => {
+                            if ((e.target as HTMLElement).closest('button, a, input, select, textarea, label')) return;
+                            onOpenDetail?.(task);
+                          }}
+                          onKeyDown={(e) => {
+                            if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
+                              e.preventDefault();
+                              onOpenDetail?.(task);
+                            }
+                          }}
+                          tabIndex={onOpenDetail ? 0 : undefined}
+                          title="Bấm để xem chi tiết"
+                          className={`transition group ${
+                            onOpenDetail
+                              ? 'cursor-pointer hover:bg-blue-50/50 focus-visible:outline-none focus-visible:bg-blue-50/70'
+                              : 'hover:bg-slate-50/80'
+                          }`}
                         >
                           {/* 1. Tên nhiệm vụ */}
                           <td className="py-3 px-4 max-w-xs">
                             <div
-                              onClick={() => onOpenDetail && onOpenDetail(task)}
-                              className={`font-semibold text-slate-900 hover:text-[#2C69FF] cursor-pointer line-clamp-1 ${task.status === 'completed' ? 'line-through text-slate-400' : ''
+                              className={`font-semibold text-slate-900 group-hover:text-[#2C69FF] line-clamp-1 ${task.status === 'completed' ? 'line-through text-slate-400' : ''
                                 }`}
                               title={task.title}
                             >
@@ -773,17 +799,9 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                           </td>
 
                           {/* 7. Thao tác */}
-                          <td className="py-3 px-4 whitespace-nowrap text-right">
-                            <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                              {/* Xem chi tiết */}
-                              <button
-                                onClick={() => onOpenDetail && onOpenDetail(task)}
-                                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer"
-                                title="Xem chi tiết"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </button>
-
+                          <td className="py-3 px-4 whitespace-nowrap align-middle">
+                            {/* Các nút trên một hàng, căn giữa ô (bấm vào hàng đã mở chi tiết nên bỏ nút "Xem chi tiết") */}
+                            <div className="flex items-center justify-center gap-1.5 flex-nowrap">
                               {/* 1. Nộp minh chứng (chỉ cho người phụ trách) */}
                               {canSubmit && task.status !== 'completed' && task.status !== 'pending_approval' && (
                                 <button
@@ -1048,6 +1066,13 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
                         +{finalAssigneeNames.length - 1}
                       </span>
                     )}
+                    {/* Trạng thái chờ duyệt (chỉ là nhãn, không bấm được) — đặt cạnh người phụ trách cho gọn hàng nút */}
+                    {task.status === 'pending_approval' && !canReview && (
+                      <span className="ml-auto px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 text-[10px] font-semibold flex items-center gap-0.5 shrink-0">
+                        <Clock className="w-2.5 h-2.5 text-amber-600" />
+                        <span>Chờ duyệt</span>
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-700/50 text-[10px]">
                     <span className="text-slate-400 flex items-center gap-1 font-medium">
@@ -1109,14 +1134,6 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
 
                     {/* Xin sửa / phản hồi yêu cầu sửa minh chứng */}
                     <UpdateRequestAction task={task} isAssignee={isAssignee} canReview={canReview} onUpdateRequest={onUpdateRequest} compact />
-
-                    {/* Trạng thái chờ duyệt (khi người xem không có quyền duyệt) */}
-                    {task.status === 'pending_approval' && !canReview && (
-                      <span className="px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 text-[10px] font-semibold flex items-center gap-0.5">
-                        <Clock className="w-2.5 h-2.5 text-amber-600" />
-                        <span>Chờ duyệt</span>
-                      </span>
-                    )}
 
                     {/* Duyệt nhanh (Chủ nhiệm) */}
                     {isPresident && task.status !== 'completed' && task.status !== 'pending_approval' && onQuickApprove && (

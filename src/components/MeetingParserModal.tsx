@@ -403,24 +403,12 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
                 className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-sm font-medium text-slate-100 [color-scheme:dark] focus:outline-none focus:border-[#2C69FF] focus:ring-1 focus:ring-[#2C69FF] transition"
               />
             </div>
-
-            <div className="flex items-center">
-              <div className="bg-[#2C69FF]/15 border border-[#2C69FF]/30 rounded-xl p-3 text-xs text-[#8FB2FF] w-full flex items-start gap-2.5">
-                <Info className="w-4 h-4 text-[#8FB2FF] shrink-0 mt-0.5" />
-                <div>
-                  <strong>Quy tắc ngày tháng:</strong> AI tự động chuyển đổi các từ tương đối như <em>"Thứ Hai tới"</em>, <em>"Tuần sau"</em>, <em>"3 ngày sau họp"</em> thành ngày cụ thể dựa trên mốc ngày họp này.
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Input mode tabs */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-200">Phương thức nạp biên bản họp:</span>
-              <span className="text-[11px] text-slate-400 hidden sm:inline">
-                Hỗ trợ văn bản thuần, Google Docs và ảnh OCR
-              </span>
             </div>
 
             <div className="inline-flex p-1 rounded-xl bg-slate-800 border border-slate-800 gap-1">

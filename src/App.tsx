@@ -72,6 +72,7 @@ import {
   canReviewTask,
   canViewLogs,
   canUseNag,
+  canViewWeeklyReport,
   isLeadership as isLeadershipRole,
 } from '../shared/permissions';
 import {
@@ -692,6 +693,25 @@ export function App() {
   };
 
   // Đặt nhiệm kỳ làm hiện hành
+  // Tạo nhiệm kỳ mới không cần file Excel — chưa đặt làm hiện hành (tránh danh bạ hiện hành bị rỗng)
+  const handleCreateTerm = async (name: string): Promise<boolean> => {
+    try {
+      const created = await api<Term>('/terms', { method: 'POST', body: { name } });
+      const t = await api<Term[]>('/terms');
+      setTerms(t);
+      setSelectedTermId(created.id);
+      showToast(
+        `Đã tạo nhiệm kỳ ${created.name}`,
+        'Đang xem nhiệm kỳ mới (chưa có thành viên). Import danh bạ hoặc bấm "Đặt hiện hành" khi sẵn sàng chuyển nhiệm kỳ.',
+        'info'
+      );
+      return true;
+    } catch (e) {
+      showError(e);
+      return false;
+    }
+  };
+
   const handleActivateTerm = async (termId: string) => {
     try {
       const res = await api<{ success: boolean; activeTerm: string }>(`/terms/${termId}/activate`, {
@@ -833,6 +853,8 @@ export function App() {
         onOpenBBHParser={() => setIsParserOpen(true)}
         onOpenMeetingHistory={() => setIsMeetingHistoryOpen(true)}
         onOpenNagModal={() => setIsNagOpen(true)}
+        canNag={canUseNag(actor)}
+        canWeeklyReport={canViewWeeklyReport(actor)}
         onOpenRosterModal={() => setIsRosterOpen(true)}
         onOpenDataSyncModal={() => setIsDataSyncOpen(true)}
         isSidebarOpen={isSidebarOpen}
@@ -903,29 +925,6 @@ export function App() {
                 </span>
               </button>
             )}
-
-            <button
-              onClick={() => {
-                if (canUseNag(actor)) {
-                  setIsNagOpen(true);
-                } else {
-                  setSidebarDeptFilter('all');
-                  setSidebarStatusFilter('overdue');
-                  document.getElementById('task-board')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-              }}
-              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-900 rounded-md text-xs transition cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5">
-                <span>🚨</span>
-                <span>Việc quá hạn</span>
-              </div>
-              {overdueCount > 0 && (
-                <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold animate-pulse">
-                  {overdueCount}
-                </span>
-              )}
-            </button>
 
             <button
               onClick={() => setIsDashOpen(true)}
@@ -1032,97 +1031,6 @@ export function App() {
 
         {/* Main Content Pane */}
         <main className="flex-1 min-w-0 flex flex-col p-3 sm:p-5 md:p-6 gap-4 sm:gap-5 max-w-full overflow-x-hidden pb-24 lg:pb-6">
-
-          {/* Top 4 KPI Metric Cards (Mobile: Vuốt ngang snap-x tiết kiệm 350px dọc; Desktop: Lưới 4 cột) */}
-          <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 shrink-0 overflow-x-auto snap-x snap-mandatory pb-1 sm:pb-0 [scrollbar-width:none]">
-            {/* Card 1: Total Tasks */}
-            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between w-[75vw] max-w-[280px] sm:w-auto shrink-0 snap-start">
-              <div>
-                <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
-                  <span>Tổng nhiệm vụ</span>
-                  <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded font-bold">
-                    {currentRole === 'Chủ nhiệm' ? 'Toàn CLB' : currentDepartment}
-                  </span>
-                </div>
-                <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{totalTasksCount}</div>
-              </div>
-              <div className="text-[10px] text-emerald-600 font-medium mt-2 flex items-center gap-1">
-                <span>↑ {completionRate}% hoàn thành toàn trình</span>
-              </div>
-            </div>
-
-            {/* Card 2: In Progress */}
-            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between w-[75vw] max-w-[280px] sm:w-auto shrink-0 snap-start">
-              <div>
-                <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
-                  <span>Đang thực hiện</span>
-                  <span className="text-[10px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-bold">Active</span>
-                </div>
-                <div className="text-2xl font-bold text-blue-600 mt-1">{inProgressCount}</div>
-              </div>
-              <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full mt-3 overflow-hidden">
-                <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${inProgressPct}%` }}></div>
-              </div>
-            </div>
-
-            {/* Card 3: The Nag Overdue */}
-            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm border-l-4 border-l-red-500 flex flex-col justify-between w-[75vw] max-w-[280px] sm:w-auto shrink-0 snap-start">
-              <div>
-                <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
-                  <span>Việc quá hạn</span>
-                  {overdueCount > 0 ? (
-                    <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold animate-pulse">Cần nhắc</span>
-                  ) : (
-                    <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">Tốt</span>
-                  )}
-                </div>
-                <div className="text-2xl font-bold text-red-600 mt-1">
-                  {overdueCount}
-                </div>
-              </div>
-              <div className="mt-2 flex items-center justify-between text-[10px]">
-                <span className="text-slate-400 italic">Nhắc tự động hàng ngày</span>
-                {overdueCount > 0 && canUseNag(actor) && (
-                  <button
-                    onClick={() => setIsNagOpen(true)}
-                    className="font-bold text-red-600 hover:underline cursor-pointer"
-                  >
-                    Gửi mail ngay &rarr;
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Card 4: Evidence Review Pending */}
-            <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between w-[75vw] max-w-[280px] sm:w-auto shrink-0 snap-start">
-              <div>
-                <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
-                  <span>Đợi duyệt bằng chứng</span>
-                  <span className="text-[10px] bg-[#2C69FF]/15 text-[#1E4FC4] px-1.5 py-0.5 rounded font-bold">Bạn duyệt</span>
-                </div>
-                <div className="text-2xl font-bold text-[#2C69FF] mt-1">
-                  {reviewableCount}
-                </div>
-              </div>
-              <div className="mt-2">
-                {reviewableCount > 0 ? (
-                  <button
-                    onClick={() => {
-                      // Lọc bảng việc hiển thị TẤT CẢ việc chờ duyệt để duyệt lần lượt
-                      setSidebarDeptFilter('all');
-                      setSidebarStatusFilter('pending_approval');
-                      document.getElementById('task-board')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }}
-                    className="text-[11px] font-bold text-[#1F56D6] hover:text-[#1E4FC4] underline cursor-pointer"
-                  >
-                    Kiểm tra ngay &rarr;
-                  </button>
-                ) : (
-                  <span className="text-[10px] text-slate-400">Không có việc tồn đọng</span>
-                )}
-              </div>
-            </div>
-          </div>
 
           {/* 3. Task Management Board */}
           <TaskBoard
@@ -1255,6 +1163,7 @@ export function App() {
           onUpdateMember={handleUpdateMember}
           onDeleteMember={handleDeleteMember}
           onActivateTerm={handleActivateTerm}
+          onCreateTerm={handleCreateTerm}
           onResetPassword={canResetMemberPassword(actor) ? handleResetMemberPassword : undefined}
         />
       )}
