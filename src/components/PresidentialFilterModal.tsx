@@ -22,6 +22,7 @@ import {
 import { Department, ExtractedDraftTask, Meeting, Member } from '../types';
 import { AssigneeMultiSelect } from './AssigneeMultiSelect';
 import { todayISO, formatDateVN } from '../utils/dateUtils';
+import { todayVN, addDays } from '../../shared/time';
 
 interface PresidentialFilterModalProps {
   isOpen: boolean;
@@ -204,7 +205,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
       suggestedAssigneeIds: [defaultMember.id],
       suggestedDepartment: defaultMember.department as Department,
       rawDeadlinetext: '7 ngày tới',
-      suggestedDeadline: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+      suggestedDeadline: addDays(todayVN(), 7),
       verificationType: 'link_required',
       hasAmbiguity: false,
       ambiguityMatches: [],
@@ -226,7 +227,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
   };
 
   const handleFixPastDeadline = (tempId: string) => {
-    const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+    const nextWeek = addDays(todayVN(), 7);
     handleUpdateTask(tempId, { suggestedDeadline: nextWeek });
   };
 
@@ -242,7 +243,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
     const finalMeeting: Meeting = {
       id: `meet-${Date.now()}`,
       title: typeof meeting.title === 'string' ? meeting.title : 'Biên bản họp Ban Điều Hành',
-      date: typeof meeting.date === 'string' ? meeting.date : new Date().toISOString().split('T')[0],
+      date: typeof meeting.date === 'string' ? meeting.date : todayVN(),
       chairperson: typeof meeting.chairperson === 'string' ? meeting.chairperson : 'Lê Hồng Phúc Minh',
       secretary: typeof meeting.secretary === 'string' ? meeting.secretary : 'Nguyễn Thị Ngọc Ánh',
       attendees: rawAttendees,

@@ -1,8 +1,10 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from './db';
 import { hashPassword } from './auth';
+import { config } from './config';
 import { INITIAL_MEMBERS, INITIAL_MEETINGS, INITIAL_TASKS, INITIAL_LOGS } from '../src/data/initialData';
 
-export const DEFAULT_PASSWORD = 'nitc123';
+export const DEFAULT_PASSWORD = config.defaultPassword;
 
 /**
  * Seed dữ liệu mẫu khi CSDL trống (lần chạy đầu) — tái tạo đúng bộ demo của MVP,
@@ -12,47 +14,71 @@ export async function seedIfEmpty(): Promise<boolean> {
   const memberCount = await prisma.member.count();
   if (memberCount > 0) return false;
 
-  await seedDemoData();
+  const passwordHash = await hashPassword(DEFAULT_PASSWORD);
+  await prisma.$transaction((tx) => seedDemoData(tx, passwordHash), { timeout: 120_000, maxWait: 15_000 });
   return true;
 }
 
-/** Wipe + seed lại (dùng cho "Reset Demo" của Chủ nhiệm) */
+/**
+ * Wipe + seed lại (dùng cho "Reset Demo" của Chủ nhiệm).
+ * Xóa và ghi lại trong MỘT transaction: lỗi giữa chừng thì dữ liệu cũ còn nguyên.
+ */
 export async function resetAndSeed(): Promise<void> {
-  await prisma.$transaction([
-    prisma.user.deleteMany(),
-    prisma.task.deleteMany(),
-    prisma.meeting.deleteMany(),
-    prisma.notificationLog.deleteMany(),
-    prisma.member.deleteMany(),
-  ]);
-  await seedDemoData();
+  const passwordHash = await hashPassword(DEFAULT_PASSWORD);
+  await prisma.$transaction(
+    async (tx) => {
+      await tx.user.deleteMany();
+      await tx.task.deleteMany();
+      await tx.meeting.deleteMany();
+      await tx.notificationLog.deleteMany();
+      await tx.member.deleteMany();
+      await seedDemoData(tx, passwordHash);
+    },
+    { timeout: 120_000, maxWait: 15_000 }
+  );
 }
 
-async function seedDemoData(): Promise<void> {
-  const passwordHash = await hashPassword(DEFAULT_PASSWORD);
+/** Nhiệm kỳ hiện hành; chưa có thì tạo theo năm học hiện tại (từ tháng 8 tính sang năm học mới). */
+async function ensureActiveTerm(tx: Prisma.TransactionClient): Promise<{ id: string }> {
+  const active = await tx.term.findFirst({ where: { isActive: true } });
+  if (active) return active;
+  const now = new Date();
+  const startYear = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
+  const name = `${startYear}-${startYear + 1}`;
+  return tx.term.upsert({ where: { name }, update: { isActive: true }, create: { name, isActive: true } });
+}
+
+async function seedDemoData(tx: Prisma.TransactionClient, passwordHash: string): Promise<void> {
+  // Gắn thành viên vào nhiệm kỳ hiện hành — GET /members mặc định lọc theo nhiệm kỳ này,
+  // thiếu termId thì danh bạ hiện rỗng dù dữ liệu vẫn có.
+  const term = await ensureActiveTerm(tx);
 
   // 1. Members + Users
   for (const m of INITIAL_MEMBERS) {
-    await prisma.member.create({
+    await tx.member.create({
       data: {
         id: m.id,
         name: m.name,
         role: m.role,
         department: m.department,
-        email: m.email,
+        email: m.email.toLowerCase(),
         phone: m.phone ?? null,
+        studentId: m.studentId ?? null,
+        className: m.className ?? null,
+        termId: term.id,
       },
     });
-    await prisma.user.create({
+    await tx.user.create({
       data: { email: m.email.toLowerCase(), passwordHash, memberId: m.id },
     });
   }
 
   // 2. Meetings
   for (const mt of INITIAL_MEETINGS) {
-    await prisma.meeting.create({
+    await tx.meeting.create({
       data: {
         id: mt.id,
+        termId: term.id,
         title: mt.title,
         date: mt.date,
         chairperson: mt.chairperson,
@@ -69,9 +95,10 @@ async function seedDemoData(): Promise<void> {
 
   // 3. Tasks
   for (const t of INITIAL_TASKS) {
-    await prisma.task.create({
+    await tx.task.create({
       data: {
         id: t.id,
+        termId: term.id,
         title: t.title,
         description: t.description ?? null,
         assigneeId: t.assigneeId,
@@ -98,7 +125,7 @@ async function seedDemoData(): Promise<void> {
 
   // 4. Logs
   for (const lg of INITIAL_LOGS) {
-    await prisma.notificationLog.create({
+    await tx.notificationLog.create({
       data: {
         id: lg.id,
         type: lg.type,

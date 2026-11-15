@@ -19,6 +19,8 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { Department, Role, Task, Member } from '../types';
+import { canReviewTask } from '../../shared/permissions';
+import { UpdateRequestAction } from './UpdateRequestAction';
 import { formatDateVN, getDaysRemaining, isTaskOverdue } from '../utils/dateUtils';
 
 interface TaskCardProps {
@@ -93,7 +95,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const canRemind = isManager && !isAssignee;
 
   // 3. Kiểm tra minh chứng (khi chờ duyệt): Ban quản lý
-  const canReview = isManager;
+  // Duyệt minh chứng: cùng quy tắc với server (shared/permissions) — người quản lý việc, không tự duyệt việc của mình
+  const canReview = canReviewTask({ id: currentUserId, role: currentRole, department: currentDepartment }, task);
 
   const departmentColorMap: Record<Department, string> = {
     'Học thuật': 'bg-sky-50 text-sky-700 border-sky-200',
@@ -245,7 +248,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             <div className="flex items-center justify-between text-[11px] text-slate-500">
               <span className="font-semibold text-slate-700">Minh chứng đã nộp:</span>
               {task.status === 'pending_approval' && (
-                <span className="text-amber-700 font-bold">Chờ Chủ nhiệm duyệt</span>
+                <span className="text-amber-700 font-bold">Chờ duyệt</span>
               )}
             </div>
 
@@ -334,6 +337,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               <span>Kiểm tra</span>
             </button>
           )}
+
+          {/* 3b. Xin sửa minh chứng (người làm) / phản hồi yêu cầu sửa (người duyệt) */}
+          <UpdateRequestAction task={task} isAssignee={isAssignee} canReview={canReview} onUpdateRequest={onUpdateRequest} />
 
           {/* 4. Trạng thái chờ duyệt (khi người xem không có quyền duyệt) */}
           {task.status === 'pending_approval' && !canReview && (

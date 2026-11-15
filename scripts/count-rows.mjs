@@ -6,7 +6,7 @@ async function main() {
     ['User', prisma.user], ['Term', prisma.term], ['Member', prisma.member],
     ['Meeting', prisma.meeting], ['Notification', prisma.notification],
     ['NotificationPref', prisma.notificationPref], ['Task', prisma.task],
-    ['NotificationLog', prisma.notificationLog], ['Setting', prisma.setting],
+    ['NotificationLog', prisma.notificationLog], ['Setting', prisma.setting], ['Doc', prisma.doc],
   ];
   for (const [name, model] of tables) {
     const n = await model.count();

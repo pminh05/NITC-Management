@@ -2,21 +2,33 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
-import jwt from 'jsonwebtoken';
-import { loginHandler, meHandler, requireAuth } from './server/auth';
+import { config } from './server/config';
+import {
+  authConfigHandler,
+  authenticateToken,
+  changePasswordHandler,
+  loginHandler,
+  meHandler,
+  requireAuth,
+  requireAuthAllowPending,
+} from './server/auth';
 import { apiRouter } from './server/api';
+import { canPublishMeeting, requireCan } from './server/permissions';
 import { parseBBHHandler } from './server/aiParser';
 import { seedIfEmpty } from './server/seed';
 import { subscribeMember } from './server/notifications';
 import { calendarIcsHandler } from './server/calendar';
 import { registerDocsRoutes } from './server/docs';
 import { startScheduler } from './server/scheduler';
-import { prisma } from './server/db';
+import { HttpError, apiNotFound, errorHandler, installProcessGuards, wrap } from './server/http';
+
+// Promise bị reject ngoài vòng đời request (cron, SSE, email) chỉ ghi log, không làm sập server
+installProcessGuards();
 
 const app = express();
-const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'nitc-command-center-dev-secret-change-in-production';
+const PORT = config.port;
 
+app.disable('x-powered-by');
 app.use(express.json({ limit: '25mb' })); // ảnh/PDF base64 có thể lớn hơn file gốc ~37%
 
 // Health check
@@ -24,84 +36,70 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
-// Auth (không cần token)
-app.post('/api/auth/login', loginHandler);
-app.get('/api/auth/me', requireAuth, meHandler);
+// Auth
+app.get('/api/auth/config', wrap(authConfigHandler)); // công khai: trang đăng nhập hỏi có ở chế độ demo không
+app.post('/api/auth/login', wrap(loginHandler));
+// Hai route dưới cho qua tài khoản đang chờ đổi mật khẩu mặc định
+app.get('/api/auth/me', requireAuthAllowPending, wrap(meHandler));
+app.post('/api/auth/change-password', requireAuthAllowPending, wrap(changePasswordHandler));
 
 // SSE stream thông báo realtime — EventSource không gửi được header, xác thực qua ?token=
-app.get('/api/notifications/stream', async (req, res) => {
-  const token = String(req.query.token || '');
-  let memberId: string;
-  try {
-    const payload = jwt.verify(token, JWT_SECRET) as { sub: string };
-    const user = await prisma.user.findUnique({ where: { id: payload.sub }, include: { member: true } });
-    if (!user?.member) throw new Error('no member');
-    memberId = user.member.id;
-  } catch {
-    return res.status(401).json({ error: 'Token không hợp lệ' });
-  }
+app.get(
+  '/api/notifications/stream',
+  wrap(async (req, res) => {
+    const auth = await authenticateToken(String(req.query.token || ''));
+    if (auth.mustChangePassword) {
+      throw new HttpError(403, 'Bạn cần đổi mật khẩu mặc định trước khi sử dụng hệ thống', 'PASSWORD_CHANGE_REQUIRED');
+    }
+    const memberId = auth.member.id;
 
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    Connection: 'keep-alive',
-  });
-  res.write(`data: ${JSON.stringify({ hello: true })}\n\n`);
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    });
+    res.write(`data: ${JSON.stringify({ hello: true })}\n\n`);
 
-  const unsubscribe = subscribeMember(memberId, (data) => {
-    res.write(`data: ${data}\n\n`);
-  });
-  // Heartbeat 25s giữ kết nối sống
-  const heartbeat = setInterval(() => res.write(': ping\n\n'), 25000);
-  req.on('close', () => {
-    clearInterval(heartbeat);
-    unsubscribe();
-  });
-});
+    const unsubscribe = subscribeMember(memberId, (data) => {
+      res.write(`data: ${data}\n\n`);
+    });
+    // Heartbeat 25s giữ kết nối sống
+    const heartbeat = setInterval(() => res.write(': ping\n\n'), 25000);
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      unsubscribe();
+    });
+  })
+);
 
-// Xuất lịch ICS (Google/Apple Calendar) — tải trực tiếp trên trình duyệt qua ?token=
-app.get('/api/calendar.ics', requireAuth, calendarIcsHandler);
+// Xuất lịch ICS (Google/Apple Calendar)
+app.get('/api/calendar.ics', requireAuth, wrap(calendarIcsHandler));
 
 // AI BBH Parser: Ban lãnh đạo + Trưởng/Phó ban (họp riêng ban)
-app.post('/api/gemini/parse-bbh', requireAuth, (req, res, next) => {
-  const role = req.authMember?.role;
-  if (!['Chủ nhiệm', 'Phó Chủ nhiệm', 'Trưởng ban', 'Phó ban'].includes(role || '')) {
-    return res.status(403).json({ error: 'Chỉ Ban lãnh đạo hoặc Trưởng ban/Phó ban được đọc biên bản họp' });
-  }
-  return next();
-}, parseBBHHandler);
-
-// Reminder / Nag log placeholder (giữ tương thích cũ; log thật giờ qua /api/logs)
-app.post('/api/nag/send-reminders', requireAuth, (req, res) => {
-  const { type, recipientEmail, recipientName, subject, content, department, taskCount } = req.body || {};
-  const log = {
-    id: `log-${Date.now()}`,
-    type: type || 'overdue_nag',
-    recipientName: recipientName || 'Ban Điều Hành NITC',
-    recipientEmail: recipientEmail || 'bdh-nitc@gmail.com',
-    department,
-    subject: subject || 'Thông báo từ NITC Command Center',
-    content: content || '',
-    sentAt: new Date().toISOString(),
-    status: 'sent',
-    taskCount: taskCount || 1,
-  };
-  res.json({ success: true, log });
-});
+app.post(
+  '/api/ai/parse-bbh',
+  requireAuth,
+  requireCan(canPublishMeeting, 'Chỉ Ban lãnh đạo hoặc Trưởng ban/Phó ban được đọc biên bản họp'),
+  wrap(parseBBHHandler)
+);
 
 // Toàn bộ API nghiệp vụ (cần đăng nhập)
 app.use('/api', requireAuth, apiRouter);
 registerDocsRoutes(apiRouter);
+
+// Đường dẫn /api không tồn tại → 404 JSON; mọi lỗi của API → JSON qua errorHandler (không sập tiến trình)
+app.use('/api', apiNotFound);
+app.use(errorHandler);
 
 // Vite & Static Asset Handling
 async function startServer() {
   // Seed dữ liệu mẫu khi CSDL trống (lần chạy đầu)
   const seeded = await seedIfEmpty();
   if (seeded) {
-    console.log('✔ Database seeded với dữ liệu demo NITC (mật khẩu mặc định: nitc123)');
+    console.log(`✔ Database seeded với dữ liệu demo NITC (mật khẩu mặc định: ${config.defaultPassword})`);
   }
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (!config.isProd) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
@@ -117,10 +115,16 @@ async function startServer() {
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`NITC Command Center Server (v3 backend) running on http://localhost:${PORT}`);
+    if (config.demoMode) {
+      console.log('⚠ DEMO_MODE=true: hiện nút đăng nhập nhanh và không buộc đổi mật khẩu mặc định — tắt khi dùng thật.');
+    }
   });
 
   // Cron: quét deadline 6h · digest 20h · báo cáo tuần Chủ Nhật 21h
   startScheduler();
 }
 
-startServer();
+startServer().catch((e) => {
+  console.error('✘ Không khởi động được server:', e);
+  process.exit(1);
+});

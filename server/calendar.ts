@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from './db';
+import { todayVN } from '../shared/time';
 
 // ===== G5: Xuất lịch ICS (Google Calendar / Apple Calendar) =====
 // GET /api/calendar.ics?token=JWT — deadline công việc (all-day) + các kỳ họp
@@ -14,7 +15,7 @@ function ymdCompact(ymd: string): string {
 
 export async function calendarIcsHandler(req: Request, res: Response) {
   const me = req.authMember!;
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayVN();
   const stamp = today.replace(/-/g, '') + 'T000000Z';
 
   const isLeadershipUser = me.role === 'Chủ nhiệm' || me.role === 'Phó Chủ nhiệm';

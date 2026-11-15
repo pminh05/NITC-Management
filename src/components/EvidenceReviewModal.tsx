@@ -29,7 +29,8 @@ export const EvidenceReviewModal: React.FC<EvidenceReviewModalProps> = ({
   onApprove,
   onReject,
 }) => {
-  const [approvalNote, setApprovalNote] = useState('Chủ nhiệm đã duyệt: Làm rất tốt, đúng tiến độ!');
+  // Để trống: server tự ghi "<tên> (<chức vụ>) đã duyệt hoàn thành."
+  const [approvalNote, setApprovalNote] = useState('');
   const [rejectReason, setRejectReason] = useState('');
   const [isRejecting, setIsRejecting] = useState(false);
 

@@ -15,6 +15,7 @@ import {
   Database,
   Settings as SettingsIcon,
   LogOut,
+  KeyRound,
   ChevronRight,
   ShieldAlert,
 } from 'lucide-react';
@@ -37,6 +38,7 @@ interface MobileBottomNavProps {
   onOpenRoster: () => void;
   onOpenDataSync: () => void;
   onOpenSettings: () => void;
+  onChangePassword?: () => void;
   onLogout: () => void;
 }
 
@@ -57,6 +59,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   onOpenRoster,
   onOpenDataSync,
   onOpenSettings,
+  onChangePassword,
   onLogout,
 }) => {
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
@@ -424,6 +427,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                     <ChevronRight className="w-4 h-4 text-slate-400" />
                   </button>
 
+                  {authMember.role === 'Chủ nhiệm' && (
                   <button
                     type="button"
                     onClick={() => {
@@ -440,12 +444,26 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-400" />
                   </button>
+                  )}
                 </>
               )}
             </div>
 
-            {/* Logout Button */}
-            <div className="pt-2 border-t border-slate-100">
+            {/* Đổi mật khẩu + Đăng xuất */}
+            <div className="pt-2 border-t border-slate-100 space-y-2">
+              {onChangePassword && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMoreDrawerOpen(false);
+                    onChangePassword();
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+                >
+                  <KeyRound className="w-4 h-4" />
+                  <span>Đổi mật khẩu</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {

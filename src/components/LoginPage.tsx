@@ -1,36 +1,58 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { api, setToken } from '../api/client';
-import { Member, Role } from '../types';
+import { Member } from '../types';
 
 interface LoginPageProps {
-  onLogin: (member: Member) => void;
+  onLogin: (member: Member, mustChangePassword: boolean) => void;
+  /** Thông báo hiển thị phía trên form (VD: phiên đăng nhập vừa hết hiệu lực) */
+  notice?: string | null;
 }
 
-// Bộ tài khoản test demo (mật khẩu chung: nitc123) — đầy đủ 5 vai trò và ban bộ phận
-const DEMO_ACCOUNTS: { label: string; email: string; icon: string }[] = [
-  { label: 'Chủ nhiệm — Phạm Phúc Minh', email: 'phamphucminhlehong@gmail.com', icon: '👑' },
-  { label: 'Phó Chủ nhiệm — Trần Thị Hoài Thương', email: 'thuongqlht02@gmail.com', icon: '🌟' },
-  { label: 'Trưởng ban Sự kiện — Đoàn Anh Tú', email: 'anhtud143@gmail.com', icon: '📅' },
-  { label: 'Trưởng ban Học thuật — Lê Ngọc Anh Thư', email: 'anhthulengoc00@gmail.com', icon: '🎓' },
-  { label: 'Thành viên Truyền thông — Chu Hà My', email: 'chuhamy1107@gmail.com', icon: '📢' },
-];
+interface DemoAccount {
+  label: string;
+  email: string;
+  icon: string;
+}
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+interface AuthConfig {
+  demoMode: boolean;
+  demoAccounts: DemoAccount[];
+  demoPassword?: string;
+}
+
+export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, notice }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Tài khoản đăng nhập nhanh do server cấp — chỉ có khi server chạy ở chế độ demo (DEMO_MODE=true).
+  // Mã nguồn giao diện không còn chứa sẵn email hay mật khẩu của ai.
+  const [demo, setDemo] = useState<AuthConfig | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    api<AuthConfig>('/auth/config')
+      .then((cfg) => {
+        if (alive && cfg?.demoMode && Array.isArray(cfg.demoAccounts)) setDemo(cfg);
+      })
+      .catch(() => {
+        // Không lấy được cấu hình → coi như không ở chế độ demo
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const doLogin = async (mail: string, pass: string) => {
     setError(null);
     setLoading(true);
     try {
-      const res = await api<{ token: string; member: Member }>('/auth/login', {
+      const res = await api<{ token: string; member: Member; mustChangePassword?: boolean }>('/auth/login', {
         method: 'POST',
         body: { email: mail, password: pass },
       });
       setToken(res.token);
-      onLogin(res.member);
+      onLogin(res.member, Boolean(res.mustChangePassword));
     } catch (e: any) {
       setError(e?.message || 'Đăng nhập thất bại');
       setLoading(false);
@@ -92,6 +114,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             />
           </div>
 
+          {notice && !error && (
+            <div className="bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs rounded-lg px-3 py-2">
+              {notice}
+            </div>
+          )}
+
           {error && (
             <div className="bg-red-500/10 border border-red-500/30 text-red-300 text-xs rounded-lg px-3 py-2">
               {error}
@@ -107,32 +135,34 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           </button>
         </form>
 
-        {/* Demo accounts */}
-        <div className="mt-6">
-          <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold text-center mb-2">
-            Đăng nhập nhanh (tài khoản demo — mật khẩu nitc123)
+        {/* Demo accounts — chỉ hiện khi server bật DEMO_MODE */}
+        {demo && demo.demoAccounts.length > 0 && demo.demoPassword && (
+          <div className="mt-6">
+            <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold text-center mb-2">
+              Đăng nhập nhanh (chế độ demo)
+            </div>
+            <div className="space-y-1.5">
+              {demo.demoAccounts.map((acc) => (
+                <button
+                  key={acc.email}
+                  onClick={() => {
+                    setEmail(acc.email);
+                    setPassword(demo.demoPassword!);
+                    doLogin(acc.email, demo.demoPassword!);
+                  }}
+                  disabled={loading}
+                  className="w-full flex items-center gap-3 px-3.5 py-2 bg-slate-800/50 hover:bg-slate-700/70 border border-slate-700/70 rounded-lg text-left transition cursor-pointer group"
+                >
+                  <span className="text-base">{acc.icon}</span>
+                  <span className="text-xs text-slate-300 group-hover:text-white flex-1 truncate">
+                    {acc.label}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-mono">đăng nhập →</span>
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="space-y-1.5">
-            {DEMO_ACCOUNTS.map((acc) => (
-              <button
-                key={acc.email}
-                onClick={() => {
-                  setEmail(acc.email);
-                  setPassword('nitc123');
-                  doLogin(acc.email, 'nitc123');
-                }}
-                disabled={loading}
-                className="w-full flex items-center gap-3 px-3.5 py-2 bg-slate-800/50 hover:bg-slate-700/70 border border-slate-700/70 rounded-lg text-left transition cursor-pointer group"
-              >
-                <span className="text-base">{acc.icon}</span>
-                <span className="text-xs text-slate-300 group-hover:text-white flex-1 truncate">
-                  {acc.label}
-                </span>
-                <span className="text-[10px] text-slate-500 font-mono">đăng nhập →</span>
-              </button>
-            ))}
-          </div>
-        </div>
+        )}
 
         <p className="text-center text-[11px] text-slate-500 mt-6">
           NITC Command Center v3 &bull; Hệ thống quản trị tích hợp AI cho tổ chức sinh viên

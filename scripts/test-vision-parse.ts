@@ -18,7 +18,7 @@ async function main() {
 
   console.log('Gửi ảnh cho AI đọc (OCR)... có thể mất 10-30 giây');
   const t0 = Date.now();
-  const res = await fetch(`${BASE}/api/gemini/parse-bbh`, {
+  const res = await fetch(`${BASE}/api/ai/parse-bbh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({

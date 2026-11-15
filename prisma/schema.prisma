@@ -26,15 +26,17 @@ model Term {
   createdAt DateTime @default(now())
   members  Member[]
   docs     Doc[]
+  tasks    Task[]
+  meetings Meeting[]
 }
 
 // Thành viên CLB (roster) — tương ứng Member trong src/types.ts
 model Member {
   id         String   @id @default(cuid()) // seed demo vẫn set id tường minh (mem-1...)
   name       String
-  role       String // Chủ tịch | Phó Chủ tịch | Trưởng ban | Phó ban | Thành viên | Cố vấn
+  role       String // Chủ nhiệm | Phó Chủ nhiệm | Trưởng ban | Phó ban | Thành viên | Cố vấn
   department String // Học thuật | Truyền thông | Sự kiện | Đối ngoại | Ban Chủ nhiệm
-  email      String
+  email      String   @unique // mỗi email một thành viên (trùng với email tài khoản đăng nhập)
   phone      String?
   studentId  String? // Mã sinh viên (MSV)
   className  String? // Lớp (VD: IT67A)
@@ -47,9 +49,13 @@ model Member {
   user       User?
   tasks      Task[]   @relation("Assignee")
   ownedTasks Task[]   @relation("Creator")
+  approvedTasks Task[] @relation("Approver")
   notifications    Notification[]
   notificationPref NotificationPref?
   createdDocs      Doc[]          @relation("DocCreator")
+
+  @@index([termId])
+  @@index([department])
 }
 
 // Biên bản họp (NITC Archive)
@@ -69,8 +75,13 @@ model Meeting {
   discussionSummary String
   actionPlan       String
   rawContent       String
+  termId           String? // nhiệm kỳ diễn ra kỳ họp
+  term             Term?    @relation(fields: [termId], references: [id])
   createdAt        DateTime @default(now())
   tasks            Task[]
+
+  @@index([termId])
+  @@index([department])
 }
 
 // Thông báo cá nhân (Trung tâm thông báo G2)
@@ -88,6 +99,7 @@ model Notification {
 
   @@unique([dedupeKey])
   @@index([memberId, readAt])
+  @@index([memberId, createdAt])
 }
 
 // Cài đặt nhận thông báo của từng thành viên
@@ -108,12 +120,14 @@ model Task {
   assigneeIds         String @default("[]") // JSON array — có thể giao nhiều người / cả ban
   department          String
   deadline            String // YYYY-MM-DD
-  status              String // in_progress | pending_approval | completed | overdue
+  status              String // in_progress | pending_approval | completed ("quá hạn" tính theo hạn chót lúc đọc — xem shared/taskState.ts)
   verificationType    String // link_required | report_required
   evidenceLink        String?
   evidenceReport      String?
   evidenceSubmittedAt String?
   approvalNote        String?
+  approvedById        String? // ai đã nghiệm thu
+  approvedAt          DateTime?
   rejectedReason      String?
   // Yêu cầu cập nhật minh chứng (người làm gửi -> Ban lãnh đạo/TB phản hồi bằng feedback)
   updateRequestedAt   String?
@@ -125,11 +139,20 @@ model Task {
   isSticky            Boolean   @default(false)
   stickyWeeksCount    Int?
   createdById         String?
+  termId              String? // nhiệm kỳ của công việc
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   assignee            Member    @relation("Assignee", fields: [assigneeId], references: [id])
   creator             Member?   @relation("Creator", fields: [createdById], references: [id])
+  approver            Member?   @relation("Approver", fields: [approvedById], references: [id], onDelete: SetNull)
+  term                Term?     @relation(fields: [termId], references: [id])
   sourceMeeting       Meeting?  @relation(fields: [sourceMeetingId], references: [id])
+
+  @@index([department])
+  @@index([assigneeId])
+  @@index([status, deadline])
+  @@index([sourceMeetingId])
+  @@index([termId])
 }
 
 // Nhật ký thông báo/nhắc việc (Nag Engine)
@@ -144,6 +167,8 @@ model NotificationLog {
   sentAt        DateTime @default(now())
   status        String // sent | queued | failed
   taskCount     Int?
+
+  @@index([sentAt])
 }
 
 // Cấu hình hệ thống (key-value) — dùng cho G5 Settings
@@ -167,4 +192,6 @@ model Doc {
   createdBy   Member?  @relation("DocCreator", fields: [createdById], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([termId, department])
 }

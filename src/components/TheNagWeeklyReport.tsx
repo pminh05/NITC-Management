@@ -79,7 +79,7 @@ Hệ thống NITC Command Center xin gửi Báo cáo Tổng kết Tiến độ C
 - Tổng số nhiệm vụ: ${totalTasks}
 - Đã hoàn thành: ${totalCompleted} việc (${totalTasks > 0 ? Math.round((totalCompleted / totalTasks) * 100) : 0}%)
 - Đang triển khai: ${tasks.filter((t) => t.status === 'in_progress').length} việc
-- Chờ Chủ nhiệm duyệt: ${tasks.filter((t) => t.status === 'pending_approval').length} việc
+- Chờ duyệt: ${tasks.filter((t) => t.status === 'pending_approval').length} việc
 - Quá hạn / Còn nợ: ${totalOverdue} việc
 - Nhiệm vụ Sticky (lưu chuyển từ kỳ trước chưa xong): ${totalSticky} việc
 

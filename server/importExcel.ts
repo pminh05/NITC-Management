@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import { prisma } from './db';
 import { hashPassword } from './auth';
+import { config } from './config';
 
 // ===== Import danh sách thành viên từ file Excel (danh bạ nhiệm kỳ của CLB) =====
 // Định dạng file chuẩn NITC: mỗi sheet là 1 ban (BCN, HỌC THUẬT, SỰ KIỆN, TRUYỀN THÔNG, ĐỐI NGOẠI),
@@ -122,7 +123,7 @@ export async function importRosterFromExcel(
   opts: { deactivateOldTerm?: boolean } = { deactivateOldTerm: true }
 ): Promise<ImportSummary> {
   const wb = XLSX.read(buffer, { type: 'buffer' });
-  const passwordHash = await hashPassword('nitc123');
+  const passwordHash = await hashPassword(config.defaultPassword);
 
   // 1. Nhiệm kỳ: upsert + đặt hiện hành
   let term = await prisma.term.findUnique({ where: { name: termName } });

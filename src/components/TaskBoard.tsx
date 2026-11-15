@@ -24,6 +24,8 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { Department, Role, Task, Member } from '../types';
+import { canReviewTask } from '../../shared/permissions';
+import { UpdateRequestAction } from './UpdateRequestAction';
 import { formatDateVN, getDaysRemaining } from '../utils/dateUtils';
 import { AssigneeMultiSelect } from './AssigneeMultiSelect';
 import { TaskCard } from './TaskCard';
@@ -535,6 +537,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 onDeleteTask={onDeleteTask}
                 onQuickApprove={onQuickApprove}
                 onRemindTask={onRemindTask}
+                onUpdateRequest={onUpdateRequest}
                 departmentColorMap={departmentColorMap}
               />
             </div>
@@ -558,6 +561,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 onDeleteTask={onDeleteTask}
                 onQuickApprove={onQuickApprove}
                 onRemindTask={onRemindTask}
+                onUpdateRequest={onUpdateRequest}
                 departmentColorMap={departmentColorMap}
               />
             </div>
@@ -581,6 +585,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 onDeleteTask={onDeleteTask}
                 onQuickApprove={onQuickApprove}
                 onRemindTask={onRemindTask}
+                onUpdateRequest={onUpdateRequest}
                 departmentColorMap={departmentColorMap}
               />
             </div>
@@ -604,6 +609,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 onDeleteTask={onDeleteTask}
                 onQuickApprove={onQuickApprove}
                 onRemindTask={onRemindTask}
+                onUpdateRequest={onUpdateRequest}
                 departmentColorMap={departmentColorMap}
               />
             </div>
@@ -660,7 +666,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
 
                       const canSubmit = isAssignee;
                       const canRemind = isManager && !isAssignee;
-                      const canReview = isManager;
+                      const canReview = canReviewTask({ id: currentUserId, role: currentRole, department: currentDepartment }, task);
 
                       return (
                         <tr
@@ -809,6 +815,9 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                                 </button>
                               )}
 
+                              {/* 3b. Xin sửa / phản hồi yêu cầu sửa minh chứng */}
+                              <UpdateRequestAction task={task} isAssignee={isAssignee} canReview={canReview} onUpdateRequest={onUpdateRequest} compact />
+
                               {/* Duyệt nhanh (Chủ nhiệm) */}
                               {isPresident && task.status !== 'completed' && task.status !== 'pending_approval' && onQuickApprove && (
                                 <button
@@ -894,6 +903,7 @@ interface KanbanColumnProps {
   onDeleteTask: (taskId: string) => void;
   onQuickApprove?: (taskId: string) => void;
   onRemindTask?: (task: Task) => void;
+  onUpdateRequest?: (task: Task) => void;
   departmentColorMap: Record<Department, string>;
 }
 
@@ -914,6 +924,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   onDeleteTask,
   onQuickApprove,
   onRemindTask,
+  onUpdateRequest,
   departmentColorMap,
 }) => {
   const isPresident = currentRole === 'Chủ nhiệm';
@@ -971,7 +982,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
 
             const canSubmit = isAssignee;
             const canRemind = isManager && !isAssignee;
-            const canReview = isManager;
+            const canReview = canReviewTask({ id: currentUserId, role: currentRole, department: currentDepartment }, task);
 
             return (
               <div
@@ -1083,6 +1094,9 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
                         <span>Kiểm tra</span>
                       </button>
                     )}
+
+                    {/* Xin sửa / phản hồi yêu cầu sửa minh chứng */}
+                    <UpdateRequestAction task={task} isAssignee={isAssignee} canReview={canReview} onUpdateRequest={onUpdateRequest} compact />
 
                     {/* Trạng thái chờ duyệt (khi người xem không có quyền duyệt) */}
                     {task.status === 'pending_approval' && !canReview && (

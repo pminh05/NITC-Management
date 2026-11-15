@@ -8,3 +8,6 @@ coverage/
 !.env.example
 dev.db
 server.log
+
+# Bản sao lưu CSDL (npm run db:backup) — chứa dữ liệu thành viên thật, không đẩy lên git
+prisma/backups/

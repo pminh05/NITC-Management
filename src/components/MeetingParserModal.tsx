@@ -131,7 +131,7 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
     setErrorMsg(null);
 
     try {
-      const data = await api<{ meeting: any; tasks: ExtractedDraftTask[] }>('/gemini/parse-bbh', {
+      const data = await api<{ meeting: any; tasks: ExtractedDraftTask[] }>('/ai/parse-bbh', {
         method: 'POST',
         body:
           inputMode === 'file'

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Meeting, Member, NotificationLog, Task } from '../types';
 import { formatDateVN } from '../utils/dateUtils';
+import { todayVN } from '../../shared/time';
 
 interface DataSyncModalProps {
   isOpen: boolean;
@@ -27,6 +28,8 @@ interface DataSyncModalProps {
     logs?: NotificationLog[];
   }) => void;
   onResetToDemo: () => void;
+  /** Khôi phục từ JSON / reset dữ liệu mẫu ghi đè toàn bộ dữ liệu — chỉ Chủ nhiệm thấy hai mục này */
+  canDestructive?: boolean;
 }
 
 export const DataSyncModal: React.FC<DataSyncModalProps> = ({
@@ -38,6 +41,7 @@ export const DataSyncModal: React.FC<DataSyncModalProps> = ({
   logs,
   onImportAllData,
   onResetToDemo,
+  canDestructive = false,
 }) => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -82,7 +86,7 @@ export const DataSyncModal: React.FC<DataSyncModalProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `NITC_Command_Center_Tasks_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `NITC_Command_Center_Tasks_${todayVN()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -222,6 +226,8 @@ export const DataSyncModal: React.FC<DataSyncModalProps> = ({
             </button>
           </div>
 
+          {canDestructive && (
+          <>
           {/* Card 3: Import JSON */}
           <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-xl flex items-center justify-between gap-4">
             <div className="space-y-1">
@@ -271,6 +277,8 @@ export const DataSyncModal: React.FC<DataSyncModalProps> = ({
               Khôi phục dữ liệu mẫu
             </button>
           </div>
+          </>
+          )}
 
         </div>
 

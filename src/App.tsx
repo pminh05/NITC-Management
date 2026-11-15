@@ -12,7 +12,14 @@ import {
   Task,
   Term,
 } from './types';
-import { api, apiUpload, getToken, setToken } from './api/client';
+import {
+  api,
+  apiUpload,
+  getToken,
+  setToken,
+  PASSWORD_CHANGE_REQUIRED_EVENT,
+  SESSION_EXPIRED_EVENT,
+} from './api/client';
 import { AppNotification } from './types';
 import { Header } from './components/Header';
 import { LoginPage } from './components/LoginPage';
@@ -36,6 +43,16 @@ import { UpdateRequestFlowModal } from './components/UpdateRequestFlowModal';
 import { QuickAddTaskModal } from './components/QuickAddTaskModal';
 import { RemindConfirmModal } from './components/RemindConfirmModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import { ChangePasswordModal } from './components/ChangePasswordModal';
+import {
+  canDestructiveAdmin,
+  canManageRoster,
+  canPublishMeeting,
+  canResetMemberPassword,
+  canReviewTask,
+  canViewLogs,
+  isLeadership as isLeadershipRole,
+} from '../shared/permissions';
 import {
   Pin,
   CheckCircle2,
@@ -47,6 +64,10 @@ export function App() {
   // ===== 0. Auth state (đăng nhập thật qua JWT) =====
   const [authMember, setAuthMember] = useState<Member | null>(null);
   const [booting, setBooting] = useState(true);
+  // Đã đăng nhập nhưng còn dùng mật khẩu mặc định → phải đổi mật khẩu xong mới vào được hệ thống
+  const [pendingMember, setPendingMember] = useState<Member | null>(null);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [loginNotice, setLoginNotice] = useState<string | null>(null);
 
   // ===== 1. Core State (nguồn sự thật: server, không còn localStorage) =====
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -59,9 +80,11 @@ export function App() {
   const currentRole = (authMember?.role as Role) || 'Thành viên';
   const currentDepartment = (authMember?.department as Department) || 'Ban Chủ nhiệm';
   const currentUserId = authMember?.id || '';
-  const isLeadership = currentRole === 'Chủ nhiệm' || currentRole === 'Phó Chủ nhiệm';
+  // Quyền suy ra từ shared/permissions.ts — đúng bộ quy tắc mà server đang áp dụng
+  const actor = { id: currentUserId, role: currentRole, department: currentDepartment };
+  const isLeadership = isLeadershipRole(actor);
   // Ban quản lý được họp riêng & ban hành việc của ban mình
-  const canManageMeetings = isLeadership || currentRole === 'Trưởng ban' || currentRole === 'Phó ban';
+  const canManageMeetings = canPublishMeeting(actor);
 
   // ===== 1b. Nhiệm kỳ & roster =====
   const [terms, setTerms] = useState<Term[]>([]);
@@ -81,8 +104,9 @@ export function App() {
         return;
       }
       try {
-        const res = await api<{ member: Member }>('/auth/me');
-        setAuthMember(res.member);
+        const res = await api<{ member: Member; mustChangePassword?: boolean }>('/auth/me');
+        if (res.mustChangePassword) setPendingMember(res.member);
+        else setAuthMember(res.member);
       } catch {
         setToken(null);
       } finally {
@@ -167,7 +191,7 @@ export function App() {
       setTasks(t);
       setMeetings(m);
       // Nhật ký nag: chỉ Ban lãnh đạo xem được
-      if (me.role === 'Chủ nhiệm' || me.role === 'Phó Chủ nhiệm') {
+      if (canViewLogs(me)) {
         try {
           const l = await api<NotificationLog[]>('/logs');
           setLogs(l);
@@ -233,14 +257,37 @@ export function App() {
     }
   }, [authMember, loadAllData]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     setToken(null);
     setAuthMember(null);
+    setPendingMember(null);
+    setIsChangePasswordOpen(false);
     setTasks([]);
     setMeetings([]);
     setMembers([]);
     setLogs([]);
-  };
+  }, []);
+
+  // Phiên hết hiệu lực giữa chừng (token hết hạn, mật khẩu đã đổi, tài khoản bị ngưng) → về trang đăng nhập.
+  // Server báo phải đổi mật khẩu mặc định → chuyển sang màn hình đổi mật khẩu bắt buộc.
+  useEffect(() => {
+    const onSessionExpired = (e: Event) => {
+      handleLogout();
+      setLoginNotice((e as CustomEvent<string>).detail || 'Phiên đăng nhập đã hết hiệu lực, vui lòng đăng nhập lại.');
+    };
+    const onPasswordChangeRequired = () => {
+      setAuthMember((current) => {
+        if (current) setPendingMember(current);
+        return null;
+      });
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
+    window.addEventListener(PASSWORD_CHANGE_REQUIRED_EVENT, onPasswordChangeRequired);
+    return () => {
+      window.removeEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
+      window.removeEventListener(PASSWORD_CHANGE_REQUIRED_EVENT, onPasswordChangeRequired);
+    };
+  }, [handleLogout]);
 
   // ===== 2. Modals Control State =====
   const [isParserOpen, setIsParserOpen] = useState(false);
@@ -352,7 +399,7 @@ export function App() {
       setSelectedTask(null);
       showToast(
         'Đã gửi minh chứng!',
-        'Nhiệm vụ đã chuyển sang trạng thái "Chờ duyệt". Chủ nhiệm sẽ tiến hành nghiệm thu.',
+        'Nhiệm vụ đã chuyển sang trạng thái "Chờ duyệt". Ban lãnh đạo hoặc Trưởng/Phó ban sẽ nghiệm thu.',
         'info'
       );
     } catch (e) {
@@ -364,12 +411,16 @@ export function App() {
   const handleUpdateRequestDone = async (updated: Task) => {
     setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
     setUpdateReqTask(null);
-    showToast(
-      updated.updateRequestedAt ? 'Đã gửi yêu cầu cập nhật' : 'Đã phản hồi yêu cầu',
-      updated.updateRequestedAt
-        ? 'Ban lãnh đạo/Trưởng ban sẽ xem xét và phản hồi với feedback.'
-        : 'Thành viên đã nhận được phản hồi qua thông báo.'
-    );
+    if (updated.updateRequestedAt) {
+      showToast('Đã gửi yêu cầu sửa minh chứng', 'Người duyệt sẽ xem xét và phản hồi qua thông báo.');
+    } else {
+      showToast(
+        'Đã phản hồi yêu cầu',
+        updated.status === 'in_progress'
+          ? 'Việc trở về "Đang làm" — người làm có thể nộp lại minh chứng.'
+          : 'Minh chứng hiện tại được giữ nguyên, việc vẫn chờ duyệt.'
+      );
+    }
   };
 
   const handleOpenReviewModal = (task: Task) => {
@@ -514,6 +565,22 @@ export function App() {
     }
   };
 
+  // Chủ nhiệm đặt lại mật khẩu của thành viên về mặc định (khi họ quên mật khẩu)
+  const handleResetMemberPassword = async (member: Member) => {
+    const ok = confirm(
+      `Đặt lại mật khẩu của ${member.name} về mật khẩu mặc định?\n\nPhiên đăng nhập hiện tại của họ sẽ hết hiệu lực và họ phải đổi mật khẩu ở lần đăng nhập tới.`
+    );
+    if (!ok) return;
+    try {
+      const res = await api<{ success: boolean; message: string }>(`/members/${member.id}/reset-password`, {
+        method: 'POST',
+      });
+      showToast('Đã đặt lại mật khẩu', res.message, 'info');
+    } catch (e) {
+      showError(e);
+    }
+  };
+
   // Import Excel danh bạ nhiệm kỳ mới
   const handleImportExcel = async (file: File, termName: string): Promise<ImportSummary | void> => {
     setImporting(true);
@@ -585,6 +652,8 @@ export function App() {
   const inProgressCount = tasks.filter((t) => t.status === 'in_progress').length;
   const inProgressPct = totalTasksCount > 0 ? Math.round((inProgressCount / totalTasksCount) * 100) : 0;
   const pendingApprovalsCount = tasks.filter((t) => t.status === 'pending_approval').length;
+  // Việc chờ duyệt mà CHÍNH người đang đăng nhập có quyền duyệt (cùng quy tắc với server)
+  const reviewableCount = tasks.filter((t) => t.status === 'pending_approval' && canReviewTask(actor, t)).length;
   const overdueCount = tasks.filter(isTaskOverdue).length;
   const completedCount = tasks.filter((t) => t.status === 'completed').length;
   const completionRate = totalTasksCount > 0 ? Math.round((completedCount / totalTasksCount) * 100) : 0;
@@ -628,8 +697,31 @@ export function App() {
     );
   }
 
+  if (pendingMember) {
+    return (
+      <ChangePasswordModal
+        forced
+        memberName={`${pendingMember.name} — ${pendingMember.role}`}
+        onLogout={handleLogout}
+        onChanged={(m) => {
+          setPendingMember(null);
+          setAuthMember(m);
+        }}
+      />
+    );
+  }
+
   if (!authMember) {
-    return <LoginPage onLogin={(m) => setAuthMember(m)} />;
+    return (
+      <LoginPage
+        notice={loginNotice}
+        onLogin={(m, mustChangePassword) => {
+          setLoginNotice(null);
+          if (mustChangePassword) setPendingMember(m);
+          else setAuthMember(m);
+        }}
+      />
+    );
   }
 
   return (
@@ -659,6 +751,7 @@ export function App() {
       <Header
         authMember={authMember}
         onLogout={handleLogout}
+        onChangePassword={() => setIsChangePasswordOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenCalendar={() => setIsCalendarOpen(true)}
         clubName={clubName}
@@ -931,14 +1024,14 @@ export function App() {
               <div>
                 <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
                   <span>Đợi duyệt bằng chứng</span>
-                  <span className="text-[10px] bg-[#2C69FF]/15 text-[#1E4FC4] px-1.5 py-0.5 rounded font-bold">Chủ nhiệm</span>
+                  <span className="text-[10px] bg-[#2C69FF]/15 text-[#1E4FC4] px-1.5 py-0.5 rounded font-bold">Bạn duyệt</span>
                 </div>
                 <div className="text-2xl font-bold text-[#2C69FF] mt-1">
-                  {pendingApprovalsCount}
+                  {reviewableCount}
                 </div>
               </div>
               <div className="mt-2">
-                {pendingApprovalsCount > 0 ? (
+                {reviewableCount > 0 ? (
                   <button
                     onClick={() => {
                       // Lọc bảng việc hiển thị TẤT CẢ việc chờ duyệt để duyệt lần lượt
@@ -975,7 +1068,9 @@ export function App() {
             onOpenBBHParser={() => setIsParserOpen(true)}
             onAddNewManualTask={handleAddNewManualTask}
             onOpenDetail={setDetailTask}
-            onUpdateRequest={(task) => setUpdateReqTask({ task, mode: isLeadership ? 'respond' : 'request' })}
+            onUpdateRequest={(task) =>
+              setUpdateReqTask({ task, mode: task.updateRequestedAt && canReviewTask(actor, task) ? 'respond' : 'request' })
+            }
             onRemindTask={handleOpenRemindConfirm}
           />
 
@@ -1066,8 +1161,9 @@ export function App() {
       />
 
       {/* Modal 7: Roster & Members Manager (Ban lãnh đạo) */}
-      {isLeadership && (
+      {canManageRoster(actor) && (
         <RosterManagerModal
+          viewer={actor}
           isOpen={isRosterOpen}
           onClose={() => setIsRosterOpen(false)}
           members={members}
@@ -1080,6 +1176,7 @@ export function App() {
           onUpdateMember={handleUpdateMember}
           onDeleteMember={handleDeleteMember}
           onActivateTerm={handleActivateTerm}
+          onResetPassword={canResetMemberPassword(actor) ? handleResetMemberPassword : undefined}
         />
       )}
 
@@ -1094,6 +1191,7 @@ export function App() {
           logs={logs}
           onImportAllData={handleImportAllData}
           onResetToDemo={handleResetToDemo}
+          canDestructive={canDestructiveAdmin(actor)}
         />
       )}
 
@@ -1202,8 +1300,24 @@ export function App() {
         onOpenRoster={() => setIsRosterOpen(true)}
         onOpenDataSync={() => setIsDataSyncOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onChangePassword={() => setIsChangePasswordOpen(true)}
         onLogout={handleLogout}
       />
+
+      {/* Modal: Đổi mật khẩu (tự nguyện — mở từ Header / menu di động) */}
+      {isChangePasswordOpen && (
+        <ChangePasswordModal
+          memberName={`${authMember.name} — ${authMember.role}`}
+          onClose={() => setIsChangePasswordOpen(false)}
+          onChanged={() => {
+            setIsChangePasswordOpen(false);
+            showToast(
+              'Đã đổi mật khẩu',
+              'Mật khẩu mới có hiệu lực ngay. Các phiên đăng nhập cũ trên thiết bị khác đã bị đăng xuất.'
+            );
+          }}
+        />
+      )}
 
     </div>
   );
