@@ -4,6 +4,7 @@ import {
   UserPlus,
   Trash2,
   Edit2,
+  KeyRound,
   X,
   Shield,
   Search,
@@ -12,6 +13,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { Department, ImportSummary, Member, Role, Term } from '../types';
+import { Actor, canDeleteMember, canEditMember, canManageTerms } from '../../shared/permissions';
 
 interface RosterManagerModalProps {
   isOpen: boolean;
@@ -26,6 +28,10 @@ interface RosterManagerModalProps {
   onUpdateMember: (id: string, updates: Partial<Member>) => void;
   onDeleteMember: (id: string) => void;
   onActivateTerm: (termId: string) => void;
+  /** Người đang thao tác — quyết định nút nào được hiện (cùng quy tắc với server) */
+  viewer: Actor;
+  /** Đặt lại mật khẩu về mặc định — chỉ truyền vào khi người dùng là Chủ nhiệm */
+  onResetPassword?: (member: Member) => void;
 }
 
 export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
@@ -41,7 +47,11 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
   onUpdateMember,
   onDeleteMember,
   onActivateTerm,
+  onResetPassword,
+  viewer,
 }) => {
+  const mayManageTerms = canManageTerms(viewer);
+  const mayDelete = canDeleteMember(viewer);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -195,7 +205,8 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                     </option>
                   ))}
               </select>
-              {selectedTermId !== 'active' &&
+              {mayManageTerms &&
+                selectedTermId !== 'active' &&
                 terms.find((t) => t.id === selectedTermId) &&
                 !terms.find((t) => t.id === selectedTermId)?.isActive && (
                   <button
@@ -208,7 +219,8 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                 )}
             </div>
 
-            {/* Import Excel */}
+            {/* Import Excel — đổi nhiệm kỳ hiện hành nên chỉ Chủ nhiệm */}
+            {mayManageTerms && (
             <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg">
               <Upload className="w-3.5 h-3.5 text-sky-400" />
               <input
@@ -234,6 +246,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                 className="hidden"
               />
             </div>
+            )}
           </div>
 
           {!isAdding && !editingId && (
@@ -313,7 +326,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                   onChange={(e) => setRole(e.target.value as Role)}
                   className="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white"
                 >
-                  {roles.map((r) => (
+                  {roles.filter((r) => canEditMember(viewer, null, r)).map((r) => (
                     <option key={r} value={r}>{r}</option>
                   ))}
                 </select>
@@ -467,6 +480,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                         {m.phone && <div className="text-[10px] text-slate-500">{m.phone}</div>}
                       </td>
                       <td className="p-3 text-right space-x-1 whitespace-nowrap">
+                        {canEditMember(viewer, m) && (
                         <button
                           onClick={() => handleStartEdit(m)}
                           className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition"
@@ -474,7 +488,17 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
-                        {m.role !== 'Chủ nhiệm' && (
+                        )}
+                        {onResetPassword && (
+                          <button
+                            onClick={() => onResetPassword(m)}
+                            className="p-1 rounded text-slate-400 hover:text-amber-300 hover:bg-amber-500/10 transition"
+                            title="Đặt lại mật khẩu về mặc định (khi thành viên quên mật khẩu)"
+                          >
+                            <KeyRound className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {mayDelete && m.role !== 'Chủ nhiệm' && (
                           <button
                             onClick={() => onDeleteMember(m.id)}
                             className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"

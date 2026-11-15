@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, User, Users, Calendar, FileText, Link as LinkIcon, CheckCircle2, RotateCcw, FileCheck, Flag, Send, Bell, ShieldCheck } from 'lucide-react';
 import { Member, Task, Role, Department } from '../types';
+import { canReviewTask } from '../../shared/permissions';
 import { formatDateVN, formatDateTimeVN, getDaysRemaining } from '../utils/dateUtils';
 
 interface TaskDetailModalProps {
@@ -49,7 +50,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
 
   const canSubmit = isAssignee;
   const canRemind = isManager && !isAssignee;
-  const canReview = isManager;
+  const canReview = canReviewTask({ id: currentUserId || '', role: currentRole, department: currentDepartment }, task);
 
   const days = getDaysRemaining(task.deadline);
   const meta = TYPE_META(task);

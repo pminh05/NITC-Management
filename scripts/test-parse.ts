@@ -43,7 +43,7 @@ if (!token) {
   process.exit(1);
 }
 
-const res = await fetch('http://localhost:3000/api/gemini/parse-bbh', {
+const res = await fetch('http://localhost:3000/api/ai/parse-bbh', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
   body: JSON.stringify({ bbhText: text, members: [], meetingDate: '2026-11-05' }),

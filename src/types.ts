@@ -89,6 +89,9 @@ export interface Task {
   evidenceReport?: string;
   evidenceSubmittedAt?: string;
   approvalNote?: string;
+  approvedById?: string; // ai đã nghiệm thu
+  approvedAt?: string;
+  termId?: string;
   rejectedReason?: string;
   updateRequestedAt?: string;
   updateRequestNote?: string;

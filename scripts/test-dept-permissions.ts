@@ -28,7 +28,7 @@ async function main() {
 
   console.log('=== 1. TB Truyền thông parse BBH riêng (được phép) ===');
   fmt(
-    await fetch(`${BASE}/api/gemini/parse-bbh`, {
+    await fetch(`${BASE}/api/ai/parse-bbh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ttHead}` },
       body: JSON.stringify({ bbhText: 'BBH Ban Truyền thông riêng\nKế hoạch sắp tới\nChuẩn bị key visual', members: [], meetingDate: '2026-11-05' }),
@@ -36,7 +36,7 @@ async function main() {
     'TB TT parse BBH'
   );
   fmt(
-    await fetch(`${BASE}/api/gemini/parse-bbh`, {
+    await fetch(`${BASE}/api/ai/parse-bbh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${memberTT}` },
       body: JSON.stringify({ bbhText: 'x', members: [], meetingDate: '2026-11-05' }),

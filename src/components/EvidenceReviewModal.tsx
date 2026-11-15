@@ -1,3 +1,4 @@
+import { confirmDialog, toast } from './ui/Feedback';
 import React, { useState } from 'react';
 import {
   CheckCircle2,
@@ -29,7 +30,8 @@ export const EvidenceReviewModal: React.FC<EvidenceReviewModalProps> = ({
   onApprove,
   onReject,
 }) => {
-  const [approvalNote, setApprovalNote] = useState('Chủ nhiệm đã duyệt: Làm rất tốt, đúng tiến độ!');
+  // Để trống: server tự ghi "<tên> (<chức vụ>) đã duyệt hoàn thành."
+  const [approvalNote, setApprovalNote] = useState('');
   const [rejectReason, setRejectReason] = useState('');
   const [isRejecting, setIsRejecting] = useState(false);
 
@@ -42,7 +44,7 @@ export const EvidenceReviewModal: React.FC<EvidenceReviewModalProps> = ({
 
   const handleConfirmReject = () => {
     if (!rejectReason.trim()) {
-      alert('Vui lòng nhập lý do yêu cầu làm lại để Trưởng ban nắm rõ.');
+      toast('Thiếu lý do', 'Vui lòng nhập lý do yêu cầu làm lại để người làm nắm rõ.', 'warn');
       return;
     }
     onReject(task.id, rejectReason.trim());
@@ -103,7 +105,7 @@ export const EvidenceReviewModal: React.FC<EvidenceReviewModalProps> = ({
           </div>
 
           {/* Ghi chú yêu cầu cập nhật từ thành viên */}
-          {task.updateRequestedAt && !task.updateFeedback && (
+          {task.updateRequestedAt && (
             <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-xl space-y-1">
               <div className="text-purple-300 font-bold text-xs">📥 Yêu cầu cập nhật từ thành viên</div>
               <div className="text-slate-300">{task.updateRequestNote || '(Không ghi chú kèm theo)'}</div>

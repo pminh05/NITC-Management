@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import confetti from 'canvas-confetti';
 import { isTaskOverdue } from './utils/dateUtils';
 import {
@@ -12,30 +12,68 @@ import {
   Task,
   Term,
 } from './types';
-import { api, apiUpload, getToken, setToken } from './api/client';
+import {
+  api,
+  apiUpload,
+  getToken,
+  setToken,
+  PASSWORD_CHANGE_REQUIRED_EVENT,
+  SESSION_EXPIRED_EVENT,
+} from './api/client';
 import { AppNotification } from './types';
 import { Header } from './components/Header';
 import { LoginPage } from './components/LoginPage';
 import { TaskBoard } from './components/TaskBoard';
-import { MeetingParserModal } from './components/MeetingParserModal';
-import { PresidentialFilterModal } from './components/PresidentialFilterModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { EvidenceSubmitModal } from './components/EvidenceSubmitModal';
 import { EvidenceReviewModal } from './components/EvidenceReviewModal';
-import { TheNagWeeklyReport } from './components/TheNagWeeklyReport';
-import { MeetingHistoryModal } from './components/MeetingHistoryModal';
-import { RosterManagerModal } from './components/RosterManagerModal';
-import { DataSyncModal } from './components/DataSyncModal';
-import { LeaderboardModal } from './components/LeaderboardModal';
-import { SettingsModal } from './components/SettingsModal';
-import { CalendarModal } from './components/CalendarModal';
-import { DocsModal } from './components/DocsModal';
-import { DashboardModal } from './components/DashboardModal';
 import { TaskDetailModal } from './components/TaskDetailModal';
 import { UpdateRequestFlowModal } from './components/UpdateRequestFlowModal';
 import { QuickAddTaskModal } from './components/QuickAddTaskModal';
 import { RemindConfirmModal } from './components/RemindConfirmModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import { ChangePasswordModal } from './components/ChangePasswordModal';
+
+// Các hộp thoại lớn tải theo nhu cầu (tách khỏi gói JS đầu vào) và được tải sẵn lúc trình duyệt rảnh
+// sau khi đăng nhập — trang đầu nhẹ hơn mà lần mở đầu tiên vẫn không phải chờ.
+const modalLoaders = {
+  MeetingParserModal: () => import('./components/MeetingParserModal').then((m) => ({ default: m.MeetingParserModal })),
+  PresidentialFilterModal: () => import('./components/PresidentialFilterModal').then((m) => ({ default: m.PresidentialFilterModal })),
+  TheNagWeeklyReport: () => import('./components/TheNagWeeklyReport').then((m) => ({ default: m.TheNagWeeklyReport })),
+  MeetingHistoryModal: () => import('./components/MeetingHistoryModal').then((m) => ({ default: m.MeetingHistoryModal })),
+  RosterManagerModal: () => import('./components/RosterManagerModal').then((m) => ({ default: m.RosterManagerModal })),
+  DataSyncModal: () => import('./components/DataSyncModal').then((m) => ({ default: m.DataSyncModal })),
+  LeaderboardModal: () => import('./components/LeaderboardModal').then((m) => ({ default: m.LeaderboardModal })),
+  SettingsModal: () => import('./components/SettingsModal').then((m) => ({ default: m.SettingsModal })),
+  CalendarModal: () => import('./components/CalendarModal').then((m) => ({ default: m.CalendarModal })),
+  DocsModal: () => import('./components/DocsModal').then((m) => ({ default: m.DocsModal })),
+  DashboardModal: () => import('./components/DashboardModal').then((m) => ({ default: m.DashboardModal })),
+};
+const MeetingParserModal = lazy(modalLoaders.MeetingParserModal);
+const PresidentialFilterModal = lazy(modalLoaders.PresidentialFilterModal);
+const TheNagWeeklyReport = lazy(modalLoaders.TheNagWeeklyReport);
+const MeetingHistoryModal = lazy(modalLoaders.MeetingHistoryModal);
+const RosterManagerModal = lazy(modalLoaders.RosterManagerModal);
+const DataSyncModal = lazy(modalLoaders.DataSyncModal);
+const LeaderboardModal = lazy(modalLoaders.LeaderboardModal);
+const SettingsModal = lazy(modalLoaders.SettingsModal);
+const CalendarModal = lazy(modalLoaders.CalendarModal);
+const DocsModal = lazy(modalLoaders.DocsModal);
+const DashboardModal = lazy(modalLoaders.DashboardModal);
+function preloadModals() {
+  Object.values(modalLoaders).forEach((load) => load().catch(() => {}));
+}
+import { confirmDialog, toast } from './components/ui/Feedback';
+import {
+  canDestructiveAdmin,
+  canManageRoster,
+  canPublishMeeting,
+  canResetMemberPassword,
+  canReviewTask,
+  canViewLogs,
+  canUseNag,
+  isLeadership as isLeadershipRole,
+} from '../shared/permissions';
 import {
   Pin,
   CheckCircle2,
@@ -47,6 +85,10 @@ export function App() {
   // ===== 0. Auth state (đăng nhập thật qua JWT) =====
   const [authMember, setAuthMember] = useState<Member | null>(null);
   const [booting, setBooting] = useState(true);
+  // Đã đăng nhập nhưng còn dùng mật khẩu mặc định → phải đổi mật khẩu xong mới vào được hệ thống
+  const [pendingMember, setPendingMember] = useState<Member | null>(null);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [loginNotice, setLoginNotice] = useState<string | null>(null);
 
   // ===== 1. Core State (nguồn sự thật: server, không còn localStorage) =====
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -59,9 +101,11 @@ export function App() {
   const currentRole = (authMember?.role as Role) || 'Thành viên';
   const currentDepartment = (authMember?.department as Department) || 'Ban Chủ nhiệm';
   const currentUserId = authMember?.id || '';
-  const isLeadership = currentRole === 'Chủ nhiệm' || currentRole === 'Phó Chủ nhiệm';
+  // Quyền suy ra từ shared/permissions.ts — đúng bộ quy tắc mà server đang áp dụng
+  const actor = { id: currentUserId, role: currentRole, department: currentDepartment };
+  const isLeadership = isLeadershipRole(actor);
   // Ban quản lý được họp riêng & ban hành việc của ban mình
-  const canManageMeetings = isLeadership || currentRole === 'Trưởng ban' || currentRole === 'Phó ban';
+  const canManageMeetings = canPublishMeeting(actor);
 
   // ===== 1b. Nhiệm kỳ & roster =====
   const [terms, setTerms] = useState<Term[]>([]);
@@ -81,8 +125,9 @@ export function App() {
         return;
       }
       try {
-        const res = await api<{ member: Member }>('/auth/me');
-        setAuthMember(res.member);
+        const res = await api<{ member: Member; mustChangePassword?: boolean }>('/auth/me');
+        if (res.mustChangePassword) setPendingMember(res.member);
+        else setAuthMember(res.member);
       } catch {
         setToken(null);
       } finally {
@@ -167,7 +212,7 @@ export function App() {
       setTasks(t);
       setMeetings(m);
       // Nhật ký nag: chỉ Ban lãnh đạo xem được
-      if (me.role === 'Chủ nhiệm' || me.role === 'Phó Chủ nhiệm') {
+      if (canViewLogs(me)) {
         try {
           const l = await api<NotificationLog[]>('/logs');
           setLogs(l);
@@ -233,14 +278,49 @@ export function App() {
     }
   }, [authMember, loadAllData]);
 
-  const handleLogout = () => {
+  // Sau khi đăng nhập, tải sẵn mã các hộp thoại lúc trình duyệt rảnh → lần mở đầu tiên không phải chờ
+  useEffect(() => {
+    if (!authMember) return;
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number; cancelIdleCallback?: (id: number) => void };
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(preloadModals);
+      return () => w.cancelIdleCallback?.(id);
+    }
+    const t = window.setTimeout(preloadModals, 1500);
+    return () => window.clearTimeout(t);
+  }, [authMember]);
+
+  const handleLogout = useCallback(() => {
     setToken(null);
     setAuthMember(null);
+    setPendingMember(null);
+    setIsChangePasswordOpen(false);
     setTasks([]);
     setMeetings([]);
     setMembers([]);
     setLogs([]);
-  };
+  }, []);
+
+  // Phiên hết hiệu lực giữa chừng (token hết hạn, mật khẩu đã đổi, tài khoản bị ngưng) → về trang đăng nhập.
+  // Server báo phải đổi mật khẩu mặc định → chuyển sang màn hình đổi mật khẩu bắt buộc.
+  useEffect(() => {
+    const onSessionExpired = (e: Event) => {
+      handleLogout();
+      setLoginNotice((e as CustomEvent<string>).detail || 'Phiên đăng nhập đã hết hiệu lực, vui lòng đăng nhập lại.');
+    };
+    const onPasswordChangeRequired = () => {
+      setAuthMember((current) => {
+        if (current) setPendingMember(current);
+        return null;
+      });
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
+    window.addEventListener(PASSWORD_CHANGE_REQUIRED_EVENT, onPasswordChangeRequired);
+    return () => {
+      window.removeEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
+      window.removeEventListener(PASSWORD_CHANGE_REQUIRED_EVENT, onPasswordChangeRequired);
+    };
+  }, [handleLogout]);
 
   // ===== 2. Modals Control State =====
   const [isParserOpen, setIsParserOpen] = useState(false);
@@ -266,12 +346,8 @@ export function App() {
   const [parsedMeetingData, setParsedMeetingData] = useState<Partial<Meeting> | null>(null);
   const [parsedDraftTasks, setParsedDraftTasks] = useState<ExtractedDraftTask[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [toastMessage, setToastMessage] = useState<{ title: string; desc: string; type?: 'success' | 'info' | 'warn' } | null>(null);
-
-  const showToast = (title: string, desc: string, type: 'success' | 'info' | 'warn' = 'success') => {
-    setToastMessage({ title, desc, type });
-    setTimeout(() => setToastMessage(null), 4000);
-  };
+  // Thông báo góc màn hình: mỗi thông báo có đồng hồ riêng, xếp chồng tối đa 3 (components/ui/Feedback.tsx)
+  const showToast = (title: string, desc: string, type: 'success' | 'info' | 'warn' = 'success') => toast(title, desc, type);
 
   const showError = (e: any) => {
     showToast('Có lỗi xảy ra', e?.message || 'Không thực hiện được thao tác', 'warn');
@@ -341,22 +417,48 @@ export function App() {
     setIsSubmitOpen(true);
   };
 
-  const handleEvidenceSubmit = async (taskId: string, evidenceData: { link?: string; report?: string }) => {
+  /**
+   * Cập nhật lạc quan: đổi thẻ công việc NGAY khi bấm (không chờ server), rồi thay bằng bản server trả về.
+   * Server từ chối (sai quyền, sai trạng thái, mất mạng…) → trả thẻ về như cũ và báo lỗi.
+   */
+  const updateTaskOptimistic = async (
+    taskId: string,
+    patch: Partial<Task>,
+    body: Record<string, unknown>
+  ): Promise<Task | null> => {
+    const previous = tasks.find((t) => t.id === taskId);
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...patch } : t)));
     try {
-      const updated = await api<Task>(`/tasks/${taskId}`, {
-        method: 'PUT',
-        body: { action: 'submit_evidence', ...evidenceData },
-      });
+      const updated = await api<Task>(`/tasks/${taskId}`, { method: 'PUT', body });
       setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
-      setIsSubmitOpen(false);
-      setSelectedTask(null);
+      return updated;
+    } catch (e) {
+      if (previous) setTasks((prev) => prev.map((t) => (t.id === taskId ? previous : t)));
+      showError(e);
+      return null;
+    }
+  };
+
+  const handleEvidenceSubmit = async (taskId: string, evidenceData: { link?: string; report?: string }) => {
+    // Đóng hộp nộp ngay — thẻ chuyển sang "Chờ duyệt" tức thì, không bấm được hai lần
+    setIsSubmitOpen(false);
+    setSelectedTask(null);
+    const updated = await updateTaskOptimistic(
+      taskId,
+      {
+        status: 'pending_approval',
+        evidenceLink: evidenceData.link,
+        evidenceReport: evidenceData.report,
+        evidenceSubmittedAt: new Date().toISOString(),
+      },
+      { action: 'submit_evidence', ...evidenceData }
+    );
+    if (updated) {
       showToast(
         'Đã gửi minh chứng!',
-        'Nhiệm vụ đã chuyển sang trạng thái "Chờ duyệt". Chủ nhiệm sẽ tiến hành nghiệm thu.',
+        'Nhiệm vụ đã chuyển sang trạng thái "Chờ duyệt". Ban lãnh đạo hoặc Trưởng/Phó ban sẽ nghiệm thu.',
         'info'
       );
-    } catch (e) {
-      showError(e);
     }
   };
 
@@ -364,12 +466,16 @@ export function App() {
   const handleUpdateRequestDone = async (updated: Task) => {
     setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
     setUpdateReqTask(null);
-    showToast(
-      updated.updateRequestedAt ? 'Đã gửi yêu cầu cập nhật' : 'Đã phản hồi yêu cầu',
-      updated.updateRequestedAt
-        ? 'Ban lãnh đạo/Trưởng ban sẽ xem xét và phản hồi với feedback.'
-        : 'Thành viên đã nhận được phản hồi qua thông báo.'
-    );
+    if (updated.updateRequestedAt) {
+      showToast('Đã gửi yêu cầu sửa minh chứng', 'Người duyệt sẽ xem xét và phản hồi qua thông báo.');
+    } else {
+      showToast(
+        'Đã phản hồi yêu cầu',
+        updated.status === 'in_progress'
+          ? 'Việc trở về "Đang làm" — người làm có thể nộp lại minh chứng.'
+          : 'Minh chứng hiện tại được giữ nguyên, việc vẫn chờ duyệt.'
+      );
+    }
   };
 
   const handleOpenReviewModal = (task: Task) => {
@@ -377,63 +483,73 @@ export function App() {
     setIsReviewOpen(true);
   };
 
-  const handleApproveEvidence = async (taskId: string, approvalNote?: string) => {
+  const celebrate = () => {
     try {
-      const updated = await api<Task>(`/tasks/${taskId}`, {
-        method: 'PUT',
-        body: { action: 'approve', note: approvalNote },
-      });
-      setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
-      setIsReviewOpen(false);
-      setSelectedTask(null);
+      confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
+    } catch {
+      // ignore
+    }
+  };
 
-      try {
-        confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
-      } catch {
-        // ignore
-      }
+  const handleApproveEvidence = async (taskId: string, approvalNote?: string) => {
+    setIsReviewOpen(false);
+    setSelectedTask(null);
+    const updated = await updateTaskOptimistic(
+      taskId,
+      { status: 'completed', updateRequestedAt: undefined },
+      { action: 'approve', note: approvalNote }
+    );
+    if (updated) {
+      celebrate();
       showToast('Đã duyệt hoàn thành!', 'Nhiệm vụ đã được nghiệm thu và đánh dấu Hoàn thành ✅');
-    } catch (e) {
-      showError(e);
     }
   };
 
   const handleRejectEvidence = async (taskId: string, rejectReason: string) => {
-    try {
-      const updated = await api<Task>(`/tasks/${taskId}`, {
-        method: 'PUT',
-        body: { action: 'reject', reason: rejectReason },
-      });
-      setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
-      setIsReviewOpen(false);
-      setSelectedTask(null);
-      showToast(
-        'Đã yêu cầu nộp lại!',
-        'Nhiệm vụ đã được trả về cho thành viên kèm ghi chú chỉnh sửa.',
-        'warn'
-      );
-    } catch (e) {
-      showError(e);
+    setIsReviewOpen(false);
+    setSelectedTask(null);
+    const updated = await updateTaskOptimistic(
+      taskId,
+      { status: 'in_progress', rejectedReason: rejectReason, updateRequestedAt: undefined },
+      { action: 'reject', reason: rejectReason }
+    );
+    if (updated) {
+      showToast('Đã yêu cầu nộp lại!', 'Nhiệm vụ đã được trả về cho thành viên kèm ghi chú chỉnh sửa.', 'warn');
     }
   };
 
   // Quick 1-click approve for president
   const handleQuickApprove = async (taskId: string) => {
-    try {
-      const updated = await api<Task>(`/tasks/${taskId}`, {
-        method: 'PUT',
-        body: { action: 'approve', note: 'Chủ nhiệm duyệt nhanh hoàn thành.' },
-      });
-      setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
+    const updated = await updateTaskOptimistic(
+      taskId,
+      { status: 'completed' },
+      { action: 'approve', note: 'Chủ nhiệm duyệt nhanh hoàn thành.' }
+    );
+    if (updated) {
+      celebrate();
       showToast('Duyệt nhanh!', 'Đã đánh dấu hoàn thành nhiệm vụ.');
-    } catch (e) {
-      showError(e);
     }
   };
 
   // Bấm nút Nhắc nộp -> mở Modal Xác nhận (tránh bấm nhầm)
   const handleOpenRemindConfirm = (task: Task) => {
     setRemindTask(task);
+  };
+
+  // Nhắc việc từ hộp "Nhắc việc quá hạn" (không hỏi lại — người dùng đã chủ động bấm trong hộp)
+  const handleNagRemind = async (task: Task): Promise<boolean> => {
+    try {
+      await api(`/tasks/${task.id}/remind`, { method: 'POST', body: {} });
+      try {
+        setLogs(await api<NotificationLog[]>('/logs'));
+      } catch {
+        // không đọc được nhật ký thì bỏ qua
+      }
+      return true;
+    } catch (e) {
+      showError(e);
+      return false;
+    }
   };
 
   // Xác nhận gửi nhắc nộp từ Modal
@@ -452,12 +568,29 @@ export function App() {
 
   // Delete Task
   const handleDeleteTask = async (taskId: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa nhiệm vụ này?')) return;
+    const ok = await confirmDialog({
+      title: 'Xóa nhiệm vụ này?',
+      message: 'Nhiệm vụ và minh chứng đã nộp sẽ bị xóa vĩnh viễn.',
+      confirmText: 'Xóa',
+      danger: true,
+    });
+    if (!ok) return;
+    // Gỡ thẻ ngay; server từ chối thì đưa thẻ trở lại đúng vị trí cũ
+    const index = tasks.findIndex((t) => t.id === taskId);
+    const removed = tasks[index];
+    setTasks((prev) => prev.filter((t) => t.id !== taskId));
     try {
       await api(`/tasks/${taskId}`, { method: 'DELETE' });
-      setTasks((prev) => prev.filter((t) => t.id !== taskId));
       showToast('Đã xóa', 'Nhiệm vụ đã được xóa khỏi hệ thống.', 'info');
     } catch (e) {
+      if (removed) {
+        setTasks((prev) => {
+          if (prev.some((t) => t.id === taskId)) return prev;
+          const next = [...prev];
+          next.splice(Math.min(index, next.length), 0, removed);
+          return next;
+        });
+      }
       showError(e);
     }
   };
@@ -509,6 +642,25 @@ export function App() {
       await api(`/members/${id}`, { method: 'DELETE' });
       showToast('Đã xóa thành viên', 'Đã xóa khỏi danh sách thành viên.', 'info');
       await loadMembers(selectedTermId);
+    } catch (e) {
+      showError(e);
+    }
+  };
+
+  // Chủ nhiệm đặt lại mật khẩu của thành viên về mặc định (khi họ quên mật khẩu)
+  const handleResetMemberPassword = async (member: Member) => {
+    const ok = await confirmDialog({
+      title: `Đặt lại mật khẩu của ${member.name}?`,
+      message: 'Phiên đăng nhập hiện tại của họ sẽ hết hiệu lực và họ phải đổi mật khẩu ở lần đăng nhập tới.',
+      confirmText: 'Đặt lại',
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      const res = await api<{ success: boolean; message: string }>(`/members/${member.id}/reset-password`, {
+        method: 'POST',
+      });
+      showToast('Đã đặt lại mật khẩu', res.message, 'info');
     } catch (e) {
       showError(e);
     }
@@ -585,6 +737,8 @@ export function App() {
   const inProgressCount = tasks.filter((t) => t.status === 'in_progress').length;
   const inProgressPct = totalTasksCount > 0 ? Math.round((inProgressCount / totalTasksCount) * 100) : 0;
   const pendingApprovalsCount = tasks.filter((t) => t.status === 'pending_approval').length;
+  // Việc chờ duyệt mà CHÍNH người đang đăng nhập có quyền duyệt (cùng quy tắc với server)
+  const reviewableCount = tasks.filter((t) => t.status === 'pending_approval' && canReviewTask(actor, t)).length;
   const overdueCount = tasks.filter(isTaskOverdue).length;
   const completedCount = tasks.filter((t) => t.status === 'completed').length;
   const completionRate = totalTasksCount > 0 ? Math.round((completedCount / totalTasksCount) * 100) : 0;
@@ -628,37 +782,42 @@ export function App() {
     );
   }
 
+  if (pendingMember) {
+    return (
+      <ChangePasswordModal
+        forced
+        memberName={`${pendingMember.name} — ${pendingMember.role}`}
+        onLogout={handleLogout}
+        onChanged={(m) => {
+          setPendingMember(null);
+          setAuthMember(m);
+        }}
+      />
+    );
+  }
+
   if (!authMember) {
-    return <LoginPage onLogin={(m) => setAuthMember(m)} />;
+    return (
+      <LoginPage
+        notice={loginNotice}
+        onLogin={(m, mustChangePassword) => {
+          setLoginNotice(null);
+          if (mustChangePassword) setPendingMember(m);
+          else setAuthMember(m);
+        }}
+      />
+    );
   }
 
   return (
     <div className="min-h-screen bg-[#F1F5F9] dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans antialiased selection:bg-[#2C69FF]/100 selection:text-white">
 
       {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300">
-          <div className={`p-4 rounded-xl shadow-2xl border flex items-start gap-3 max-w-sm ${toastMessage.type === 'warn'
-              ? 'bg-amber-50 border-amber-300 text-amber-900'
-              : toastMessage.type === 'info'
-                ? 'bg-blue-50 border-blue-300 text-blue-900'
-                : 'bg-white border-emerald-400 text-slate-900 dark:text-slate-100 shadow-emerald-100'
-            }`}>
-            <div className="p-1 rounded-lg bg-emerald-100 text-emerald-700">
-              <CheckCircle2 className="w-5 h-5" />
-            </div>
-            <div>
-              <h5 className="font-bold text-sm text-slate-900">{toastMessage.title}</h5>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">{toastMessage.desc}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* 1. Global Navigation Header */}
       <Header
         authMember={authMember}
         onLogout={handleLogout}
+        onChangePassword={() => setIsChangePasswordOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenCalendar={() => setIsCalendarOpen(true)}
         clubName={clubName}
@@ -746,7 +905,15 @@ export function App() {
             )}
 
             <button
-              onClick={() => setIsNagOpen(true)}
+              onClick={() => {
+                if (canUseNag(actor)) {
+                  setIsNagOpen(true);
+                } else {
+                  setSidebarDeptFilter('all');
+                  setSidebarStatusFilter('overdue');
+                  document.getElementById('task-board')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
               className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-900 rounded-md text-xs transition cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
@@ -915,7 +1082,7 @@ export function App() {
               </div>
               <div className="mt-2 flex items-center justify-between text-[10px]">
                 <span className="text-slate-400 italic">Nhắc tự động hàng ngày</span>
-                {overdueCount > 0 && (
+                {overdueCount > 0 && canUseNag(actor) && (
                   <button
                     onClick={() => setIsNagOpen(true)}
                     className="font-bold text-red-600 hover:underline cursor-pointer"
@@ -931,14 +1098,14 @@ export function App() {
               <div>
                 <div className="text-xs text-slate-500 font-medium flex items-center justify-between">
                   <span>Đợi duyệt bằng chứng</span>
-                  <span className="text-[10px] bg-[#2C69FF]/15 text-[#1E4FC4] px-1.5 py-0.5 rounded font-bold">Chủ nhiệm</span>
+                  <span className="text-[10px] bg-[#2C69FF]/15 text-[#1E4FC4] px-1.5 py-0.5 rounded font-bold">Bạn duyệt</span>
                 </div>
                 <div className="text-2xl font-bold text-[#2C69FF] mt-1">
-                  {pendingApprovalsCount}
+                  {reviewableCount}
                 </div>
               </div>
               <div className="mt-2">
-                {pendingApprovalsCount > 0 ? (
+                {reviewableCount > 0 ? (
                   <button
                     onClick={() => {
                       // Lọc bảng việc hiển thị TẤT CẢ việc chờ duyệt để duyệt lần lượt
@@ -975,7 +1142,7 @@ export function App() {
             onOpenBBHParser={() => setIsParserOpen(true)}
             onAddNewManualTask={handleAddNewManualTask}
             onOpenDetail={setDetailTask}
-            onUpdateRequest={(task) => setUpdateReqTask({ task, mode: isLeadership ? 'respond' : 'request' })}
+            onUpdateRequest={(task) => setUpdateReqTask({ task, mode: 'request' })}
             onRemindTask={handleOpenRemindConfirm}
           />
 
@@ -993,10 +1160,11 @@ export function App() {
         </div>
       </footer>
 
-      {/* 5. Modals System */}
+      {/* 5. Modals System — modal tải theo nhu cầu nằm trong Suspense (chưa tải xong thì chưa hiện gì) */}
+      <Suspense fallback={null}>
 
       {/* Modal 1: BBH Input & AI Parser (Ban lãnh đạo + Trưởng/Phó ban họp riêng) */}
-      {canManageMeetings && (
+      {canManageMeetings && isParserOpen && (
         <MeetingParserModal
           isOpen={isParserOpen}
           onClose={() => setIsParserOpen(false)}
@@ -1006,7 +1174,7 @@ export function App() {
       )}
 
       {/* Modal 2: Presidential Filter (Quy tắc trùng tên, Cảnh báo vắng mặt, Phê duyệt) */}
-      {canManageMeetings && (
+      {canManageMeetings && isFilterOpen && (
         <ErrorBoundary fallbackTitle="Lỗi hiển thị Màn hình Đối soát nhiệm vụ">
           <PresidentialFilterModal
             isOpen={isFilterOpen}
@@ -1044,7 +1212,10 @@ export function App() {
       />
 
       {/* Modal 5: The Nag & Sunday Weekly Report */}
+      {isNagOpen && canUseNag(actor) && (
       <TheNagWeeklyReport
+        actor={actor}
+        onRemindTask={handleNagRemind}
         isOpen={isNagOpen}
         onClose={() => setIsNagOpen(false)}
         tasks={tasks}
@@ -1052,8 +1223,10 @@ export function App() {
         logs={logs}
         onSendNotification={handleSendNotification}
       />
+      )}
 
       {/* Modal 6: Meeting Minutes Archive & Official PDF Export */}
+      {isMeetingHistoryOpen && (
       <MeetingHistoryModal
         isOpen={isMeetingHistoryOpen}
         onClose={() => setIsMeetingHistoryOpen(false)}
@@ -1064,10 +1237,12 @@ export function App() {
           setIsParserOpen(true);
         }}
       />
+      )}
 
       {/* Modal 7: Roster & Members Manager (Ban lãnh đạo) */}
-      {isLeadership && (
+      {canManageRoster(actor) && isRosterOpen && (
         <RosterManagerModal
+          viewer={actor}
           isOpen={isRosterOpen}
           onClose={() => setIsRosterOpen(false)}
           members={members}
@@ -1080,11 +1255,12 @@ export function App() {
           onUpdateMember={handleUpdateMember}
           onDeleteMember={handleDeleteMember}
           onActivateTerm={handleActivateTerm}
+          onResetPassword={canResetMemberPassword(actor) ? handleResetMemberPassword : undefined}
         />
       )}
 
       {/* Modal 8: Data Storage & Google Sheets Sync (chỉ Chủ nhiệm) */}
-      {isLeadership && (
+      {isLeadership && isDataSyncOpen && (
         <DataSyncModal
           isOpen={isDataSyncOpen}
           onClose={() => setIsDataSyncOpen(false)}
@@ -1094,6 +1270,7 @@ export function App() {
           logs={logs}
           onImportAllData={handleImportAllData}
           onResetToDemo={handleResetToDemo}
+          canDestructive={canDestructiveAdmin(actor)}
         />
       )}
 
@@ -1137,6 +1314,7 @@ export function App() {
       />
 
       {/* Modal: Lịch tổng deadline & họp */}
+      {isCalendarOpen && (
       <CalendarModal
         isOpen={isCalendarOpen}
         onClose={() => setIsCalendarOpen(false)}
@@ -1144,8 +1322,10 @@ export function App() {
         meetings={meetings}
         onOpenDetail={setDetailTask}
       />
+      )}
 
       {/* Modal: Dashboard phân tích */}
+      {isDashOpen && (
       <DashboardModal
         isOpen={isDashOpen}
         onClose={() => setIsDashOpen(false)}
@@ -1153,28 +1333,37 @@ export function App() {
         meetings={meetings}
         authMember={authMember}
       />
+      )}
 
       {/* Modal: Kho tài liệu (mọi vai trò xem trong phạm vi) */}
+      {isDocsOpen && (
       <DocsModal
         isOpen={isDocsOpen}
         onClose={() => setIsDocsOpen(false)}
         terms={terms}
         authMember={authMember}
       />
+      )}
 
       {/* Modal 10: Cấu hình hệ thống (chỉ Ban lãnh đạo) */}
+      {isSettingsOpen && (
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         onSaved={() => showToast('Đã lưu cấu hình', 'Thang điểm KPI và lịch báo cáo đã được áp dụng.')}
       />
+      )}
 
       {/* Modal 9: Bảng xếp hạng & KPI (mọi vai trò đều xem được trong phạm vi của mình) */}
+      {isLeaderboardOpen && (
       <LeaderboardModal
         isOpen={isLeaderboardOpen}
         onClose={() => setIsLeaderboardOpen(false)}
         authMember={authMember}
       />
+      )}
+
+      </Suspense>
 
       {/* Modal: Quick Add Task (Mở từ FAB mobile hoặc thao tác nhanh) */}
       <QuickAddTaskModal
@@ -1198,12 +1387,29 @@ export function App() {
         onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
         onOpenDocs={() => setIsDocsOpen(true)}
         onOpenNag={() => setIsNagOpen(true)}
+        canNag={canUseNag(actor)}
         onOpenMeetingHistory={() => setIsMeetingHistoryOpen(true)}
         onOpenRoster={() => setIsRosterOpen(true)}
         onOpenDataSync={() => setIsDataSyncOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onChangePassword={() => setIsChangePasswordOpen(true)}
         onLogout={handleLogout}
       />
+
+      {/* Modal: Đổi mật khẩu (tự nguyện — mở từ Header / menu di động) */}
+      {isChangePasswordOpen && (
+        <ChangePasswordModal
+          memberName={`${authMember.name} — ${authMember.role}`}
+          onClose={() => setIsChangePasswordOpen(false)}
+          onChanged={() => {
+            setIsChangePasswordOpen(false);
+            showToast(
+              'Đã đổi mật khẩu',
+              'Mật khẩu mới có hiệu lực ngay. Các phiên đăng nhập cũ trên thiết bị khác đã bị đăng xuất.'
+            );
+          }}
+        />
+      )}
 
     </div>
   );

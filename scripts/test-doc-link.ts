@@ -13,7 +13,7 @@ async function login(email: string): Promise<string> {
 }
 
 async function tryParse(token: string, body: any, note: string) {
-  const res = await fetch(`${BASE}/api/gemini/parse-bbh`, {
+  const res = await fetch(`${BASE}/api/ai/parse-bbh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({ ...body, members: [], meetingDate: '2026-11-04' }),

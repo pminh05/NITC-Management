@@ -1,7 +1,9 @@
+import { confirmDialog, toast } from './ui/Feedback';
 import React, { useState } from 'react';
 import { Plus, X, Calendar, UserCheck, CheckCircle2 } from 'lucide-react';
 import { Department, Member, Task } from '../types';
 import { AssigneeMultiSelect } from './AssigneeMultiSelect';
+import { todayVN, addDays } from '../../shared/time';
 
 export interface QuickAddTaskModalProps {
   isOpen: boolean;
@@ -26,7 +28,7 @@ export const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
     return head ? [head.id] : [];
   });
   const [deadline, setDeadline] = useState(
-    new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0]
+    addDays(todayVN(), 5)
   );
   const [verificationType, setVerificationType] = useState<'link_required' | 'report_required'>('link_required');
 
@@ -38,7 +40,7 @@ export const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
 
     const member = members.find((m) => m.id === assigneeIds[0]);
     if (!member) {
-      alert('Vui lòng chọn ít nhất một người phụ trách');
+      toast('Thiếu người phụ trách', 'Vui lòng chọn ít nhất một người phụ trách', 'warn');
       return;
     }
 

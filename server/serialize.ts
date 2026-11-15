@@ -1,5 +1,6 @@
 // Chuyển đổi giữa representation CSDL (Prisma) và shape JSON mà frontend đang dùng
 // (giữ nguyên kiểu dữ liệu của src/types.ts để UI ít phải sửa)
+import { effectiveStatus } from '../shared/taskState';
 
 function parseIds(raw: string | null): string[] {
   try {
@@ -29,6 +30,9 @@ export function serializeTask(t: {
   evidenceReport: string | null;
   evidenceSubmittedAt: string | null;
   approvalNote: string | null;
+  approvedById?: string | null;
+  approvedAt?: Date | null;
+  termId?: string | null;
   rejectedReason: string | null;
   updateRequestedAt: string | null;
   updateRequestNote: string | null;
@@ -51,12 +55,16 @@ export function serializeTask(t: {
     assigneeIds: parseIds(t.assigneeIds),
     department: t.department,
     deadline: t.deadline,
-    status: t.status,
+    // "Quá hạn" tính theo hạn chót + ngày Việt Nam lúc đọc, không phụ thuộc giá trị lưu trong CSDL
+    status: effectiveStatus(t),
     verificationType: t.verificationType,
     evidenceLink: t.evidenceLink ?? undefined,
     evidenceReport: t.evidenceReport ?? undefined,
     evidenceSubmittedAt: t.evidenceSubmittedAt ?? undefined,
     approvalNote: t.approvalNote ?? undefined,
+    approvedById: t.approvedById ?? undefined,
+    approvedAt: t.approvedAt ? t.approvedAt.toISOString() : undefined,
+    termId: t.termId ?? undefined,
     rejectedReason: t.rejectedReason ?? undefined,
     updateRequestedAt: t.updateRequestedAt ?? undefined,
     updateRequestNote: t.updateRequestNote ?? undefined,

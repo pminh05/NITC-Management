@@ -1,6 +1,8 @@
 import { prisma } from './db';
-import { isLeadership, AuthMember } from './auth';
+import { AuthMember } from './auth';
+import { isLeadership } from './permissions';
 import { getSettings } from './settings';
+import { todayVN, ymdVN } from '../shared/time';
 
 // ===== G3: KPI thành viên — tự tính từ dữ liệu công việc =====
 // Thang điểm (quy tắc nghiệp vụ NITC, sẽ đưa vào Settings ở G5):
@@ -19,9 +21,10 @@ export const KPI_RULES = {
   overdueUnfinished: -2,
 };
 
+/** Ngày nộp theo giờ Việt Nam (mốc thời gian lưu dạng ISO/UTC — cắt chuỗi sẽ lệch ngày với lượt nộp trước 7h sáng) */
 function dateOf(iso?: string | null): string | null {
   if (!iso) return null;
-  return iso.split('T')[0];
+  return ymdVN(iso) || null;
 }
 
 export interface MemberKpiRow {
@@ -53,14 +56,14 @@ export interface DeptKpiRow {
 /** Điểm 1 công việc cho 1 người dựa trên trạng thái + ngày nộp/hạn */
 function scoreTaskFor(deadline: string, status: string, evidenceSubmittedAt: string | null, updatedAt: Date, rules: typeof KPI_RULES): number {
   if (status === 'completed') {
-    const submittedDate = dateOf(evidenceSubmittedAt) || updatedAt.toISOString().split('T')[0];
+    const submittedDate = dateOf(evidenceSubmittedAt) || ymdVN(updatedAt);
     return submittedDate <= deadline ? rules.completedOnTime : rules.completedLate;
   }
   if (status === 'pending_approval') {
-    const submittedDate = dateOf(evidenceSubmittedAt) || updatedAt.toISOString().split('T')[0];
+    const submittedDate = dateOf(evidenceSubmittedAt) || ymdVN(updatedAt);
     return submittedDate <= deadline ? rules.submittedPending : 0;
   }
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayVN();
   if (deadline < today) return rules.overdueUnfinished;
   return 0;
 }
@@ -122,12 +125,12 @@ export async function computeKpi(me: AuthMember): Promise<{
       row.points += points;
       if (t.status === 'completed') {
         row.completed += 1;
-        const submittedDate = dateOf(t.evidenceSubmittedAt) || t.updatedAt.toISOString().split('T')[0];
+        const submittedDate = dateOf(t.evidenceSubmittedAt) || ymdVN(t.updatedAt);
         if (submittedDate <= t.deadline) row.onTime += 1;
         else row.late += 1;
       } else if (t.status === 'pending_approval') {
         row.pending += 1;
-      } else if (t.deadline < new Date().toISOString().split('T')[0]) {
+      } else if (t.deadline < todayVN()) {
         row.overdue += 1;
       } else {
         row.inProgress += 1;

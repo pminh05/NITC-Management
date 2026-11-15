@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import OpenAI from 'openai';
+import { HttpError, validate } from './http';
+import { parseBbhSchema } from './schemas';
+import { todayVN } from '../shared/time';
 
 // AI BBH Parser (OpenAI — structured JSON output) + fallback heuristic theo quy tắc nghiệp vụ NITC
 
@@ -22,7 +25,7 @@ function stripAccents(s: string): string {
 
 // Helper for heuristic fallback date calculation
 function calculateFallbackDate(baseDateStr: string, relativeText: string): string {
-  const base = new Date(baseDateStr || new Date().toISOString().split('T')[0]);
+  const base = new Date(baseDateStr || todayVN());
   const lower = relativeText.toLowerCase();
 
   if (lower.includes('ngày mai') || lower.includes('ngay mai')) {
@@ -62,12 +65,12 @@ function calculateFallbackDate(baseDateStr: string, relativeText: string): strin
   return `${yyyy}-${mm}-${dd}`;
 }
 
-// Fallback heuristic parser if Gemini API key is unavailable or fails
+// Parser dự phòng theo quy tắc (heuristic) — dùng khi không có OPENAI_API_KEY hoặc lời gọi AI lỗi
 function fallbackParseBBH(bbhText: string, members: any[], meetingDateStr: string) {
   const lines = bbhText.split('\n').map((l) => l.trim()).filter(Boolean);
 
   let title = 'Họp Ban Điều hành NITC';
-  let date = meetingDateStr || new Date().toISOString().split('T')[0];
+  let date = meetingDateStr || todayVN();
   let chairperson = 'Phạm Phúc Minh';
   let secretary = '';
   const attendees: string[] = [];
@@ -362,7 +365,8 @@ export async function fetchGoogleDocText(url: string): Promise<string> {
 }
 
 export async function parseBBHHandler(req: Request, res: Response) {
-  const { bbhText: rawText, images, pdf, docUrl, members, meetingDate } = req.body;
+  const { bbhText: rawText, images, pdf, docUrl, members, meetingDate: rawMeetingDate } = validate(parseBbhSchema, req.body);
+  const meetingDate = rawMeetingDate || '';
 
   // Chế độ LINK: tải nội dung Google Docs/Sheets công khai thành văn bản
   let bbhText: string | undefined = typeof rawText === 'string' ? rawText : undefined;
@@ -403,7 +407,7 @@ export async function parseBBHHandler(req: Request, res: Response) {
       });
     }
     console.log('Using local heuristic parser (No OPENAI_API_KEY provided)');
-    const fallbackResult = fallbackParseBBH(bbhText, memberList, meetingDate);
+    const fallbackResult = fallbackParseBBH(bbhText || '', memberList, meetingDate);
     return res.json(fallbackResult);
   }
 
@@ -418,7 +422,7 @@ Phân tích Biên bản họp (BBH) dưới đây theo đúng cấu trúc chuẩ
 DANH SÁCH THÀNH VIÊN HIỆN TẠI (ROSTER — gồm Chủ nhiệm, Phó Chủ nhiệm, Trưởng ban, Phó ban, Thành viên):
 ${memberContext}
 
-NGÀY HỌP MẶC ĐỊNH (nếu biên bản không ghi rõ): ${meetingDate || new Date().toISOString().split('T')[0]}
+NGÀY HỌP MẶC ĐỊNH (nếu biên bản không ghi rõ): ${meetingDate || todayVN()}
 
 NGUỒN BIÊN BẢN:
 ${
@@ -516,8 +520,15 @@ Trả về JSON theo cấu trúc trên.`;
 
     return res.json(parsedJson);
   } catch (error: any) {
-    console.error('Gemini parsing error, falling back to heuristic parser:', error);
-    const fallbackResult = fallbackParseBBH(bbhText, memberList, meetingDate);
+    console.error('AI parsing error, falling back to heuristic parser:', error?.message || error);
+    // Ảnh/PDF không có văn bản để phân tích dự phòng → báo lỗi rõ ràng thay vì làm hỏng request
+    if (!hasText) {
+      throw new HttpError(
+        502,
+        'Dịch vụ AI không đọc được biên bản từ ảnh/PDF lúc này. Thử lại sau, hoặc dán nội dung ở tab "Dán văn bản".'
+      );
+    }
+    const fallbackResult = fallbackParseBBH(bbhText || '', memberList, meetingDate);
     return res.json(fallbackResult);
   }
 }

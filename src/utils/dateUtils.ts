@@ -1,16 +1,18 @@
-/** Hôm nay theo chuẩn YYYY-MM-DD (so khớp trực tiếp với trường deadline) */
+import { daysUntil, todayVN } from '../../shared/time';
+import { effectiveStatus } from '../../shared/taskState';
+
+/** Hôm nay (YYYY-MM-DD) theo giờ Việt Nam — cùng cách tính với server (shared/time.ts) */
 export function todayISO(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return todayVN();
 }
 
 /**
- * Việc quá hạn = deadline đã trễ HÔM NAY và chưa hoàn thành.
- * Dựa theo ngày (không phụ thuộc task.status) để luôn đúng — kể cả khi
- * status chưa được cron cập nhật.
+ * Việc quá hạn = việc chưa nộp minh chứng mà hạn chót đã qua (ngày Việt Nam).
+ * Việc đã nộp, đang chờ duyệt KHÔNG tính là quá hạn — cùng quy tắc với server (shared/taskState.ts),
+ * để số "Quá hạn" ở mọi nơi khớp với cột "Quá hạn" trên bảng điều hành.
  */
 export function isTaskOverdue(task: { deadline: string; status: string }): boolean {
-  return task.status !== 'completed' && task.deadline < todayISO();
+  return effectiveStatus(task, todayISO()) === 'overdue';
 }
 
 export function formatDateVN(dateStr?: string): string {
@@ -42,14 +44,9 @@ export function getDaysRemaining(deadlineStr: string): {
   label: string;
   badgeColor: string;
 } {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const deadline = new Date(deadlineStr);
-  deadline.setHours(0, 0, 0, 0);
-
-  const diffTime = deadline.getTime() - today.getTime();
-  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+  // Số ngày còn lại tính theo ngày Việt Nam, khớp với cách server xác định "quá hạn"
+  const raw = daysUntil(deadlineStr || '');
+  const diffDays = Number.isNaN(raw) ? 0 : raw;
 
   if (diffDays < 0) {
     const daysLate = Math.abs(diffDays);

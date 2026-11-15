@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   Clock,
   LogOut,
+  KeyRound,
   Calendar,
   Settings as SettingsIcon,
   PanelLeftClose,
@@ -15,10 +16,13 @@ import {
 } from 'lucide-react';
 import { AppNotification, Member, Task } from '../types';
 import { NotificationBell } from './NotificationBell';
+import { todayVN } from '../../shared/time';
+import { effectiveStatus } from '../../shared/taskState';
 
 interface HeaderProps {
   authMember: Member;
   onLogout: () => void;
+  onChangePassword?: () => void;
   onOpenSettings: () => void;
   onOpenCalendar: () => void;
   clubName?: string;
@@ -43,6 +47,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   authMember,
   onLogout,
+  onChangePassword,
   onOpenSettings,
   onOpenCalendar,
   tasks,
@@ -66,10 +71,10 @@ export const Header: React.FC<HeaderProps> = ({
   const isLeadership = authMember.role === 'Chủ nhiệm' || authMember.role === 'Phó Chủ nhiệm';
 
   // Thống kê phạm vi vai trò (ngày là nguồn sự thật)
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayVN();
   const totalTasks = tasks.length;
   const pendingCount = tasks.filter((t) => t.status === 'pending_approval').length;
-  const overdueCount = tasks.filter((t) => t.status !== 'completed' && t.deadline < today).length;
+  const overdueCount = tasks.filter((t) => effectiveStatus(t, today) === 'overdue').length;
   const completedCount = tasks.filter((t) => t.status === 'completed').length;
   const completionRate = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
 
@@ -154,8 +159,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden md:inline">Lịch</span>
             </button>
 
-            {isLeadership && (
-              <>
+            {isPresident && (
                 <button
                   onClick={onOpenSettings}
                   className="hidden md:inline-flex p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition cursor-pointer shrink-0"
@@ -163,6 +167,9 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   <SettingsIcon className="w-3.5 h-3.5" />
                 </button>
+            )}
+            {isLeadership && (
+              <>
                 <button onClick={onOpenRosterModal} className={`${ghostBtn} hidden md:inline-flex`} title="Danh sách thành viên & Quản lý ban">
                   <span className="hidden md:inline">Danh sách thành viên</span>
                 </button>
@@ -186,6 +193,15 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="w-8 h-8 rounded-full bg-slate-600 border-2 border-slate-400 flex items-center justify-center font-bold text-xs text-white uppercase shadow-sm shrink-0">
               {roleIcon}
             </div>
+            {onChangePassword && (
+              <button
+                onClick={onChangePassword}
+                title="Đổi mật khẩu"
+                className="hidden sm:inline-flex p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 transition cursor-pointer shrink-0"
+              >
+                <KeyRound className="w-4 h-4" />
+              </button>
+            )}
             <button
               onClick={onLogout}
               title="Đăng xuất"

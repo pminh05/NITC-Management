@@ -1,3 +1,4 @@
+import { confirmDialog, toast } from './ui/Feedback';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   X,
@@ -118,17 +119,17 @@ export const DocsModal: React.FC<DocsModalProps> = ({ isOpen, onClose, terms, au
       resetForm();
       load();
     } catch (err: any) {
-      alert(err?.message || 'Lưu thất bại');
+      toast('Lưu thất bại', err?.message || 'Không lưu được tài liệu', 'warn');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Xóa tài liệu này khỏi kho?')) return;
+    if (!(await confirmDialog({ title: 'Xóa tài liệu này khỏi kho?', message: 'Chỉ xóa liên kết trong hệ thống, tệp gốc trên Drive không bị ảnh hưởng.', confirmText: 'Xóa', danger: true }))) return;
     try {
       await api(`/docs/${id}`, { method: 'DELETE' });
       load();
     } catch (err: any) {
-      alert(err?.message || 'Xóa thất bại');
+      toast('Xóa thất bại', err?.message || 'Không xóa được tài liệu', 'warn');
     }
   };
 
@@ -137,7 +138,7 @@ export const DocsModal: React.FC<DocsModalProps> = ({ isOpen, onClose, terms, au
       await api(`/docs/${id}/pin`, { method: 'POST' });
       load();
     } catch (err: any) {
-      alert(err?.message || 'Chỉ Ban lãnh đạo được ghim');
+      toast('Không ghim được', err?.message || 'Chỉ Ban lãnh đạo được ghim', 'warn');
     }
   };
 

@@ -24,6 +24,8 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { Department, Role, Task, Member } from '../types';
+import { canReviewTask } from '../../shared/permissions';
+import { UpdateRequestAction } from './UpdateRequestAction';
 import { formatDateVN, getDaysRemaining } from '../utils/dateUtils';
 import { AssigneeMultiSelect } from './AssigneeMultiSelect';
 import { TaskCard } from './TaskCard';
@@ -156,6 +158,19 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
 
   const departments: Department[] = ['Học thuật', 'Truyền thông', 'Sự kiện', 'Đối ngoại', 'Ban Chủ nhiệm'];
 
+  // Tab ban cạnh "Việc của tôi": ban nhiều việc hơn đứng trước (bằng nhau thì giữ thứ tự gốc)
+  const departmentTabs = useMemo(() => {
+    const count = new Map<Department, number>(departments.map((d) => [d, 0]));
+    for (const t of tasks) {
+      const d = t.department as Department;
+      if (count.has(d)) count.set(d, count.get(d)! + 1);
+    }
+    return departments
+      .map((dept, order) => ({ dept, total: count.get(dept)!, order }))
+      .sort((a, b) => b.total - a.total || a.order - b.order);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks]);
+
   const isPresident = currentRole === 'Chủ nhiệm';
 
   // Nhãn màu ban
@@ -218,8 +233,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
               Toàn CLB ({tasks.length})
             </button>
 
-            {departments.map((dept) => {
-              const deptTasks = tasks.filter((t) => t.department === dept);
+            {departmentTabs.map(({ dept, total }) => {
               const isActive = !onlyMyTasks && selectedDept === dept;
               return (
                 <button
@@ -233,7 +247,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                     }`}
                 >
-                  Ban {dept} ({deptTasks.length})
+                  {dept === 'Ban Chủ nhiệm' ? dept : `Ban ${dept}`} ({total})
                 </button>
               );
             })}
@@ -535,6 +549,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 onDeleteTask={onDeleteTask}
                 onQuickApprove={onQuickApprove}
                 onRemindTask={onRemindTask}
+                onUpdateRequest={onUpdateRequest}
                 departmentColorMap={departmentColorMap}
               />
             </div>
@@ -558,6 +573,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 onDeleteTask={onDeleteTask}
                 onQuickApprove={onQuickApprove}
                 onRemindTask={onRemindTask}
+                onUpdateRequest={onUpdateRequest}
                 departmentColorMap={departmentColorMap}
               />
             </div>
@@ -581,6 +597,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 onDeleteTask={onDeleteTask}
                 onQuickApprove={onQuickApprove}
                 onRemindTask={onRemindTask}
+                onUpdateRequest={onUpdateRequest}
                 departmentColorMap={departmentColorMap}
               />
             </div>
@@ -604,6 +621,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 onDeleteTask={onDeleteTask}
                 onQuickApprove={onQuickApprove}
                 onRemindTask={onRemindTask}
+                onUpdateRequest={onUpdateRequest}
                 departmentColorMap={departmentColorMap}
               />
             </div>
@@ -660,7 +678,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
 
                       const canSubmit = isAssignee;
                       const canRemind = isManager && !isAssignee;
-                      const canReview = isManager;
+                      const canReview = canReviewTask({ id: currentUserId, role: currentRole, department: currentDepartment }, task);
 
                       return (
                         <tr
@@ -809,6 +827,9 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                                 </button>
                               )}
 
+                              {/* 3b. Xin sửa / phản hồi yêu cầu sửa minh chứng */}
+                              <UpdateRequestAction task={task} isAssignee={isAssignee} canReview={canReview} onUpdateRequest={onUpdateRequest} compact />
+
                               {/* Duyệt nhanh (Chủ nhiệm) */}
                               {isPresident && task.status !== 'completed' && task.status !== 'pending_approval' && onQuickApprove && (
                                 <button
@@ -894,6 +915,7 @@ interface KanbanColumnProps {
   onDeleteTask: (taskId: string) => void;
   onQuickApprove?: (taskId: string) => void;
   onRemindTask?: (task: Task) => void;
+  onUpdateRequest?: (task: Task) => void;
   departmentColorMap: Record<Department, string>;
 }
 
@@ -914,6 +936,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   onDeleteTask,
   onQuickApprove,
   onRemindTask,
+  onUpdateRequest,
   departmentColorMap,
 }) => {
   const isPresident = currentRole === 'Chủ nhiệm';
@@ -971,7 +994,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
 
             const canSubmit = isAssignee;
             const canRemind = isManager && !isAssignee;
-            const canReview = isManager;
+            const canReview = canReviewTask({ id: currentUserId, role: currentRole, department: currentDepartment }, task);
 
             return (
               <div
@@ -1083,6 +1106,9 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
                         <span>Kiểm tra</span>
                       </button>
                     )}
+
+                    {/* Xin sửa / phản hồi yêu cầu sửa minh chứng */}
+                    <UpdateRequestAction task={task} isAssignee={isAssignee} canReview={canReview} onUpdateRequest={onUpdateRequest} compact />
 
                     {/* Trạng thái chờ duyệt (khi người xem không có quyền duyệt) */}
                     {task.status === 'pending_approval' && !canReview && (

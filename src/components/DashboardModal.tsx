@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { X, RefreshCw, TrendingUp } from 'lucide-react';
 import { api } from '../api/client';
 import { Meeting, Member, Task } from '../types';
+import { todayVN, addDays } from '../../shared/time';
 
 interface DashboardModalProps {
   isOpen: boolean;
@@ -48,8 +49,7 @@ const STATUS_COLORS = {
 };
 
 function todayISO(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return todayVN(); // ngày Việt Nam, cùng cách tính với server
 }
 
 /** Donut SVG: phân bố trạng thái công việc */
@@ -135,7 +135,7 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({ isOpen, onClose,
   const completionRate = totalTasks > 0 ? Math.round((counts.completed / totalTasks) * 100) : 0;
 
   // Deadline 7 ngày tới (chưa hoàn thành)
-  const in7 = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+  const in7 = addDays(todayVN(), 7);
   const upcoming = tasks
     .filter((t) => t.status !== 'completed' && t.deadline >= todayISO() && t.deadline <= in7)
     .sort((a, b) => a.deadline.localeCompare(b.deadline));

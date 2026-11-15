@@ -2,21 +2,16 @@ import cron, { ScheduledTask } from 'node-cron';
 import { prisma } from './db';
 import { notify, notifyLeadership, departmentHead, sendEmailIfEnabled, getPref } from './notifications';
 import { getSettings } from './settings';
+import { VN_TIMEZONE, addDays, diffDays, todayVN } from '../shared/time';
+import { effectiveStatus } from '../shared/taskState';
+import { taskAssigneeIds } from '../shared/permissions';
 
 // ===== Bộ lập lịch tự động (G2) =====
 // Cron: quét deadline 6h00 hằng ngày · digest email 20h00 · báo cáo tuần Chủ Nhật 21h00.
 // Tắt bằng SCHEDULER_ENABLED=false khi dev/demo.
+// Mọi lịch chạy và mọi phép so ngày đều theo giờ Việt Nam (shared/time.ts), không phụ thuộc múi giờ máy chủ.
 
-function todayStr(d = new Date()): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-function daysBetween(fromISO: string, toISO: string): number {
-  return Math.round((new Date(toISO).getTime() - new Date(fromISO).getTime()) / 86400000);
-}
+const CRON_OPTS = { timezone: VN_TIMEZONE };
 
 /**
  * Quét deadline toàn hệ thống, sinh thông báo:
@@ -26,32 +21,21 @@ function daysBetween(fromISO: string, toISO: string): number {
  * Idempotent: dedupeKey kiểu type:taskId:ngày — chạy lại không sinh trùng.
  */
 export async function scanDeadlines(): Promise<{ tomorrow: number; today: number; overdue: number }> {
-  const today = todayStr();
-  const tomorrow = todayStr(new Date(Date.now() + 86400000));
+  const today = todayVN();
 
-  // Đồng bộ trạng thái DB: việc trễ hạn đánh dấu 'overdue' (pending_approval vẫn giữ
-  // vì đang chờ Chủ nhiệm nghiệm thu, không phải lỗi của người làm)
-  await prisma.task.updateMany({
-    where: { deadline: { lt: today }, status: 'in_progress' },
-    data: { status: 'overdue' },
-  });
-
+  // Chỉ nhắc việc còn mở (đang làm / quá hạn). Việc đã nộp minh chứng đang chờ duyệt thì không nhắc người làm nữa.
+  // "Quá hạn" được tính theo hạn chót lúc đọc (shared/taskState.ts) nên không cần ghi trạng thái vào CSDL.
   const openTasks = await prisma.task.findMany({
-    where: { status: { not: 'completed' } },
-    include: { assignee: true },
+    where: { status: { in: ['in_progress', 'overdue'] } },
   });
 
   let cTomorrow = 0, cToday = 0, cOverdue = 0;
 
   for (const task of openTasks) {
-    const diff = daysBetween(today, task.deadline); // >0: còn bao nhiêu ngày, <0: trễ bao nhiêu ngày
+    const diff = diffDays(today, task.deadline); // >0: còn bao nhiêu ngày, <0: trễ bao nhiêu ngày
 
     // Đa phụ trách: tất cả người trong assigneeIds đều nhận nhắc hẹn
-    let assigneeIds: string[] = [task.assigneeId];
-    try {
-      const parsed = JSON.parse(task.assigneeIds);
-      if (Array.isArray(parsed) && parsed.length > 0) assigneeIds = parsed;
-    } catch {}
+    const assigneeIds = taskAssigneeIds(task);
 
     if (diff === 1) {
       for (const memberId of assigneeIds) {
@@ -151,19 +135,19 @@ export async function weeklyReport(): Promise<void> {
     const d = byDept.get(t.department) || { total: 0, done: 0, overdue: 0 };
     d.total++;
     if (t.status === 'completed') d.done++;
-    if (t.status === 'overdue') d.overdue++;
+    if (effectiveStatus(t) === 'overdue') d.overdue++;
     byDept.set(t.department, d);
   }
   const lines = [...byDept.entries()]
     .map(([dept, d]) => `• ${dept}: ${d.done}/${d.total} hoàn thành${d.overdue > 0 ? ` — ${d.overdue} việc quá hạn` : ''}`)
     .join('\n');
-  const totalOverdue = tasks.filter((t) => t.status === 'overdue').length;
+  const totalOverdue = tasks.filter((t) => effectiveStatus(t) === 'overdue').length;
 
   await notifyLeadership({
     type: 'weekly_summary',
     title: '📊 Báo cáo tuần — tiến độ toàn CLB',
     body: `Tổng kết tuần (tổng cộng ${totalOverdue} việc quá hạn):\n${lines}\n\nXem chi tiết trong mục Nhắc việc.`,
-    dedupeKey: `weekly_summary:${todayStr()}`,
+    dedupeKey: `weekly_summary:${todayVN()}`,
   });
 
   if (process.env.EMAIL_ENABLED === 'true') {
@@ -178,6 +162,17 @@ export async function weeklyReport(): Promise<void> {
   }
 }
 
+/** Bọc job cron: lỗi (CSDL bận, SMTP hỏng...) chỉ ghi log, không lan ra thành unhandledRejection. */
+function safeJob(name: string, job: () => Promise<void>): () => Promise<void> {
+  return async () => {
+    try {
+      await job();
+    } catch (e) {
+      console.error(`[cron] Job "${name}" lỗi:`, e);
+    }
+  };
+}
+
 let weeklyJob: ScheduledTask | null = null;
 
 /** Đặt lại lịch báo cáo tuần khi Cấu hình thay đổi (không cần restart) */
@@ -185,10 +180,14 @@ export async function rescheduleWeeklyReport(): Promise<void> {
   const s = await getSettings();
   const cronExpr = `0 ${s.reportHour} * * ${s.reportDayOfWeek}`;
   if (weeklyJob) weeklyJob.stop();
-  weeklyJob = cron.schedule(cronExpr, async () => {
-    await weeklyReport();
-    console.log('[cron] Đã tạo báo cáo tuần');
-  });
+  weeklyJob = cron.schedule(
+    cronExpr,
+    safeJob('báo cáo tuần', async () => {
+      await weeklyReport();
+      console.log('[cron] Đã tạo báo cáo tuần');
+    }),
+    CRON_OPTS
+  );
   const dayNames = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
   console.log(`[cron] Báo cáo tuần: ${dayNames[s.reportDayOfWeek]} ${s.reportHour}h`);
 }
@@ -199,16 +198,24 @@ export function startScheduler(): void {
     return;
   }
   // Quét deadline 6h00 hằng ngày — giờ VN
-  cron.schedule('0 6 * * *', async () => {
-    const r = await scanDeadlines();
-    console.log(`[cron 6h] Quét deadline: +${r.tomorrow} mai, +${r.today} hôm nay, ${r.overdue} quá hạn`);
-  });
+  cron.schedule(
+    '0 6 * * *',
+    safeJob('quét deadline', async () => {
+      const r = await scanDeadlines();
+      console.log(`[cron 6h] Quét deadline: +${r.tomorrow} mai, +${r.today} hôm nay, ${r.overdue} quá hạn`);
+    }),
+    CRON_OPTS
+  );
   // Digest email 20h00
-  cron.schedule('0 20 * * *', async () => {
-    const n = await sendDigestEmails();
-    console.log(`[cron 20h] Digest email: ${n} người`);
-  });
+  cron.schedule(
+    '0 20 * * *',
+    safeJob('digest email', async () => {
+      const n = await sendDigestEmails();
+      console.log(`[cron 20h] Digest email: ${n} người`);
+    }),
+    CRON_OPTS
+  );
   // Báo cáo tuần — lịch đọc từ Cấu hình (mặc định Chủ nhật 21h)
-  rescheduleWeeklyReport();
+  rescheduleWeeklyReport().catch((e) => console.error('[cron] Không đặt được lịch báo cáo tuần:', e));
   console.log('✔ Scheduler khởi động: quét deadline 6h · digest 20h · báo cáo tuần theo Cấu hình');
 }

@@ -1,3 +1,4 @@
+import { confirmDialog, toast } from './ui/Feedback';
 import React, { useState } from 'react';
 import {
   Database,
@@ -12,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Meeting, Member, NotificationLog, Task } from '../types';
 import { formatDateVN } from '../utils/dateUtils';
+import { todayVN } from '../../shared/time';
 
 interface DataSyncModalProps {
   isOpen: boolean;
@@ -27,6 +29,8 @@ interface DataSyncModalProps {
     logs?: NotificationLog[];
   }) => void;
   onResetToDemo: () => void;
+  /** Khôi phục từ JSON / reset dữ liệu mẫu ghi đè toàn bộ dữ liệu — chỉ Chủ nhiệm thấy hai mục này */
+  canDestructive?: boolean;
 }
 
 export const DataSyncModal: React.FC<DataSyncModalProps> = ({
@@ -38,6 +42,7 @@ export const DataSyncModal: React.FC<DataSyncModalProps> = ({
   logs,
   onImportAllData,
   onResetToDemo,
+  canDestructive = false,
 }) => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -82,7 +87,7 @@ export const DataSyncModal: React.FC<DataSyncModalProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `NITC_Command_Center_Tasks_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `NITC_Command_Center_Tasks_${todayVN()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -132,10 +137,10 @@ export const DataSyncModal: React.FC<DataSyncModalProps> = ({
           setSuccessMsg('Khôi phục dữ liệu từ tệp tin thành công!');
           setTimeout(() => setSuccessMsg(null), 3000);
         } else {
-          alert('Tệp tin không đúng định dạng sao lưu NITC Command Center.');
+          toast('Không khôi phục được', 'Tệp tin không đúng định dạng sao lưu NITC Command Center.', 'warn');
         }
       } catch (err) {
-        alert('Lỗi đọc tệp tin JSON.');
+        toast('Không khôi phục được', 'Lỗi đọc tệp tin JSON.', 'warn');
       }
     };
     reader.readAsText(file);
@@ -222,6 +227,8 @@ export const DataSyncModal: React.FC<DataSyncModalProps> = ({
             </button>
           </div>
 
+          {canDestructive && (
+          <>
           {/* Card 3: Import JSON */}
           <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-xl flex items-center justify-between gap-4">
             <div className="space-y-1">
@@ -259,8 +266,15 @@ export const DataSyncModal: React.FC<DataSyncModalProps> = ({
             </div>
 
             <button
-              onClick={() => {
-                if (confirm('Bạn có chắc chắn muốn khôi phục về dữ liệu mẫu ban đầu không?')) {
+              onClick={async () => {
+                if (
+                  await confirmDialog({
+                    title: 'Khôi phục dữ liệu mẫu?',
+                    message: 'Toàn bộ dữ liệu hiện tại sẽ bị thay bằng bộ dữ liệu mẫu (server tự sao lưu trước khi xóa).',
+                    confirmText: 'Khôi phục',
+                    danger: true,
+                  })
+                ) {
                   onResetToDemo();
                   setSuccessMsg('Đã khôi phục về dữ liệu mẫu NITC chuẩn thành công!');
                   setTimeout(() => setSuccessMsg(null), 3000);
@@ -271,6 +285,8 @@ export const DataSyncModal: React.FC<DataSyncModalProps> = ({
               Khôi phục dữ liệu mẫu
             </button>
           </div>
+          </>
+          )}
 
         </div>
 

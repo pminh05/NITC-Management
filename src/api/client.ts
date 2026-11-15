@@ -2,11 +2,18 @@
 
 const TOKEN_KEY = 'nitc_token_v3';
 
+/** Sự kiện toàn cục để App phản ứng khi phiên hết hiệu lực / bị buộc đổi mật khẩu giữa chừng. */
+export const SESSION_EXPIRED_EVENT = 'nitc:session-expired';
+export const PASSWORD_CHANGE_REQUIRED_EVENT = 'nitc:password-change-required';
+
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  /** Mã lỗi máy đọc được từ server (VD: PASSWORD_CHANGE_REQUIRED, TOO_MANY_ATTEMPTS) */
+  code?: string;
+  constructor(message: string, status: number, code?: string) {
     super(message);
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -20,6 +27,22 @@ export function setToken(token: string | null): void {
   } else {
     localStorage.removeItem(TOKEN_KEY);
   }
+}
+
+/** Chuyển phản hồi lỗi thành ApiError + phát sự kiện phiên khi cần. */
+function toApiError(path: string, res: Response, data: any, hadToken: boolean): ApiError {
+  const err = new ApiError(data?.error || `Lỗi máy chủ (${res.status})`, res.status, data?.code);
+  if (typeof window !== 'undefined') {
+    // 401 khi đang có token (không phải lúc đăng nhập) = phiên đã hết hiệu lực: token hết hạn,
+    // mật khẩu đã đổi, hoặc tài khoản bị ngưng hoạt động
+    if (res.status === 401 && hadToken && !path.startsWith('/auth/login')) {
+      window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT, { detail: err.message }));
+    }
+    if (res.status === 403 && err.code === 'PASSWORD_CHANGE_REQUIRED') {
+      window.dispatchEvent(new CustomEvent(PASSWORD_CHANGE_REQUIRED_EVENT));
+    }
+  }
+  return err;
 }
 
 interface ApiOptions {
@@ -51,7 +74,7 @@ export async function api<T>(path: string, opts: ApiOptions = {}): Promise<T> {
   const data = await res.json().catch(() => null);
 
   if (!res.ok) {
-    throw new ApiError(data?.error || `Lỗi máy chủ (${res.status})`, res.status);
+    throw toApiError(path, res, data, Boolean(token));
   }
   return data as T;
 }
@@ -81,7 +104,7 @@ export async function apiUpload<T>(
   }
   const data = await res.json().catch(() => null);
   if (!res.ok) {
-    throw new ApiError(data?.error || `Lỗi máy chủ (${res.status})`, res.status);
+    throw toApiError(path, res, data, Boolean(token));
   }
   return data as T;
 }
