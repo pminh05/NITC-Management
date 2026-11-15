@@ -104,7 +104,7 @@ export const EvidenceReviewModal: React.FC<EvidenceReviewModalProps> = ({
           </div>
 
           {/* Ghi chú yêu cầu cập nhật từ thành viên */}
-          {task.updateRequestedAt && !task.updateFeedback && (
+          {task.updateRequestedAt && (
             <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-xl space-y-1">
               <div className="text-purple-300 font-bold text-xs">📥 Yêu cầu cập nhật từ thành viên</div>
               <div className="text-slate-300">{task.updateRequestNote || '(Không ghi chú kèm theo)'}</div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquareReply, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { Task } from '../types';
 
 interface UpdateRequestActionProps {
@@ -13,10 +13,9 @@ interface UpdateRequestActionProps {
 }
 
 /**
- * Nút của luồng "Yêu cầu cập nhật minh chứng" — chỉ có khi minh chứng đang chờ duyệt:
- *  - Người được giao, chưa gửi yêu cầu: "Xin sửa minh chứng"
- *  - Người được giao, đã gửi: nhãn "Đã xin sửa" (chờ người duyệt phản hồi)
- *  - Người có quyền duyệt, đang có yêu cầu: "Phản hồi yêu cầu sửa"
+ * Nút "Xin sửa minh chứng" cho người được giao — chỉ có khi minh chứng đang chờ duyệt:
+ *  - Chưa gửi yêu cầu: nút "Xin sửa minh chứng"
+ *  - Đã gửi: nhãn "Đã xin sửa" (người duyệt thấy lý do trong hộp "Kiểm tra")
  */
 export const UpdateRequestAction: React.FC<UpdateRequestActionProps> = ({
   task,
@@ -33,19 +32,8 @@ export const UpdateRequestAction: React.FC<UpdateRequestActionProps> = ({
     onUpdateRequest(task);
   };
 
-  if (task.updateRequestedAt && canReview) {
-    return (
-      <button
-        onClick={open}
-        className={`${size} font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer bg-violet-600 hover:bg-violet-500 text-white shadow-sm`}
-        title={`Người làm xin sửa minh chứng${task.updateRequestNote ? `: ${task.updateRequestNote}` : ''}`}
-      >
-        <MessageSquareReply className={icon} />
-        <span>Phản hồi yêu cầu sửa</span>
-      </button>
-    );
-  }
-
+  // Người duyệt xử lý yêu cầu sửa ngay trong hộp "Kiểm tra" (nút "Yêu cầu cập nhật" trả việc về để nộp lại),
+  // nên ở đây chỉ còn phần của người làm.
   if (isAssignee && !canReview) {
     if (task.updateRequestedAt) {
       return (

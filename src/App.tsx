@@ -1068,9 +1068,7 @@ export function App() {
             onOpenBBHParser={() => setIsParserOpen(true)}
             onAddNewManualTask={handleAddNewManualTask}
             onOpenDetail={setDetailTask}
-            onUpdateRequest={(task) =>
-              setUpdateReqTask({ task, mode: task.updateRequestedAt && canReviewTask(actor, task) ? 'respond' : 'request' })
-            }
+            onUpdateRequest={(task) => setUpdateReqTask({ task, mode: 'request' })}
             onRemindTask={handleOpenRemindConfirm}
           />
 
