@@ -210,7 +210,16 @@ export async function authConfigHandler(_req: Request, res: Response) {
     { m: pick('Phó Chủ nhiệm'), icon: '🌟' },
     { m: pick('Trưởng ban', 'Sự kiện') || pick('Trưởng ban'), icon: '📅' },
     { m: pick('Trưởng ban', 'Học thuật'), icon: '🎓' },
-    { m: pick('Thành viên', 'Truyền thông') || pick('Thành viên'), icon: '📢' },
+    {
+      // DEMO_MEMBER_NAME trong .env chọn đích danh thành viên demo; không có thì lấy thành viên đầu tiên ban Truyền thông
+      m:
+        (config.demoMemberName
+          ? members.find((x) => x.name === config.demoMemberName && x.role === 'Thành viên')
+          : undefined) ||
+        pick('Thành viên', 'Truyền thông') ||
+        pick('Thành viên'),
+      icon: '📢',
+    },
   ];
   const seen = new Set<string>();
   const demoAccounts: { label: string; email: string; icon: string }[] = [];

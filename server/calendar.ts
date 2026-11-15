@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from './db';
 import { todayVN } from '../shared/time';
+import { canViewMeeting, canViewTask, taskAssigneeIds } from '../shared/permissions';
 
 // ===== G5: Xuất lịch ICS (Google Calendar / Apple Calendar) =====
 // GET /api/calendar.ics?token=JWT — deadline công việc (all-day) + các kỳ họp
@@ -18,8 +19,6 @@ export async function calendarIcsHandler(req: Request, res: Response) {
   const today = todayVN();
   const stamp = today.replace(/-/g, '') + 'T000000Z';
 
-  const isLeadershipUser = me.role === 'Chủ nhiệm' || me.role === 'Phó Chủ nhiệm';
-
   // Phạm vi dữ liệu giống GET /tasks + /meetings (không phải lãnh đạo chỉ thấy ban mình)
   const tasks = await prisma.task.findMany({ include: { sourceMeeting: true } });
   const meetings = await prisma.meeting.findMany();
@@ -36,16 +35,10 @@ export async function calendarIcsHandler(req: Request, res: Response) {
 
   let eventCount = 0;
   for (const t of tasks) {
-    // Quyền xem: lãnh đạo tất cả; người khác: ban mình + việc giao mình + việc nhóm có mình
-    let ids: string[] = [t.assigneeId];
-    try {
-      const p = JSON.parse(t.assigneeIds);
-      if (Array.isArray(p) && p.length) ids = p;
-    } catch {}
-    const canView =
-      isLeadershipUser || t.department === me.department || ids.includes(me.id);
-    if (!canView) continue;
+    // Quyền xem giống hệt bảng việc (shared/permissions → canViewTask)
+    if (!canViewTask(me, t)) continue;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(t.deadline)) continue;
+    const ids = taskAssigneeIds(t);
 
     const status = t.status === 'completed' ? '✅ ĐÃ XONG' : t.deadline < today ? '🚨 QUÁ HẠN' : '📌 ĐANG LÀM';
     lines.push(
@@ -67,7 +60,7 @@ export async function calendarIcsHandler(req: Request, res: Response) {
   }
 
   for (const m of meetings) {
-    const canView = isLeadershipUser || m.department === 'Ban Chủ nhiệm' || m.department === me.department;
+    const canView = canViewMeeting(me, m);
     if (!canView) continue;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(m.date)) continue;
     lines.push(

@@ -82,9 +82,15 @@ export function isAssignee(a: Actor, task: TaskRef): boolean {
   return taskAssigneeIds(task).includes(a.id);
 }
 
-/** Xem việc: lãnh đạo thấy tất cả; còn lại thấy việc của ban mình + việc được giao cho mình */
+/**
+ * Xem việc:
+ *   Ban lãnh đạo:        tất cả
+ *   Trưởng/Phó ban:      mọi việc của ban mình + việc được giao cho mình
+ *   Thành viên, Cố vấn:  chỉ việc được giao cho mình (kể cả việc nhóm có tên mình)
+ */
 export function canViewTask(a: Actor, task: TaskRef): boolean {
-  return isLeadership(a) || task.department === a.department || isAssignee(a, task);
+  if (isLeadership(a) || isAssignee(a, task)) return true;
+  return isDeptManager(a) && task.department === a.department;
 }
 
 export function canCreateTask(a: Actor): boolean {

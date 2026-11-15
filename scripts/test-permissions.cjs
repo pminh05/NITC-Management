@@ -139,6 +139,11 @@ async function mainSuite() {
     const tHT2 = await mk('Học thuật', mTV_HT, '[TEST] việc HT 2');
 
     // ---- Giao việc
+    // ---- Phạm vi xem việc: thành viên chỉ thấy việc giao cho mình; Trưởng/Phó ban thấy cả ban
+    { const r = await call(T.TV_SK, 'GET', '/tasks'); const notMine = r.data.filter((t) => !(t.assigneeIds || []).includes(mTV_SK.id) && t.assigneeId !== mTV_SK.id); check('V8', 'TV_SK', 'thành viên chỉ thấy việc được giao cho mình', r.status === 200 && r.data.length > 0 && notMine.length === 0, `${r.data.length} việc, ${notMine.length} việc không phải của mình`); }
+    { const r = await call(T.TV_SK2 || await login(mTV_SK2.email), 'GET', `/tasks`); check('V8', 'TV cùng ban', 'không thấy việc của thành viên khác trong ban', !r.data.some((t) => t.id === tSK.id)); }
+    { const r = await call(T.TB_SK, 'GET', '/tasks'); const sk = all.filter((t) => t.department === 'Sự kiện').length; check('V8', 'TB_SK', 'Trưởng ban thấy mọi việc của ban mình', r.data.filter((t) => t.department === 'Sự kiện').length >= sk && r.data.some((t) => t.id === tSK.id)); }
+    rec('V8', 'TV cùng ban', 'PUT việc của người khác (không xem được)', 403, await call(await login(mTV_SK2.email), 'PUT', `/tasks/${tSK2.id}`, { action: 'request_update' }));
     rec('G1', 'TV_SK', 'POST /tasks', 403, await call(T.TV_SK, 'POST', '/tasks', { title: 'x', department: 'Sự kiện', deadline: future, assigneeId: mTV_SK.id }));
     rec('G2', 'TB_SK', 'POST /tasks ban mình', 201, await call(T.TB_SK, 'POST', '/tasks', { title: '[TEST] TB giao', department: 'Sự kiện', deadline: future, assigneeId: mTV_SK.id }));
     rec('G3', 'TB_SK', 'POST /tasks ban khác', 403, await call(T.TB_SK, 'POST', '/tasks', { title: 'x', department: 'Học thuật', deadline: future, assigneeId: mTV_HT.id }));

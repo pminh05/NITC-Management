@@ -51,6 +51,9 @@ export const config = {
    */
   demoMode: process.env.DEMO_MODE === 'true',
 
+  /** Họ tên thành viên dùng cho nút đăng nhập nhanh "Thành viên" (chế độ demo). Bỏ trống = tự chọn. */
+  demoMemberName: (process.env.DEMO_MEMBER_NAME || '').trim(),
+
   /** Cho phép "Reset demo" và "Import toàn bộ" (xóa sạch dữ liệu hiện có). Mặc định khóa. */
   allowDestructiveAdmin: process.env.ALLOW_DESTRUCTIVE_ADMIN === 'true',
 
