@@ -1,3 +1,4 @@
+import { confirmDialog, toast } from './ui/Feedback';
 import React, { useState } from 'react';
 import { Plus, X, Calendar, UserCheck, CheckCircle2 } from 'lucide-react';
 import { Department, Member, Task } from '../types';
@@ -39,7 +40,7 @@ export const QuickAddTaskModal: React.FC<QuickAddTaskModalProps> = ({
 
     const member = members.find((m) => m.id === assigneeIds[0]);
     if (!member) {
-      alert('Vui lòng chọn ít nhất một người phụ trách');
+      toast('Thiếu người phụ trách', 'Vui lòng chọn ít nhất một người phụ trách', 'warn');
       return;
     }
 

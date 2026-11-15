@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import confetti from 'canvas-confetti';
 import { isTaskOverdue } from './utils/dateUtils';
 import {
@@ -24,26 +24,46 @@ import { AppNotification } from './types';
 import { Header } from './components/Header';
 import { LoginPage } from './components/LoginPage';
 import { TaskBoard } from './components/TaskBoard';
-import { MeetingParserModal } from './components/MeetingParserModal';
-import { PresidentialFilterModal } from './components/PresidentialFilterModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { EvidenceSubmitModal } from './components/EvidenceSubmitModal';
 import { EvidenceReviewModal } from './components/EvidenceReviewModal';
-import { TheNagWeeklyReport } from './components/TheNagWeeklyReport';
-import { MeetingHistoryModal } from './components/MeetingHistoryModal';
-import { RosterManagerModal } from './components/RosterManagerModal';
-import { DataSyncModal } from './components/DataSyncModal';
-import { LeaderboardModal } from './components/LeaderboardModal';
-import { SettingsModal } from './components/SettingsModal';
-import { CalendarModal } from './components/CalendarModal';
-import { DocsModal } from './components/DocsModal';
-import { DashboardModal } from './components/DashboardModal';
 import { TaskDetailModal } from './components/TaskDetailModal';
 import { UpdateRequestFlowModal } from './components/UpdateRequestFlowModal';
 import { QuickAddTaskModal } from './components/QuickAddTaskModal';
 import { RemindConfirmModal } from './components/RemindConfirmModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { ChangePasswordModal } from './components/ChangePasswordModal';
+
+// Các hộp thoại lớn tải theo nhu cầu (tách khỏi gói JS đầu vào) và được tải sẵn lúc trình duyệt rảnh
+// sau khi đăng nhập — trang đầu nhẹ hơn mà lần mở đầu tiên vẫn không phải chờ.
+const modalLoaders = {
+  MeetingParserModal: () => import('./components/MeetingParserModal').then((m) => ({ default: m.MeetingParserModal })),
+  PresidentialFilterModal: () => import('./components/PresidentialFilterModal').then((m) => ({ default: m.PresidentialFilterModal })),
+  TheNagWeeklyReport: () => import('./components/TheNagWeeklyReport').then((m) => ({ default: m.TheNagWeeklyReport })),
+  MeetingHistoryModal: () => import('./components/MeetingHistoryModal').then((m) => ({ default: m.MeetingHistoryModal })),
+  RosterManagerModal: () => import('./components/RosterManagerModal').then((m) => ({ default: m.RosterManagerModal })),
+  DataSyncModal: () => import('./components/DataSyncModal').then((m) => ({ default: m.DataSyncModal })),
+  LeaderboardModal: () => import('./components/LeaderboardModal').then((m) => ({ default: m.LeaderboardModal })),
+  SettingsModal: () => import('./components/SettingsModal').then((m) => ({ default: m.SettingsModal })),
+  CalendarModal: () => import('./components/CalendarModal').then((m) => ({ default: m.CalendarModal })),
+  DocsModal: () => import('./components/DocsModal').then((m) => ({ default: m.DocsModal })),
+  DashboardModal: () => import('./components/DashboardModal').then((m) => ({ default: m.DashboardModal })),
+};
+const MeetingParserModal = lazy(modalLoaders.MeetingParserModal);
+const PresidentialFilterModal = lazy(modalLoaders.PresidentialFilterModal);
+const TheNagWeeklyReport = lazy(modalLoaders.TheNagWeeklyReport);
+const MeetingHistoryModal = lazy(modalLoaders.MeetingHistoryModal);
+const RosterManagerModal = lazy(modalLoaders.RosterManagerModal);
+const DataSyncModal = lazy(modalLoaders.DataSyncModal);
+const LeaderboardModal = lazy(modalLoaders.LeaderboardModal);
+const SettingsModal = lazy(modalLoaders.SettingsModal);
+const CalendarModal = lazy(modalLoaders.CalendarModal);
+const DocsModal = lazy(modalLoaders.DocsModal);
+const DashboardModal = lazy(modalLoaders.DashboardModal);
+function preloadModals() {
+  Object.values(modalLoaders).forEach((load) => load().catch(() => {}));
+}
+import { confirmDialog, toast } from './components/ui/Feedback';
 import {
   canDestructiveAdmin,
   canManageRoster,
@@ -257,6 +277,18 @@ export function App() {
     }
   }, [authMember, loadAllData]);
 
+  // Sau khi đăng nhập, tải sẵn mã các hộp thoại lúc trình duyệt rảnh → lần mở đầu tiên không phải chờ
+  useEffect(() => {
+    if (!authMember) return;
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number; cancelIdleCallback?: (id: number) => void };
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(preloadModals);
+      return () => w.cancelIdleCallback?.(id);
+    }
+    const t = window.setTimeout(preloadModals, 1500);
+    return () => window.clearTimeout(t);
+  }, [authMember]);
+
   const handleLogout = useCallback(() => {
     setToken(null);
     setAuthMember(null);
@@ -313,12 +345,8 @@ export function App() {
   const [parsedMeetingData, setParsedMeetingData] = useState<Partial<Meeting> | null>(null);
   const [parsedDraftTasks, setParsedDraftTasks] = useState<ExtractedDraftTask[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [toastMessage, setToastMessage] = useState<{ title: string; desc: string; type?: 'success' | 'info' | 'warn' } | null>(null);
-
-  const showToast = (title: string, desc: string, type: 'success' | 'info' | 'warn' = 'success') => {
-    setToastMessage({ title, desc, type });
-    setTimeout(() => setToastMessage(null), 4000);
-  };
+  // Thông báo góc màn hình: mỗi thông báo có đồng hồ riêng, xếp chồng tối đa 3 (components/ui/Feedback.tsx)
+  const showToast = (title: string, desc: string, type: 'success' | 'info' | 'warn' = 'success') => toast(title, desc, type);
 
   const showError = (e: any) => {
     showToast('Có lỗi xảy ra', e?.message || 'Không thực hiện được thao tác', 'warn');
@@ -388,22 +416,48 @@ export function App() {
     setIsSubmitOpen(true);
   };
 
-  const handleEvidenceSubmit = async (taskId: string, evidenceData: { link?: string; report?: string }) => {
+  /**
+   * Cập nhật lạc quan: đổi thẻ công việc NGAY khi bấm (không chờ server), rồi thay bằng bản server trả về.
+   * Server từ chối (sai quyền, sai trạng thái, mất mạng…) → trả thẻ về như cũ và báo lỗi.
+   */
+  const updateTaskOptimistic = async (
+    taskId: string,
+    patch: Partial<Task>,
+    body: Record<string, unknown>
+  ): Promise<Task | null> => {
+    const previous = tasks.find((t) => t.id === taskId);
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...patch } : t)));
     try {
-      const updated = await api<Task>(`/tasks/${taskId}`, {
-        method: 'PUT',
-        body: { action: 'submit_evidence', ...evidenceData },
-      });
+      const updated = await api<Task>(`/tasks/${taskId}`, { method: 'PUT', body });
       setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
-      setIsSubmitOpen(false);
-      setSelectedTask(null);
+      return updated;
+    } catch (e) {
+      if (previous) setTasks((prev) => prev.map((t) => (t.id === taskId ? previous : t)));
+      showError(e);
+      return null;
+    }
+  };
+
+  const handleEvidenceSubmit = async (taskId: string, evidenceData: { link?: string; report?: string }) => {
+    // Đóng hộp nộp ngay — thẻ chuyển sang "Chờ duyệt" tức thì, không bấm được hai lần
+    setIsSubmitOpen(false);
+    setSelectedTask(null);
+    const updated = await updateTaskOptimistic(
+      taskId,
+      {
+        status: 'pending_approval',
+        evidenceLink: evidenceData.link,
+        evidenceReport: evidenceData.report,
+        evidenceSubmittedAt: new Date().toISOString(),
+      },
+      { action: 'submit_evidence', ...evidenceData }
+    );
+    if (updated) {
       showToast(
         'Đã gửi minh chứng!',
         'Nhiệm vụ đã chuyển sang trạng thái "Chờ duyệt". Ban lãnh đạo hoặc Trưởng/Phó ban sẽ nghiệm thu.',
         'info'
       );
-    } catch (e) {
-      showError(e);
     }
   };
 
@@ -428,57 +482,51 @@ export function App() {
     setIsReviewOpen(true);
   };
 
-  const handleApproveEvidence = async (taskId: string, approvalNote?: string) => {
+  const celebrate = () => {
     try {
-      const updated = await api<Task>(`/tasks/${taskId}`, {
-        method: 'PUT',
-        body: { action: 'approve', note: approvalNote },
-      });
-      setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
-      setIsReviewOpen(false);
-      setSelectedTask(null);
+      confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
+    } catch {
+      // ignore
+    }
+  };
 
-      try {
-        confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
-      } catch {
-        // ignore
-      }
+  const handleApproveEvidence = async (taskId: string, approvalNote?: string) => {
+    setIsReviewOpen(false);
+    setSelectedTask(null);
+    const updated = await updateTaskOptimistic(
+      taskId,
+      { status: 'completed', updateRequestedAt: undefined },
+      { action: 'approve', note: approvalNote }
+    );
+    if (updated) {
+      celebrate();
       showToast('Đã duyệt hoàn thành!', 'Nhiệm vụ đã được nghiệm thu và đánh dấu Hoàn thành ✅');
-    } catch (e) {
-      showError(e);
     }
   };
 
   const handleRejectEvidence = async (taskId: string, rejectReason: string) => {
-    try {
-      const updated = await api<Task>(`/tasks/${taskId}`, {
-        method: 'PUT',
-        body: { action: 'reject', reason: rejectReason },
-      });
-      setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
-      setIsReviewOpen(false);
-      setSelectedTask(null);
-      showToast(
-        'Đã yêu cầu nộp lại!',
-        'Nhiệm vụ đã được trả về cho thành viên kèm ghi chú chỉnh sửa.',
-        'warn'
-      );
-    } catch (e) {
-      showError(e);
+    setIsReviewOpen(false);
+    setSelectedTask(null);
+    const updated = await updateTaskOptimistic(
+      taskId,
+      { status: 'in_progress', rejectedReason: rejectReason, updateRequestedAt: undefined },
+      { action: 'reject', reason: rejectReason }
+    );
+    if (updated) {
+      showToast('Đã yêu cầu nộp lại!', 'Nhiệm vụ đã được trả về cho thành viên kèm ghi chú chỉnh sửa.', 'warn');
     }
   };
 
   // Quick 1-click approve for president
   const handleQuickApprove = async (taskId: string) => {
-    try {
-      const updated = await api<Task>(`/tasks/${taskId}`, {
-        method: 'PUT',
-        body: { action: 'approve', note: 'Chủ nhiệm duyệt nhanh hoàn thành.' },
-      });
-      setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
+    const updated = await updateTaskOptimistic(
+      taskId,
+      { status: 'completed' },
+      { action: 'approve', note: 'Chủ nhiệm duyệt nhanh hoàn thành.' }
+    );
+    if (updated) {
+      celebrate();
       showToast('Duyệt nhanh!', 'Đã đánh dấu hoàn thành nhiệm vụ.');
-    } catch (e) {
-      showError(e);
     }
   };
 
@@ -503,12 +551,29 @@ export function App() {
 
   // Delete Task
   const handleDeleteTask = async (taskId: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa nhiệm vụ này?')) return;
+    const ok = await confirmDialog({
+      title: 'Xóa nhiệm vụ này?',
+      message: 'Nhiệm vụ và minh chứng đã nộp sẽ bị xóa vĩnh viễn.',
+      confirmText: 'Xóa',
+      danger: true,
+    });
+    if (!ok) return;
+    // Gỡ thẻ ngay; server từ chối thì đưa thẻ trở lại đúng vị trí cũ
+    const index = tasks.findIndex((t) => t.id === taskId);
+    const removed = tasks[index];
+    setTasks((prev) => prev.filter((t) => t.id !== taskId));
     try {
       await api(`/tasks/${taskId}`, { method: 'DELETE' });
-      setTasks((prev) => prev.filter((t) => t.id !== taskId));
       showToast('Đã xóa', 'Nhiệm vụ đã được xóa khỏi hệ thống.', 'info');
     } catch (e) {
+      if (removed) {
+        setTasks((prev) => {
+          if (prev.some((t) => t.id === taskId)) return prev;
+          const next = [...prev];
+          next.splice(Math.min(index, next.length), 0, removed);
+          return next;
+        });
+      }
       showError(e);
     }
   };
@@ -567,9 +632,12 @@ export function App() {
 
   // Chủ nhiệm đặt lại mật khẩu của thành viên về mặc định (khi họ quên mật khẩu)
   const handleResetMemberPassword = async (member: Member) => {
-    const ok = confirm(
-      `Đặt lại mật khẩu của ${member.name} về mật khẩu mặc định?\n\nPhiên đăng nhập hiện tại của họ sẽ hết hiệu lực và họ phải đổi mật khẩu ở lần đăng nhập tới.`
-    );
+    const ok = await confirmDialog({
+      title: `Đặt lại mật khẩu của ${member.name}?`,
+      message: 'Phiên đăng nhập hiện tại của họ sẽ hết hiệu lực và họ phải đổi mật khẩu ở lần đăng nhập tới.',
+      confirmText: 'Đặt lại',
+      danger: true,
+    });
     if (!ok) return;
     try {
       const res = await api<{ success: boolean; message: string }>(`/members/${member.id}/reset-password`, {
@@ -728,25 +796,6 @@ export function App() {
     <div className="min-h-screen bg-[#F1F5F9] dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans antialiased selection:bg-[#2C69FF]/100 selection:text-white">
 
       {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300">
-          <div className={`p-4 rounded-xl shadow-2xl border flex items-start gap-3 max-w-sm ${toastMessage.type === 'warn'
-              ? 'bg-amber-50 border-amber-300 text-amber-900'
-              : toastMessage.type === 'info'
-                ? 'bg-blue-50 border-blue-300 text-blue-900'
-                : 'bg-white border-emerald-400 text-slate-900 dark:text-slate-100 shadow-emerald-100'
-            }`}>
-            <div className="p-1 rounded-lg bg-emerald-100 text-emerald-700">
-              <CheckCircle2 className="w-5 h-5" />
-            </div>
-            <div>
-              <h5 className="font-bold text-sm text-slate-900">{toastMessage.title}</h5>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">{toastMessage.desc}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* 1. Global Navigation Header */}
       <Header
         authMember={authMember}
@@ -1086,10 +1135,11 @@ export function App() {
         </div>
       </footer>
 
-      {/* 5. Modals System */}
+      {/* 5. Modals System — modal tải theo nhu cầu nằm trong Suspense (chưa tải xong thì chưa hiện gì) */}
+      <Suspense fallback={null}>
 
       {/* Modal 1: BBH Input & AI Parser (Ban lãnh đạo + Trưởng/Phó ban họp riêng) */}
-      {canManageMeetings && (
+      {canManageMeetings && isParserOpen && (
         <MeetingParserModal
           isOpen={isParserOpen}
           onClose={() => setIsParserOpen(false)}
@@ -1099,7 +1149,7 @@ export function App() {
       )}
 
       {/* Modal 2: Presidential Filter (Quy tắc trùng tên, Cảnh báo vắng mặt, Phê duyệt) */}
-      {canManageMeetings && (
+      {canManageMeetings && isFilterOpen && (
         <ErrorBoundary fallbackTitle="Lỗi hiển thị Màn hình Đối soát nhiệm vụ">
           <PresidentialFilterModal
             isOpen={isFilterOpen}
@@ -1137,6 +1187,7 @@ export function App() {
       />
 
       {/* Modal 5: The Nag & Sunday Weekly Report */}
+      {isNagOpen && (
       <TheNagWeeklyReport
         isOpen={isNagOpen}
         onClose={() => setIsNagOpen(false)}
@@ -1145,8 +1196,10 @@ export function App() {
         logs={logs}
         onSendNotification={handleSendNotification}
       />
+      )}
 
       {/* Modal 6: Meeting Minutes Archive & Official PDF Export */}
+      {isMeetingHistoryOpen && (
       <MeetingHistoryModal
         isOpen={isMeetingHistoryOpen}
         onClose={() => setIsMeetingHistoryOpen(false)}
@@ -1157,9 +1210,10 @@ export function App() {
           setIsParserOpen(true);
         }}
       />
+      )}
 
       {/* Modal 7: Roster & Members Manager (Ban lãnh đạo) */}
-      {canManageRoster(actor) && (
+      {canManageRoster(actor) && isRosterOpen && (
         <RosterManagerModal
           viewer={actor}
           isOpen={isRosterOpen}
@@ -1179,7 +1233,7 @@ export function App() {
       )}
 
       {/* Modal 8: Data Storage & Google Sheets Sync (chỉ Chủ nhiệm) */}
-      {isLeadership && (
+      {isLeadership && isDataSyncOpen && (
         <DataSyncModal
           isOpen={isDataSyncOpen}
           onClose={() => setIsDataSyncOpen(false)}
@@ -1233,6 +1287,7 @@ export function App() {
       />
 
       {/* Modal: Lịch tổng deadline & họp */}
+      {isCalendarOpen && (
       <CalendarModal
         isOpen={isCalendarOpen}
         onClose={() => setIsCalendarOpen(false)}
@@ -1240,8 +1295,10 @@ export function App() {
         meetings={meetings}
         onOpenDetail={setDetailTask}
       />
+      )}
 
       {/* Modal: Dashboard phân tích */}
+      {isDashOpen && (
       <DashboardModal
         isOpen={isDashOpen}
         onClose={() => setIsDashOpen(false)}
@@ -1249,28 +1306,37 @@ export function App() {
         meetings={meetings}
         authMember={authMember}
       />
+      )}
 
       {/* Modal: Kho tài liệu (mọi vai trò xem trong phạm vi) */}
+      {isDocsOpen && (
       <DocsModal
         isOpen={isDocsOpen}
         onClose={() => setIsDocsOpen(false)}
         terms={terms}
         authMember={authMember}
       />
+      )}
 
       {/* Modal 10: Cấu hình hệ thống (chỉ Ban lãnh đạo) */}
+      {isSettingsOpen && (
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         onSaved={() => showToast('Đã lưu cấu hình', 'Thang điểm KPI và lịch báo cáo đã được áp dụng.')}
       />
+      )}
 
       {/* Modal 9: Bảng xếp hạng & KPI (mọi vai trò đều xem được trong phạm vi của mình) */}
+      {isLeaderboardOpen && (
       <LeaderboardModal
         isOpen={isLeaderboardOpen}
         onClose={() => setIsLeaderboardOpen(false)}
         authMember={authMember}
       />
+      )}
+
+      </Suspense>
 
       {/* Modal: Quick Add Task (Mở từ FAB mobile hoặc thao tác nhanh) */}
       <QuickAddTaskModal

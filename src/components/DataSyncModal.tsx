@@ -1,3 +1,4 @@
+import { confirmDialog, toast } from './ui/Feedback';
 import React, { useState } from 'react';
 import {
   Database,
@@ -136,10 +137,10 @@ export const DataSyncModal: React.FC<DataSyncModalProps> = ({
           setSuccessMsg('Khôi phục dữ liệu từ tệp tin thành công!');
           setTimeout(() => setSuccessMsg(null), 3000);
         } else {
-          alert('Tệp tin không đúng định dạng sao lưu NITC Command Center.');
+          toast('Không khôi phục được', 'Tệp tin không đúng định dạng sao lưu NITC Command Center.', 'warn');
         }
       } catch (err) {
-        alert('Lỗi đọc tệp tin JSON.');
+        toast('Không khôi phục được', 'Lỗi đọc tệp tin JSON.', 'warn');
       }
     };
     reader.readAsText(file);
@@ -265,8 +266,15 @@ export const DataSyncModal: React.FC<DataSyncModalProps> = ({
             </div>
 
             <button
-              onClick={() => {
-                if (confirm('Bạn có chắc chắn muốn khôi phục về dữ liệu mẫu ban đầu không?')) {
+              onClick={async () => {
+                if (
+                  await confirmDialog({
+                    title: 'Khôi phục dữ liệu mẫu?',
+                    message: 'Toàn bộ dữ liệu hiện tại sẽ bị thay bằng bộ dữ liệu mẫu (server tự sao lưu trước khi xóa).',
+                    confirmText: 'Khôi phục',
+                    danger: true,
+                  })
+                ) {
                   onResetToDemo();
                   setSuccessMsg('Đã khôi phục về dữ liệu mẫu NITC chuẩn thành công!');
                   setTimeout(() => setSuccessMsg(null), 3000);

@@ -1,3 +1,4 @@
+import { confirmDialog, toast } from './ui/Feedback';
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   ShieldCheck,
@@ -234,8 +235,10 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
   const handlePublish = () => {
     const unresolvedTask = safeTasks.find((t) => !t.suggestedAssigneeId || t.hasAmbiguity);
     if (unresolvedTask) {
-      alert(
-        `⚠️ Chú ý: Công việc "${unresolvedTask.title}" chưa được gán người phụ trách cụ thể hoặc còn trùng tên! Vui lòng chọn người trước khi ban hành.`
+      toast(
+        'Chưa thể ban hành',
+        `Công việc "${unresolvedTask.title}" chưa được gán người phụ trách cụ thể hoặc còn trùng tên! Vui lòng chọn người trước khi ban hành.`,
+        'warn'
       );
       return;
     }

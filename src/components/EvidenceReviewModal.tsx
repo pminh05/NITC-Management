@@ -1,3 +1,4 @@
+import { confirmDialog, toast } from './ui/Feedback';
 import React, { useState } from 'react';
 import {
   CheckCircle2,
@@ -43,7 +44,7 @@ export const EvidenceReviewModal: React.FC<EvidenceReviewModalProps> = ({
 
   const handleConfirmReject = () => {
     if (!rejectReason.trim()) {
-      alert('Vui lòng nhập lý do yêu cầu làm lại để Trưởng ban nắm rõ.');
+      toast('Thiếu lý do', 'Vui lòng nhập lý do yêu cầu làm lại để người làm nắm rõ.', 'warn');
       return;
     }
     onReject(task.id, rejectReason.trim());

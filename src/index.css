@@ -13,3 +13,54 @@ html, body {
 /* Khóa biến thể dark theo class (main.tsx luôn xóa class này lúc khởi động)
    → giao diện luôn sáng kể cả khi Windows đang bật chế độ tối */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* ===== Hiệu ứng mở hộp thoại / thẻ =====
+   Các component dùng sẵn lớp animate-in, fade-in, zoom-in-95, slide-in-from-*… (cú pháp kiểu tailwindcss-animate)
+   nhưng dự án chưa có plugin đó nên trước đây hộp thoại hiện ra đột ngột. Định nghĩa trực tiếp ở đây. */
+@keyframes nitc-enter {
+  from {
+    opacity: var(--nitc-enter-opacity, 1);
+    transform: translate3d(var(--nitc-enter-x, 0), var(--nitc-enter-y, 0), 0) scale(var(--nitc-enter-scale, 1));
+  }
+}
+@utility animate-in {
+  animation: nitc-enter var(--tw-duration, 180ms) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@utility fade-in {
+  --nitc-enter-opacity: 0;
+}
+@utility zoom-in-* {
+  --nitc-enter-scale: calc(--value(integer) * 1%);
+}
+@utility slide-in-from-bottom {
+  --nitc-enter-y: 100%;
+}
+@utility slide-in-from-bottom-* {
+  --nitc-enter-y: calc(--value(integer) * var(--spacing));
+}
+@utility slide-in-from-top-* {
+  --nitc-enter-y: calc(--value(integer) * var(--spacing) * -1);
+}
+@utility slide-in-from-left-* {
+  --nitc-enter-x: calc(--value(integer) * var(--spacing) * -1);
+}
+@utility slide-in-from-right-* {
+  --nitc-enter-x: calc(--value(integer) * var(--spacing));
+}
+
+/* Thông báo góc màn hình: trượt ra khi đóng */
+@keyframes nitc-toast-out {
+  to { opacity: 0; transform: translate3d(0, 8px, 0) scale(0.98); }
+}
+.nitc-toast-leave {
+  animation: nitc-toast-out 160ms ease-in forwards;
+}
+
+/* Người dùng bật "giảm chuyển động" trong hệ điều hành → tắt hiệu ứng */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
