@@ -235,6 +235,24 @@ async function mainSuite() {
     rec('Q4', 'CN', 'POST /admin/reset khi chưa bật cờ', 403, await call(T.CN, 'POST', '/admin/reset'));
     rec('Q5', 'CN', 'POST /admin/import khi chưa bật cờ', 403, await call(T.CN, 'POST', '/admin/import', {}));
     check('Q6', 'CN', 'dữ liệu còn nguyên sau khi reset bị chặn', (await call(T.CN, 'GET', '/members')).data?.length === members.length);
+    // ---- Import Excel: file không hợp lệ không được tạo/đổi nhiệm kỳ
+    {
+      const XLSX = require(path.join(PROJ, 'node_modules/xlsx'));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['a', 'b'], ['1', '2']]), 'Học thuật');
+      const termsBefore = JSON.stringify((await call(T.CN, 'GET', '/terms')).data);
+      const fd = new FormData();
+      fd.append('file', new Blob([XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })]), 'rong.xlsx');
+      fd.append('termName', '2030-2031');
+      const r = await fetch(s.base + '/members/import', { method: 'POST', headers: { Authorization: 'Bearer ' + T.CN }, body: fd });
+      const termsAfter = JSON.stringify((await call(T.CN, 'GET', '/terms')).data);
+      check('E2', 'CN', 'import file không có cột Tên/Email: báo lỗi, không tạo/đổi nhiệm kỳ', r.status === 400 && termsBefore === termsAfter, `HTTP ${r.status}`);
+      const fd2 = new FormData();
+      fd2.append('file', new Blob([XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })]), 'x.xlsx');
+      fd2.append('termName', '2030-2032');
+      const r2 = await fetch(s.base + '/members/import', { method: 'POST', headers: { Authorization: 'Bearer ' + T.CN }, body: fd2 });
+      check('E2', 'CN', 'import tên nhiệm kỳ sai (2030-2032) bị từ chối', r2.status === 400);
+    }
     rec('Q7', 'TB_SK', 'đặt lại mật khẩu người khác', 403, await call(T.TB_SK, 'POST', `/members/${mTV_SK.id}/reset-password`));
 
     // ---- Kho tài liệu

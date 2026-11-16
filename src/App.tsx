@@ -679,7 +679,7 @@ export function App() {
       const s = res.summary;
       showToast(
         'Import thành công!',
-        `Nhiệm kỳ ${s.term}: +${s.created} thành viên mới, cập nhật ${s.updated}, bỏ qua ${s.skipped}.`
+        `Nhiệm kỳ ${s.term}${s.mode === 'archive' ? ' (lưu trữ — nhiệm kỳ hiện hành giữ nguyên)' : s.mode === 'newer' ? ' (đã thành nhiệm kỳ hiện hành)' : ''}: +${s.created} mới, cập nhật ${s.updated}, bỏ qua ${s.skipped}.`
       );
       // Reload terms + về chế độ nhiệm kỳ vừa import để nhìn thấy ngay
       const t = await api<Term[]>('/terms');

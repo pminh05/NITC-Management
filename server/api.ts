@@ -268,16 +268,13 @@ apiRouter.post('/members/import', requireCan(canManageTerms, ONLY_PRESIDENT), up
     return res.status(400).json({ error: 'Vui lòng đính kèm file Excel (.xlsx)' });
   }
   const termName = String(req.body?.termName || '').trim();
-  if (!/^\d{4}-\d{4}$/.test(termName)) {
-    return res.status(400).json({ error: 'Tên nhiệm kỳ phải theo định dạng YYYY-YYYY (VD: 2025-2026)' });
+  const tm = /^(\d{4})-(\d{4})$/.exec(termName);
+  if (!tm || Number(tm[2]) !== Number(tm[1]) + 1) {
+    return res.status(400).json({ error: 'Tên nhiệm kỳ phải theo định dạng YYYY-YYYY, năm sau hơn năm trước 1 (VD: 2025-2026)' });
   }
-  try {
-    const summary = await importRosterFromExcel(req.file.buffer, termName);
-    return res.json({ success: true, summary });
-  } catch (e: any) {
-    console.error('Excel import error:', e);
-    return res.status(400).json({ error: 'Không đọc được file Excel. Kiểm tra lại định dạng danh bạ NITC.' });
-  }
+  // Lỗi đọc file / file không có dòng hợp lệ → HttpError 400 kèm lý do cụ thể, CSDL không thay đổi
+  const summary = await importRosterFromExcel(req.file.buffer, termName);
+  return res.json({ success: true, summary });
 });
 
 /** Email đã thuộc về thành viên/tài khoản khác chưa? (Member.email chưa unique ở CSDL nên phải kiểm tra ở đây) */

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Department, ImportSummary, Member, Role, Term } from '../types';
 import { Actor, canDeleteMember, canEditMember, canManageTerms } from '../../shared/permissions';
+import { confirmDialog } from './ui/Feedback';
 
 interface RosterManagerModalProps {
   isOpen: boolean;
@@ -152,6 +153,30 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
     if (!file) return;
     setImportError(null);
     setImportResult(null);
+
+    // Xác nhận trước khi ghi: nhiệm kỳ nào, có đổi nhiệm kỳ hiện hành không, tên file có khớp không
+    const termName = importTermName.trim();
+    const activeName = activeTerm?.name;
+    const fileTerm = /(\d{4})\s*[-–]\s*(\d{4})/.exec(file.name);
+    const fileTermName = fileTerm ? `${fileTerm[1]}-${fileTerm[2]}` : null;
+    const effect = !activeName || termName > activeName
+      ? `Nhiệm kỳ ${termName} sẽ trở thành nhiệm kỳ HIỆN HÀNH (thay cho ${activeName || 'hiện tại'}). Thành viên trùng email được cập nhật và chuyển sang ${termName}; người mới được tạo tài khoản đăng nhập.`
+      : termName === activeName
+      ? `Cập nhật danh bạ nhiệm kỳ hiện hành ${termName}: thành viên trùng email được cập nhật, người mới được tạo tài khoản.`
+      : `${termName} cũ hơn nhiệm kỳ hiện hành ${activeName} → chỉ nhập LƯU TRỮ: nhiệm kỳ hiện hành giữ nguyên, người đã có trong hệ thống không bị sửa, người mới lưu ở trạng thái "Cựu thành viên" và không có tài khoản đăng nhập.`;
+    const mismatch = fileTermName && fileTermName !== termName
+      ? `\n\n⚠ Tên file có nhiệm kỳ ${fileTermName} nhưng ô "Nhiệm kỳ mới" đang là ${termName}. Nếu nhầm, bấm Hủy và sửa ô nhiệm kỳ.`
+      : '';
+    const ok = await confirmDialog({
+      title: `Import "${file.name}" vào nhiệm kỳ ${termName}?`,
+      message: effect + mismatch,
+      confirmText: 'Import',
+      danger: Boolean(mismatch),
+    });
+    if (!ok) {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
     try {
       const summary = await onImportExcel(file, importTermName.trim());
       if (summary) setImportResult(summary);
@@ -342,14 +367,17 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
         {importResult && (
           <div className="mx-4 mt-3 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-200 space-y-1">
             <div className="font-bold text-emerald-300">
-              ✅ Import nhiệm kỳ {importResult.term} thành công: +{importResult.created} thành viên mới,
+              ✅ Import nhiệm kỳ {importResult.term}
+              {importResult.mode === 'archive' ? ' (lưu trữ)' : ''} thành công: +{importResult.created} thành viên mới,
               cập nhật {importResult.updated}, bỏ qua {importResult.skipped}
             </div>
             <div className="text-[11px] text-emerald-300/80">
               {Object.entries(importResult.departments)
                 .map(([dept, n]) => `${dept}: ${n}`)
                 .join(' · ')}
-              {' — '}mỗi thành viên có tài khoản đăng nhập (mật khẩu mặc định nitc123)
+              {importResult.mode === 'archive'
+                ? ' — lưu ở trạng thái Cựu thành viên, không tạo tài khoản đăng nhập; nhiệm kỳ hiện hành giữ nguyên'
+                : ' — thành viên mới có tài khoản đăng nhập (mật khẩu mặc định nitc123)'}
             </div>
             {importResult.skippedRows.length > 0 && (
               <div className="text-[11px] text-amber-300">

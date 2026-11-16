@@ -67,6 +67,9 @@ export interface AppNotification {
 
 export interface ImportSummary {
   term: string;
+  /** newer = nhiệm kỳ mới (thành hiện hành) · current = nhiệm kỳ hiện hành · archive = nhiệm kỳ cũ (chỉ lưu trữ) */
+  mode?: 'newer' | 'current' | 'archive';
+  backup?: string;
   created: number;
   updated: number;
   skipped: number;
