@@ -702,7 +702,7 @@ export function App() {
       setSelectedTermId(created.id);
       showToast(
         `Đã tạo nhiệm kỳ ${created.name}`,
-        'Đang xem nhiệm kỳ mới (chưa có thành viên). Import danh bạ hoặc bấm "Đặt hiện hành" khi sẵn sàng chuyển nhiệm kỳ.',
+        'Đang xem nhiệm kỳ mới (chưa có thành viên). Import danh sách thành viên để bắt đầu nhiệm kỳ này.',
         'info'
       );
       return true;
@@ -721,6 +721,18 @@ export function App() {
       setTerms(t);
       setSelectedTermId('active');
       showToast('Đã đổi nhiệm kỳ', `Nhiệm kỳ ${res.activeTerm} giờ là nhiệm kỳ hiện hành.`);
+    } catch (e) {
+      showError(e);
+    }
+  };
+
+  const handleDeleteTerm = async (termId: string) => {
+    const name = terms.find((t) => t.id === termId)?.name || '';
+    try {
+      await api(`/terms/${termId}`, { method: 'DELETE' });
+      setTerms(await api<Term[]>('/terms'));
+      setSelectedTermId('active');
+      showToast('Đã xóa nhiệm kỳ', `Nhiệm kỳ trống ${name} đã được xóa.`);
     } catch (e) {
       showError(e);
     }
@@ -1163,6 +1175,7 @@ export function App() {
           onUpdateMember={handleUpdateMember}
           onDeleteMember={handleDeleteMember}
           onActivateTerm={handleActivateTerm}
+          onDeleteTerm={handleDeleteTerm}
           onCreateTerm={handleCreateTerm}
           onResetPassword={canResetMemberPassword(actor) ? handleResetMemberPassword : undefined}
         />

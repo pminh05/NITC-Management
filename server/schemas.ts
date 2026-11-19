@@ -333,3 +333,30 @@ export const adminImportSchema = z.object({
     .max(20000)
     .nullish(),
 });
+
+// ----- Nhiệm kỳ, cấu hình, kênh thông báo -----
+export const termCreateSchema = z.object({
+  name: z
+    .string('Thiếu tên nhiệm kỳ')
+    .trim()
+    .regex(/^\d{4}-\d{4}$/, 'Tên nhiệm kỳ phải theo định dạng YYYY-YYYY (VD: 2026-2027)')
+    .refine((s) => Number(s.slice(5)) === Number(s.slice(0, 4)) + 1, 'Năm sau phải hơn năm trước đúng 1 (VD: 2026-2027)'),
+});
+
+const kpiPoint = z.number('Điểm KPI phải là số').int('Điểm KPI phải là số nguyên').min(-100).max(100);
+
+/** Cập nhật một phần: trường nào gửi lên mới được kiểm tra và lưu */
+export const settingsUpdateSchema = z.object({
+  clubName: text('tên CLB', 200).optional(),
+  groupEmail: email.optional(),
+  kpiOnTime: kpiPoint.optional(),
+  kpiLate: kpiPoint.optional(),
+  kpiPending: kpiPoint.optional(),
+  kpiOverdue: kpiPoint.optional(),
+  reportDayOfWeek: z.number().int().min(0, 'Ngày gửi báo cáo phải từ 0 (Chủ nhật) đến 6').max(6, 'Ngày gửi báo cáo phải từ 0 (Chủ nhật) đến 6').optional(),
+  reportHour: z.number().int().min(0, 'Giờ gửi báo cáo phải từ 0 đến 23').max(23, 'Giờ gửi báo cáo phải từ 0 đến 23').optional(),
+});
+
+export const notificationPrefSchema = z.object({
+  channel: z.enum(['in_app', 'in_app_email', 'digest'], { error: 'Kênh nhận thông báo không hợp lệ (in_app | in_app_email | digest)' }),
+});

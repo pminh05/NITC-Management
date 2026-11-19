@@ -53,15 +53,25 @@ export interface DeptKpiRow {
   memberCount: number;
 }
 
+type ScoredTask = { deadline: string; status: string; evidenceSubmittedAt: string | null; approvedAt: Date | null; updatedAt: Date };
+
+/**
+ * Ngày hoàn thành dùng để xét đúng/trễ hạn: ngày nộp minh chứng → ngày duyệt (Chủ nhiệm duyệt nhanh, không minh chứng)
+ * → ngày sửa cuối (chỉ cho dữ liệu cũ chưa có hai mốc trên). Không dùng updatedAt trước tiên vì sửa tiêu đề/mô tả
+ * sau khi xong cũng làm nó đổi, khiến việc đúng hạn bị tính thành trễ hạn.
+ */
+function doneDateOf(t: ScoredTask): string {
+  return dateOf(t.evidenceSubmittedAt) || (t.approvedAt ? ymdVN(t.approvedAt) : '') || ymdVN(t.updatedAt);
+}
+
 /** Điểm 1 công việc cho 1 người dựa trên trạng thái + ngày nộp/hạn */
-function scoreTaskFor(deadline: string, status: string, evidenceSubmittedAt: string | null, updatedAt: Date, rules: typeof KPI_RULES): number {
+function scoreTaskFor(t: ScoredTask, rules: typeof KPI_RULES): number {
+  const { deadline, status } = t;
   if (status === 'completed') {
-    const submittedDate = dateOf(evidenceSubmittedAt) || ymdVN(updatedAt);
-    return submittedDate <= deadline ? rules.completedOnTime : rules.completedLate;
+    return doneDateOf(t) <= deadline ? rules.completedOnTime : rules.completedLate;
   }
   if (status === 'pending_approval') {
-    const submittedDate = dateOf(evidenceSubmittedAt) || ymdVN(updatedAt);
-    return submittedDate <= deadline ? rules.submittedPending : 0;
+    return doneDateOf(t) <= deadline ? rules.submittedPending : 0;
   }
   const today = todayVN();
   if (deadline < today) return rules.overdueUnfinished;
@@ -87,7 +97,8 @@ export async function computeKpi(me: AuthMember): Promise<{
       where: { status: 'active', term: { isActive: true } },
       orderBy: [{ department: 'asc' }, { name: 'asc' }],
     }),
-    prisma.task.findMany(),
+    // Chỉ việc của nhiệm kỳ hiện hành — sang nhiệm kỳ mới bảng thi đua bắt đầu lại từ đầu
+    prisma.task.findMany({ where: { term: { isActive: true } } }),
   ]);
 
   const rows = new Map<string, MemberKpiRow>();
@@ -117,7 +128,7 @@ export async function computeKpi(me: AuthMember): Promise<{
     } catch {
       // fallback 1 người
     }
-    const points = scoreTaskFor(t.deadline, t.status, t.evidenceSubmittedAt, t.updatedAt, rules);
+    const points = scoreTaskFor(t, rules);
     for (const id of ids) {
       const row = rows.get(id);
       if (!row) continue;
@@ -125,8 +136,7 @@ export async function computeKpi(me: AuthMember): Promise<{
       row.points += points;
       if (t.status === 'completed') {
         row.completed += 1;
-        const submittedDate = dateOf(t.evidenceSubmittedAt) || ymdVN(t.updatedAt);
-        if (submittedDate <= t.deadline) row.onTime += 1;
+        if (doneDateOf(t) <= t.deadline) row.onTime += 1;
         else row.late += 1;
       } else if (t.status === 'pending_approval') {
         row.pending += 1;

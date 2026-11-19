@@ -80,7 +80,7 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
     return;
   }
   if (err?.type === 'entity.too.large') {
-    res.status(413).json({ error: 'Dữ liệu gửi lên quá lớn (tối đa 25MB)' });
+    res.status(413).json({ error: 'Dữ liệu gửi lên quá lớn (tối đa 2MB)' });
     return;
   }
   // multer (upload file)

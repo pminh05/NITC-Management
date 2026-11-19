@@ -1,6 +1,6 @@
 import cron, { ScheduledTask } from 'node-cron';
 import { prisma } from './db';
-import { notify, notifyLeadership, departmentHead, sendEmailIfEnabled, getPref } from './notifications';
+import { notify, notifyLeadership, departmentManagers, sendEmailIfEnabled, getPref } from './notifications';
 import { getSettings } from './settings';
 import { VN_TIMEZONE, addDays, diffDays, todayVN } from '../shared/time';
 import { effectiveStatus } from '../shared/taskState';
@@ -17,7 +17,7 @@ const CRON_OPTS = { timezone: VN_TIMEZONE };
  * Quét deadline toàn hệ thống, sinh thông báo:
  *  - deadline = ngày mai  → deadline_tomorrow cho người được giao
  *  - deadline = hôm nay   → deadline_today cho người được giao
- *  - quá hạn              → overdue cho người được giao + Trưởng ban + Ban lãnh đạo (nhắc lại mỗi 2 ngày)
+ *  - quá hạn              → overdue cho người được giao + Trưởng/Phó ban + Ban lãnh đạo (trễ 1, 3, 5... ngày)
  * Idempotent: dedupeKey kiểu type:taskId:ngày — chạy lại không sinh trùng.
  */
 export async function scanDeadlines(): Promise<{ tomorrow: number; today: number; overdue: number }> {
@@ -63,11 +63,11 @@ export async function scanDeadlines(): Promise<{ tomorrow: number; today: number
       cToday++;
     } else if (diff < 0) {
       const daysOverdue = Math.abs(diff);
-      // Nhắc lại mỗi 2 ngày (daysOverdue lẻ → bỏ qua để tránh spam)
-      if (daysOverdue % 2 === 1) continue;
-      const head = await departmentHead(task.department);
-      const recipients = new Set<string>([...assigneeIds]);
-      if (head) recipients.add(head.id);
+      // Nhắc ngay ngày trễ đầu tiên, sau đó cách ngày (trễ 1, 3, 5... ngày) để tránh spam
+      if (daysOverdue % 2 === 0) continue;
+      // Người làm + Trưởng ban và Phó ban của ban đó (ban chưa có Trưởng ban vẫn có người nhận)
+      const managers = await departmentManagers(task.department);
+      const recipients = new Set<string>([...assigneeIds, ...managers.map((m) => m.id)]);
 
       for (const memberId of recipients) {
         await notify({
@@ -129,7 +129,8 @@ export async function sendDigestEmails(): Promise<number> {
  * cho Ban lãnh đạo + gửi email (nếu bật).
  */
 export async function weeklyReport(): Promise<void> {
-  const tasks = await prisma.task.findMany();
+  // Chỉ việc của nhiệm kỳ hiện hành
+  const tasks = await prisma.task.findMany({ where: { term: { isActive: true } } });
   const byDept = new Map<string, { total: number; done: number; overdue: number }>();
   for (const t of tasks) {
     const d = byDept.get(t.department) || { total: 0, done: 0, overdue: 0 };

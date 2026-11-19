@@ -96,16 +96,24 @@ export async function notify(input: NotifyInput): Promise<void> {
   });
   if (!member || member.status !== 'active') return;
 
-  const created = await prisma.notification.create({
-    data: {
-      memberId: input.memberId,
-      type: input.type,
-      title: input.title,
-      body: input.body,
-      taskId: input.taskId,
-      dedupeKey: input.dedupeKey,
-    },
-  });
+  let created;
+  try {
+    created = await prisma.notification.create({
+      data: {
+        memberId: input.memberId,
+        type: input.type,
+        title: input.title,
+        body: input.body,
+        taskId: input.taskId,
+        dedupeKey: input.dedupeKey,
+      },
+    });
+  } catch (e) {
+    // Hai yêu cầu cùng lúc (VD bấm đúp) cùng vượt qua bước kiểm tra ở trên → bản sau trùng dedupeKey: bỏ qua,
+    // không để lỗi thông báo làm hỏng thao tác chính đã lưu xong
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') return;
+    throw e;
+  }
 
   emitToMember(input.memberId, {
     id: created.id,
@@ -118,7 +126,10 @@ export async function notify(input: NotifyInput): Promise<void> {
 
   const channel = member.notificationPref?.channel || 'in_app';
   if (channel === 'in_app_email' && member.email) {
-    await sendEmailIfEnabled(member.email, `[NITC] ${created.title}`, created.body || '');
+    // Gửi ngầm: SMTP chậm/lỗi không làm chậm hay hỏng thao tác của người dùng (thông báo trong app đã lưu ở trên)
+    void sendEmailIfEnabled(member.email, `[NITC] ${created.title}`, created.body || '').catch((e) =>
+      console.error('Email send failed:', e)
+    );
   }
 }
 
@@ -132,12 +143,12 @@ export async function notifyLeadership(input: Omit<NotifyInput, 'memberId'>): Pr
   }
 }
 
-/** Trưởng ban của 1 ban (nếu có) */
-export async function departmentHead(department: string): Promise<{ id: string; email: string; name: string } | null> {
-  const head = await prisma.member.findFirst({
-    where: { department, role: 'Trưởng ban', status: 'active' },
+/** Trưởng ban + Phó ban đang hoạt động của 1 ban */
+export async function departmentManagers(department: string): Promise<{ id: string; email: string; name: string }[]> {
+  return prisma.member.findMany({
+    where: { department, role: { in: ['Trưởng ban', 'Phó ban'] }, status: 'active' },
+    select: { id: true, email: true, name: true },
   });
-  return head ? { id: head.id, email: head.email, name: head.name } : null;
 }
 
 // ===== Queries cho API =====

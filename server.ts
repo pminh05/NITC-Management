@@ -16,6 +16,7 @@ import { apiRouter } from './server/api';
 import { canPublishMeeting, requireCan } from './server/permissions';
 import { parseBBHHandler } from './server/aiParser';
 import { seedIfEmpty } from './server/seed';
+import { prisma } from './server/db';
 import { subscribeMember } from './server/notifications';
 import { calendarIcsHandler } from './server/calendar';
 import { registerDocsRoutes } from './server/docs';
@@ -29,7 +30,7 @@ const app = express();
 const PORT = config.port;
 
 app.disable('x-powered-by');
-app.use(express.json({ limit: '25mb' })); // ảnh/PDF base64 có thể lớn hơn file gốc ~37%
+app.use(express.json({ limit: '2mb' })); // minh chứng là đường link, BBH là văn bản — 2MB là dư dả
 
 // Health check
 app.get('/api/health', (_req, res) => {
@@ -98,6 +99,10 @@ async function startServer() {
   if (seeded) {
     console.log(`✔ Database seeded với dữ liệu demo NITC (mật khẩu mặc định: ${config.defaultPassword})`);
   }
+  // Dữ liệu cũ từng lưu "overdue" vào CSDL — nay "quá hạn" được tính theo hạn chót lúc đọc (shared/taskState.ts),
+  // nên chuẩn hóa về "đang làm". Màn hình vẫn hiện quá hạn nếu đã trễ hạn.
+  const legacy = await prisma.task.updateMany({ where: { status: 'overdue' }, data: { status: 'in_progress' } });
+  if (legacy.count > 0) console.log(`✔ Chuẩn hóa ${legacy.count} việc trạng thái cũ "overdue" → "in_progress"`);
 
   if (!config.isProd) {
     const vite = await createViteServer({

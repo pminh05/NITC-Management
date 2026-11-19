@@ -955,7 +955,7 @@ export const PresidentialFilterModal: React.FC<PresidentialFilterModalProps> = (
             <span className="font-bold text-slate-100">Đã kiểm tra {safeTasks.length} công việc.</span>
             <span className="text-slate-600 hidden md:inline">|</span>
             <span className="text-amber-400 font-semibold hidden md:inline">
-              Nhiệm vụ tuần trước chưa xong sẽ tự động được kế thừa (Quy tắc Sticky Task).
+              Việc chưa có người phụ trách hoặc còn trùng tên phải được xử lý trước khi ban hành.
             </span>
           </div>
 

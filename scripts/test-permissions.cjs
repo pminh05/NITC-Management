@@ -289,7 +289,49 @@ async function mainSuite() {
     rec('M8', 'PCN', 'tạo thành viên vai trò Chủ nhiệm', 403, await call(T.PCN, 'POST', '/members', { name: 'x', role: 'Chủ nhiệm', department: 'Ban Chủ nhiệm', email: 'cn2@example.com' }));
     rec('M9', 'PCN', 'DELETE thành viên', 403, await call(T.PCN, 'DELETE', `/members/${mTV_SK2.id}`));
     rec('M9', 'TB_SK', 'PUT /members', 403, await call(T.TB_SK, 'PUT', `/members/${mTV_SK2.id}`, { name: 'x' }));
-    rec('M6', 'CN', 'POST /members hợp lệ', 201, await call(T.CN, 'POST', '/members', { name: 'Thành viên thử', role: 'Thành viên', department: 'Sự kiện', email: 'thu-nghiem@example.com' }));
+    const mNew = await call(T.CN, 'POST', '/members', { name: 'Thành viên thử', role: 'Thành viên', department: 'Sự kiện', email: 'thu-nghiem@example.com' });
+    rec('M6', 'CN', 'POST /members hợp lệ', 201, mNew);
+
+    // ---- Thêm lại người từng bị gỡ khỏi việc vẫn nhận thông báo "được giao việc"
+    {
+      const TVSK = T.TV_SK;
+      const count = async () => ((await call(TVSK, 'GET', '/notifications')).data?.items || []).filter((x) => x.type === 'task_assigned' && x.taskId === tSK2.id).length;
+      const before = await count();
+      await call(T.TB_SK, 'PUT', `/tasks/${tSK2.id}`, { action: 'update', assigneeIds: [mTV_SK2.id] });
+      await call(T.TB_SK, 'PUT', `/tasks/${tSK2.id}`, { action: 'update', assigneeIds: [mTV_SK2.id, mTV_SK.id] });
+      const after = await count();
+      check('T3', 'TB_SK', 'gỡ rồi thêm lại người phụ trách → người đó nhận thông báo mới', after === before + 1, `${before} → ${after} thông báo`);
+    }
+    // ---- Xóa thành viên: chặn khi có tên trong việc, kể cả chỉ làm cùng
+    {
+      await call(T.TB_SK, 'PUT', `/tasks/${tSK2.id}`, { action: 'update', assigneeIds: [mTV_SK2.id, mTV_SK.id, mNew.data.id] });
+      rec('M10', 'CN', 'xóa thành viên chỉ là người làm cùng một việc', 409, await call(T.CN, 'DELETE', `/members/${mNew.data.id}`));
+      const lone = await call(T.CN, 'POST', '/members', { name: 'Chưa có việc', role: 'Thành viên', department: 'Sự kiện', email: 'chua-co-viec@example.com' });
+      rec('M10', 'CN', 'xóa thành viên chưa có việc nào', 200, await call(T.CN, 'DELETE', `/members/${lone.data.id}`));
+    }
+    // ---- Nhiệm kỳ: không kích hoạt nhiệm kỳ trống; chỉ xóa được nhiệm kỳ trống, không phải hiện hành
+    {
+      const tNew = await call(T.CN, 'POST', '/terms', { name: '2030-2031' });
+      rec('Z1', 'CN', 'tạo nhiệm kỳ trống', 201, tNew);
+      rec('Z1', 'CN', 'đặt nhiệm kỳ trống làm hiện hành', 409, await call(T.CN, 'PUT', `/terms/${tNew.data.id}/activate`));
+      rec('Z1', 'PCN', 'xóa nhiệm kỳ', 403, await call(T.PCN, 'DELETE', `/terms/${tNew.data.id}`));
+      rec('Z1', 'CN', 'xóa nhiệm kỳ trống', 200, await call(T.CN, 'DELETE', `/terms/${tNew.data.id}`));
+      const active = (await call(T.CN, 'GET', '/terms')).data.find((t) => t.isActive);
+      rec('Z1', 'CN', 'xóa nhiệm kỳ hiện hành', 409, await call(T.CN, 'DELETE', `/terms/${active.id}`));
+      rec('Z1', 'CN', 'POST /terms 2030-2032 (năm không liên tiếp)', 400, await call(T.CN, 'POST', '/terms', { name: '2030-2032' }));
+    }
+    // ---- Cấu hình: giá trị sai bị từ chối thay vì lặng lẽ bỏ qua
+    rec('Q8', 'CN', 'PUT /settings giờ báo cáo = 30', 400, await call(T.CN, 'PUT', '/settings', { reportHour: 30 }));
+    rec('Q8', 'CN', 'PUT /settings điểm KPI là chữ', 400, await call(T.CN, 'PUT', '/settings', { kpiOnTime: 'abc' }));
+    rec('Q8', 'CN', 'PUT /settings tên CLB rỗng', 400, await call(T.CN, 'PUT', '/settings', { clubName: '  ' }));
+    // ---- KPI: việc duyệt nhanh tính theo ngày duyệt; sửa tiêu đề sau đó không đổi điểm
+    {
+      const kpiOf = async () => (await call(T.CN, 'GET', '/kpi')).data.members.find((x) => x.memberId === mTV_SK.id);
+      const k1 = await kpiOf();
+      await call(T.CN, 'PUT', `/tasks/${tQ2.id}`, { action: 'update', title: '[TEST] duyệt nhanh 2 (sửa tên)' });
+      const k2 = await kpiOf();
+      check('K8', 'CN', 'sửa tiêu đề việc đã duyệt nhanh không làm đổi điểm thi đua', k1 && k2 && k1.points === k2.points && k1.onTime === k2.onTime, `${k1?.points} → ${k2?.points} điểm`);
+    }
 
     // ---- Chống sập: dữ liệu sai kiểu phải trả 4xx, server vẫn sống
     rec('X1', 'CN', 'đổi email trùng người khác', 409, await call(T.CN, 'PUT', `/members/${mTV_SK.id}`, { email: mTB_SK.email }));

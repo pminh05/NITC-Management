@@ -59,6 +59,9 @@ import {
   adminImportSchema,
   logCreateSchema,
   memberCreateSchema,
+  notificationPrefSchema,
+  settingsUpdateSchema,
+  termCreateSchema,
   memberUpdateSchema,
   publishSchema,
   remindSchema,
@@ -117,27 +120,44 @@ apiRouter.get('/terms', async (_req: Request, res: Response) => {
 });
 
 apiRouter.post('/terms', requireCan(canManageTerms, ONLY_PRESIDENT), async (req: Request, res: Response) => {
-  const { name } = req.body || {};
-  if (!name || !/^\d{4}-\d{4}$/.test(String(name).trim())) {
-    return res.status(400).json({ error: 'Tên nhiệm kỳ phải theo định dạng YYYY-YYYY (VD: 2026-2027)' });
-  }
-  const term = await prisma.term.upsert({
-    where: { name: String(name).trim() },
-    update: {},
-    create: { name: String(name).trim() },
-  });
+  const { name } = validate(termCreateSchema, req.body);
+  const term = await prisma.term.upsert({ where: { name }, update: {}, create: { name } });
   return res.status(201).json(term);
 });
 
 apiRouter.put('/terms/:id/activate', requireCan(canManageTerms, ONLY_PRESIDENT), async (req: Request, res: Response) => {
   const { id } = req.params;
-  const term = await prisma.term.findUnique({ where: { id } });
+  const term = await prisma.term.findUnique({ where: { id }, include: { _count: { select: { members: true } } } });
   if (!term) return res.status(404).json({ error: 'Không tìm thấy nhiệm kỳ' });
+  // Nhiệm kỳ chưa có ai: kích hoạt sẽ làm danh bạ/bảng thi đua trống và việc mới rơi vào nhiệm kỳ rỗng
+  if (term._count.members === 0) {
+    return res.status(409).json({
+      error: `Nhiệm kỳ ${term.name} chưa có thành viên nào nên không thể đặt làm hiện hành. Hãy Import danh sách thành viên cho nhiệm kỳ này trước.`,
+    });
+  }
   await prisma.$transaction([
     prisma.term.updateMany({ where: { isActive: true }, data: { isActive: false } }),
     prisma.term.update({ where: { id }, data: { isActive: true } }),
   ]);
   return res.json({ success: true, activeTerm: term.name });
+});
+
+/** Xóa nhiệm kỳ — chỉ nhiệm kỳ TRỐNG (không thành viên/việc/kỳ họp/tài liệu) và không phải nhiệm kỳ hiện hành */
+apiRouter.delete('/terms/:id', requireCan(canManageTerms, ONLY_PRESIDENT), async (req: Request, res: Response) => {
+  const term = await prisma.term.findUnique({
+    where: { id: req.params.id },
+    include: { _count: { select: { members: true, tasks: true, meetings: true, docs: true } } },
+  });
+  if (!term) return res.status(404).json({ error: 'Không tìm thấy nhiệm kỳ' });
+  if (term.isActive) return res.status(409).json({ error: 'Không thể xóa nhiệm kỳ hiện hành' });
+  const c = term._count;
+  if (c.members + c.tasks + c.meetings + c.docs > 0) {
+    return res.status(409).json({
+      error: `Nhiệm kỳ ${term.name} đang có dữ liệu (${c.members} thành viên, ${c.tasks} việc, ${c.meetings} kỳ họp, ${c.docs} tài liệu) nên không xóa được`,
+    });
+  }
+  await prisma.term.delete({ where: { id: term.id } });
+  return res.json({ success: true });
 });
 
 // ============ SETTINGS (Cấu hình) ============
@@ -147,15 +167,8 @@ apiRouter.get('/settings', async (_req: Request, res: Response) => {
 });
 
 apiRouter.put('/settings', requireCan(canManageSettings, ONLY_PRESIDENT), async (req: Request, res: Response) => {
-  const b = req.body || {};
-  const partial: Partial<AppSettings> = {};
-  if (typeof b.clubName === 'string' && b.clubName.trim()) partial.clubName = b.clubName.trim();
-  if (typeof b.groupEmail === 'string' && b.groupEmail.includes('@')) partial.groupEmail = b.groupEmail.trim();
-  for (const k of ['kpiOnTime', 'kpiLate', 'kpiPending', 'kpiOverdue'] as const) {
-    if (typeof b[k] === 'number' && Number.isFinite(b[k])) partial[k] = Math.round(b[k]);
-  }
-  if (typeof b.reportDayOfWeek === 'number' && b.reportDayOfWeek >= 0 && b.reportDayOfWeek <= 6) partial.reportDayOfWeek = Math.round(b.reportDayOfWeek);
-  if (typeof b.reportHour === 'number' && b.reportHour >= 0 && b.reportHour <= 23) partial.reportHour = Math.round(b.reportHour);
+  const input = validate(settingsUpdateSchema, req.body);
+  const partial = Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined)) as Partial<AppSettings>;
   const updated = await updateSettings(partial);
   await rescheduleWeeklyReport(); // áp lịch báo cáo mới ngay
   res.json(updated);
@@ -206,12 +219,9 @@ apiRouter.get('/notifications/prefs', async (req: Request, res: Response) => {
 });
 
 apiRouter.put('/notifications/prefs', async (req: Request, res: Response) => {
-  try {
-    await setPref(req.authMember!.id, String(req.body?.channel || 'in_app'));
-    res.json({ success: true, channel: req.body?.channel });
-  } catch (e: any) {
-    res.status(400).json({ error: e.message });
-  }
+  const { channel } = validate(notificationPrefSchema, req.body);
+  await setPref(req.authMember!.id, channel);
+  res.json({ success: true, channel });
 });
 
 // Quét deadline thủ công (phục vụ demo/kịch bản thử nghiệm S3 — bình thường cron 6h tự chạy)
@@ -399,14 +409,21 @@ apiRouter.post('/members/:id/reset-password', requireCan(canResetMemberPassword,
 
 apiRouter.delete('/members/:id', requireCan(canDeleteMember, ONLY_PRESIDENT), async (req: Request, res: Response) => {
   const { id } = req.params;
-  const existing = await prisma.member.findUnique({ where: { id }, include: { tasks: { select: { id: true } } } });
+  const existing = await prisma.member.findUnique({ where: { id } });
   if (!existing) return res.status(404).json({ error: 'Không tìm thấy thành viên' });
   if (existing.role === 'Chủ nhiệm') {
     return res.status(403).json({ error: 'Không thể xóa Chủ nhiệm CLB' });
   }
-  if (existing.tasks.length > 0) {
+  // Có tên trong bất kỳ việc nào (phụ trách chính HOẶC làm cùng) → không xóa, tránh để lại mã người "mồ côi"
+  // trong việc nhóm và làm mất lịch sử điểm thi đua. assigneeIds là chuỗi JSON nên lọc bằng taskAssigneeIds.
+  const candidateTasks = await prisma.task.findMany({
+    where: { OR: [{ assigneeId: id }, { assigneeIds: { contains: id } }] },
+    select: { assigneeId: true, assigneeIds: true, department: true },
+  });
+  const involved = candidateTasks.filter((t) => taskAssigneeIds(t).includes(id)).length;
+  if (involved > 0) {
     return res.status(409).json({
-      error: `Thành viên đang phụ trách ${existing.tasks.length} nhiệm vụ. Chuyển/hoàn thành việc trước khi xóa.`,
+      error: `${existing.name} có tên trong ${involved} nhiệm vụ nên không xóa được (sẽ mất lịch sử công việc và điểm thi đua). Hãy chuyển trạng thái sang "Ngưng hoạt động" thay vì xóa.`,
     });
   }
   await prisma.member.delete({ where: { id } }); // User bị xóa cascade
@@ -727,7 +744,8 @@ apiRouter.put('/tasks/:id', requireAuth, async (req: Request, res: Response) => 
         type: 'task_assigned',
         title: '📌 Bạn được giao việc mới',
         body: `"${updated.title}" — hạn chót ${updated.deadline}. Xem chi tiết trong Bảng điều hành.`,
-        dedupeKey: `task_assigned:${task.id}`,
+        // Kèm mốc thời gian: người từng bị gỡ khỏi việc rồi được thêm lại vẫn nhận thông báo mới
+        dedupeKey: `task_assigned:${task.id}:${now.getTime()}`,
       }, added);
     }
     if (deadlineChanged && updated.status !== 'completed') {

@@ -30,6 +30,8 @@ interface RosterManagerModalProps {
   onUpdateMember: (id: string, updates: Partial<Member>) => void;
   onDeleteMember: (id: string) => void;
   onActivateTerm: (termId: string) => void;
+  /** Xóa nhiệm kỳ trống (chưa có thành viên) */
+  onDeleteTerm?: (termId: string) => void;
   /** Tạo nhiệm kỳ trống (không import) — chỉ người quản lý nhiệm kỳ */
   onCreateTerm?: (name: string) => Promise<boolean>;
   /** Người đang thao tác — quyết định nút nào được hiện (cùng quy tắc với server) */
@@ -51,6 +53,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
   onUpdateMember,
   onDeleteMember,
   onActivateTerm,
+  onDeleteTerm,
   onCreateTerm,
   onResetPassword,
   viewer,
@@ -226,6 +229,8 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
     'px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-xs font-semibold [color-scheme:dark] focus:outline-none focus:border-emerald-500 cursor-pointer';
 
   const activeTerm = terms.find((t) => t.isActive);
+  /** Nhiệm kỳ khác (không phải hiện hành) đang được chọn để xem */
+  const selectedOtherTerm = terms.find((t) => t.id === selectedTermId && !t.isActive);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
@@ -279,18 +284,33 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                     </option>
                   ))}
               </select>
-              {mayManageTerms &&
-                selectedTermId !== 'active' &&
-                terms.find((t) => t.id === selectedTermId) &&
-                !terms.find((t) => t.id === selectedTermId)?.isActive && (
-                  <button
-                    onClick={() => onActivateTerm(selectedTermId)}
-                    className="px-2 py-1 rounded bg-amber-600/30 border border-amber-600/50 text-amber-300 font-semibold hover:bg-amber-600/50 transition cursor-pointer"
-                    title="Đặt nhiệm kỳ này làm nhiệm kỳ hiện hành"
-                  >
-                    Đặt hiện hành
-                  </button>
-                )}
+              {mayManageTerms && selectedOtherTerm && selectedOtherTerm.memberCount > 0 && (
+                <button
+                  onClick={() => onActivateTerm(selectedOtherTerm.id)}
+                  className="px-2 py-1 rounded bg-amber-600/30 border border-amber-600/50 text-amber-300 font-semibold hover:bg-amber-600/50 transition cursor-pointer"
+                  title="Đặt nhiệm kỳ này làm nhiệm kỳ hiện hành"
+                >
+                  Đặt hiện hành
+                </button>
+              )}
+              {/* Nhiệm kỳ trống: không cho đặt hiện hành (danh bạ sẽ rỗng) — chỉ cho xóa */}
+              {mayManageTerms && onDeleteTerm && selectedOtherTerm && selectedOtherTerm.memberCount === 0 && (
+                <button
+                  onClick={async () => {
+                    const ok = await confirmDialog({
+                      title: `Xóa nhiệm kỳ ${selectedOtherTerm.name}?`,
+                      message: 'Nhiệm kỳ này chưa có thành viên nào. Xóa xong có thể tạo lại bất cứ lúc nào.',
+                      confirmText: 'Xóa nhiệm kỳ',
+                      danger: true,
+                    });
+                    if (ok) onDeleteTerm(selectedOtherTerm.id);
+                  }}
+                  className="px-2 py-1 rounded bg-red-600/20 border border-red-600/40 text-red-300 font-semibold hover:bg-red-600/40 transition cursor-pointer"
+                  title="Nhiệm kỳ trống — xóa đi"
+                >
+                  Xóa nhiệm kỳ trống
+                </button>
+              )}
             </div>
 
             {/* Import Excel — đổi nhiệm kỳ hiện hành nên chỉ Chủ nhiệm */}
