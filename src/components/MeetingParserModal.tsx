@@ -20,6 +20,43 @@ import { ExtractedDraftTask, Meeting, Member } from '../types';
 import { SAMPLE_BBH_TEMPLATES } from '../data/initialData';
 import { api } from '../api/client';
 
+
+/** Giới hạn tệp PDF gửi lên (máy chủ nhận tối đa 25 MB cho API đọc biên bản; base64 làm dữ liệu lớn thêm ~1/3). */
+const MAX_PDF_BYTES = 15 * 1024 * 1024;
+
+/** Thu nhỏ ảnh về cạnh dài tối đa 2000 px, nén JPEG; lỗi thì dùng ảnh gốc. Trả data URL. */
+function shrinkImage(file: File): Promise<string | null> {
+  const readRaw = () =>
+    new Promise<string | null>((resolve) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result));
+      r.onerror = () => resolve(null);
+      r.readAsDataURL(file);
+    });
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 2000 / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext('2d');
+      URL.revokeObjectURL(url);
+      if (!ctx) return readRaw().then(resolve);
+      ctx.fillStyle = '#ffffff'; // nền trắng cho ảnh PNG trong suốt
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      readRaw().then(resolve);
+    };
+    img.src = url;
+  });
+}
+
 interface MeetingParserModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -459,7 +496,7 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
                   <span className="text-xs font-bold text-slate-200">
                     Bấm để tải ảnh biên bản họp (chọn nhiều ảnh) hoặc tệp PDF
                   </span>
-                  <p className="text-[11px] text-slate-400 mt-0.5">JPG · PNG · WEBP · PDF — tối đa ~7MB (Hỗ trợ chữ viết tay & in)</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">JPG · PNG · WEBP (tự thu nhỏ trước khi gửi, tối đa 4 ảnh) · PDF tối đa 15 MB — hỗ trợ chữ in và chữ viết tay rõ</p>
                 </div>
                 <input
                   type="file"
@@ -470,45 +507,27 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
                     const files: File[] = Array.from(e.target.files || []);
                     if (files.length === 0) return;
                     setErrorMsg(null);
-                    const imgs: string[] = [];
-                    let pdfFile: File | null = null;
-                    for (const f of files) {
-                      if (f.type === 'application/pdf') {
-                        pdfFile = f;
-                        break;
-                      }
-                    }
-                    const imgFiles = files.filter((f) => f.type.startsWith('image/'));
-                    let pending = imgFiles.length + (pdfFile ? 1 : 0);
-                    if (pending === 0) {
+                    const pdfFile = files.find((f) => f.type === 'application/pdf') || null;
+                    const imgFiles = files.filter((f) => f.type.startsWith('image/')).slice(0, 4);
+                    if (!pdfFile && imgFiles.length === 0) {
                       setErrorMsg('Chỉ nhận ảnh (JPG/PNG/WEBP) hoặc tệp PDF.');
                       return;
                     }
-                    const done = () => {
-                      pending -= 1;
-                      if (pending === 0) {
-                        setImagePreviews(imgs.slice(0, 4));
-                        if (pdfFile) {
-                          setPdfName(pdfFile.name);
-                        }
-                      }
-                    };
-                    imgFiles.slice(0, 4).forEach((f) => {
-                      const reader = new FileReader();
-                      reader.onload = () => {
-                        imgs.push(String(reader.result));
-                        done();
-                      };
-                      reader.onerror = () => done();
-                      reader.readAsDataURL(f);
+                    if (pdfFile && pdfFile.size > MAX_PDF_BYTES) {
+                      setErrorMsg(`Tệp PDF quá lớn (${(pdfFile.size / 1048576).toFixed(1)} MB). Giới hạn 15 MB — hãy tách bớt trang hoặc chụp ảnh từng trang.`);
+                      return;
+                    }
+                    // Ảnh được thu nhỏ ở trình duyệt trước khi gửi: ảnh điện thoại thường 3–8 MB,
+                    // thu về cạnh dài tối đa 2000 px là đủ để AI đọc chữ và giữ yêu cầu gửi lên gọn nhẹ.
+                    Promise.all(imgFiles.map(shrinkImage)).then((imgs) => {
+                      setImagePreviews(imgs.filter(Boolean) as string[]);
                     });
                     if (pdfFile) {
                       const reader = new FileReader();
                       reader.onload = () => {
                         setPdfData(String(reader.result));
-                        done();
+                        setPdfName(pdfFile.name);
                       };
-                      reader.onerror = () => done();
                       reader.readAsDataURL(pdfFile);
                     }
                   }}

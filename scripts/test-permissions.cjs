@@ -427,6 +427,8 @@ async function accountSuite() {
   const w = (v, n) => String(v).padEnd(n).slice(0, n);
   console.log('\n' + w('ID', 4) + w('Vai trò', 28) + w('Thao tác', 58) + w('K.vọng', 8) + w('Thực tế', 8) + w('KQ', 9) + 'Ghi chú');
   for (const r of rows) console.log(w(r.id, 4) + w(r.who, 28) + w(r.what, 58) + w(r.expect, 8) + w(r.actual, 8) + w(r.ok, 9) + r.note);
+  // Ghi kết quả đầy đủ (không cắt cột) ra JSON khi cần lập báo cáo: TEST_REPORT_JSON=<đường dẫn>
+  if (process.env.TEST_REPORT_JSON) fs.writeFileSync(process.env.TEST_REPORT_JSON, JSON.stringify({ date: new Date().toISOString(), rows }, null, 1));
   // TEST_REPORT=<tệp.json>: xuất toàn bộ kết quả để đưa vào báo cáo thử nghiệm
   if (process.env.TEST_REPORT) fs.writeFileSync(process.env.TEST_REPORT, JSON.stringify(rows, null, 1));
   const bad = rows.filter((r) => r.ok === 'LỆCH');

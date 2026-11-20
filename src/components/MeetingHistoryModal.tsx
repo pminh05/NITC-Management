@@ -16,6 +16,7 @@ import {
 import { Meeting, Task } from '../types';
 import { formatDateVN, isTaskOverdue } from '../utils/dateUtils';
 import { exportMeetingToPdf } from '../utils/pdfExport';
+import { toast } from './ui/Feedback';
 
 interface MeetingHistoryModalProps {
   isOpen: boolean;
@@ -53,8 +54,12 @@ export const MeetingHistoryModal: React.FC<MeetingHistoryModalProps> = ({
     window.print();
   };
 
-  const handleDownloadPdf = (meeting: Meeting) => {
-    exportMeetingToPdf(meeting, tasks);
+  const handleDownloadPdf = async (meeting: Meeting) => {
+    try {
+      await exportMeetingToPdf(meeting, tasks);
+    } catch {
+      toast('Chưa xuất được PDF', 'Không tải được phông chữ tiếng Việt. Kiểm tra kết nối rồi thử lại.', 'warn');
+    }
   };
 
   return (

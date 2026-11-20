@@ -30,6 +30,8 @@ const app = express();
 const PORT = config.port;
 
 app.disable('x-powered-by');
+// API đọc biên bản nhận ảnh/PDF dạng base64 nên cần giới hạn riêng lớn hơn (đăng ký TRƯỚC bộ đọc JSON chung)
+app.use('/api/ai/parse-bbh', express.json({ limit: '25mb' }));
 app.use(express.json({ limit: '2mb' })); // minh chứng là đường link, BBH là văn bản — 2MB là dư dả
 
 // Health check
