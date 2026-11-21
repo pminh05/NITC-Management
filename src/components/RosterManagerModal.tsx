@@ -226,27 +226,27 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
   };
   const STATUS_LABEL: Record<string, string> = { active: 'Đang hoạt động', inactive: 'Ngưng hoạt động', alumni: 'Cựu thành viên' };
   const selectClass =
-    'px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-xs font-semibold [color-scheme:dark] focus:outline-none focus:border-emerald-500 cursor-pointer';
+    'px-3 py-2 bg-surface border border-border rounded-lg text-fg text-xs font-semibold [color-scheme:dark] focus:outline-none focus:border-emerald-500 cursor-pointer';
 
   const activeTerm = terms.find((t) => t.isActive);
   /** Nhiệm kỳ khác (không phải hiện hành) đang được chọn để xem */
   const selectedOtherTerm = terms.find((t) => t.id === selectedTermId && !t.isActive);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#101828]/50 backdrop-blur-sm overflow-y-auto">
+      <div className="bg-surface border border-border rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-xs">
 
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900 sticky top-0 z-10">
+        <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-surface sticky top-0 z-10">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            <div className="p-2 rounded-xl bg-success-bg text-success border border-success-bar/30">
               <Users className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white tracking-tight">
+              <h2 className="text-lg font-bold text-fg tracking-tight">
                 Danh sách thành viên CLB (Roster)
               </h2>
-              <p className="text-slate-400">
+              <p className="text-muted">
                 Quản lý thành viên theo từng nhiệm kỳ — import trực tiếp từ file Excel danh bạ của CLB
               </p>
             </div>
@@ -254,22 +254,22 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="p-1 rounded-lg text-muted hover:text-fg hover:bg-surface-2 transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Toolbar: Term selector + Import Excel + Thêm mới */}
-        <div className="p-4 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between gap-3 flex-wrap">
+        <div className="p-4 bg-surface-2 border-b border-border flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
             {/* Nhiệm kỳ */}
             <div className="flex items-center gap-1.5">
-              <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
+              <RefreshCw className="w-3.5 h-3.5 text-muted" />
               <select
                 value={selectedTermId}
                 onChange={(e) => onSelectTerm(e.target.value)}
-                className="px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                className="px-2.5 py-1.5 bg-surface border border-border rounded-lg text-fg focus:outline-none focus:border-emerald-500"
                 title="Xem roster theo nhiệm kỳ"
               >
                 <option value="active">
@@ -287,7 +287,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
               {mayManageTerms && selectedOtherTerm && selectedOtherTerm.memberCount > 0 && (
                 <button
                   onClick={() => onActivateTerm(selectedOtherTerm.id)}
-                  className="px-2 py-1 rounded bg-amber-600/30 border border-amber-600/50 text-amber-300 font-semibold hover:bg-amber-600/50 transition cursor-pointer"
+                  className="px-2 py-1 rounded bg-warning-bg border border-warning-bar/30 text-warning font-semibold hover:bg-warning-bg transition cursor-pointer"
                   title="Đặt nhiệm kỳ này làm nhiệm kỳ hiện hành"
                 >
                   Đặt hiện hành
@@ -305,7 +305,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                     });
                     if (ok) onDeleteTerm(selectedOtherTerm.id);
                   }}
-                  className="px-2 py-1 rounded bg-red-600/20 border border-red-600/40 text-red-300 font-semibold hover:bg-red-600/40 transition cursor-pointer"
+                  className="px-2 py-1 rounded bg-danger-bg border border-danger-bar/30 text-danger font-semibold hover:bg-danger-bg transition cursor-pointer"
                   title="Nhiệm kỳ trống — xóa đi"
                 >
                   Xóa nhiệm kỳ trống
@@ -315,8 +315,8 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
 
             {/* Import Excel — đổi nhiệm kỳ hiện hành nên chỉ Chủ nhiệm */}
             {mayManageTerms && (
-            <div className="flex items-center gap-2 pl-3 pr-1.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg">
-              <label htmlFor="new-term-name" className="text-slate-300 font-semibold whitespace-nowrap">
+            <div className="flex items-center gap-2 pl-3 pr-1.5 py-1.5 bg-surface border border-border rounded-lg">
+              <label htmlFor="new-term-name" className="text-fg-2 font-semibold whitespace-nowrap">
                 Nhiệm kỳ mới:
               </label>
               <input
@@ -325,8 +325,8 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                 value={importTermName}
                 onChange={(e) => setImportTermName(e.target.value)}
                 placeholder="2026-2027"
-                className={`w-24 px-2 py-1 bg-slate-950 border rounded text-white placeholder-slate-500 focus:outline-none font-mono text-[11px] ${
-                  termNameValid || !importTermName ? 'border-slate-700 focus:border-sky-500' : 'border-red-500/70'
+                className={`w-24 px-2 py-1 bg-surface border rounded text-fg placeholder:text-muted focus:outline-none font-mono text-[11px] ${
+                  termNameValid || !importTermName ? 'border-border focus:border-sky-500' : 'border-danger-bar/30'
                 }`}
                 title="Định dạng YYYY-YYYY, VD: 2026-2027"
               />
@@ -335,7 +335,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                   type="button"
                   onClick={handleCreateTermClick}
                   disabled={!termNameValid || termExists || creatingTerm}
-                  className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold transition active:scale-95 cursor-pointer whitespace-nowrap flex items-center gap-1"
+                  className="px-2.5 py-1 rounded bg-surface-2 hover:bg-[#F2F4F7] border border-border-strong disabled:opacity-40 disabled:cursor-not-allowed text-fg font-semibold transition active:scale-95 cursor-pointer whitespace-nowrap flex items-center gap-1"
                   title={
                     !termNameValid
                       ? 'Nhập tên nhiệm kỳ dạng YYYY-YYYY'
@@ -385,8 +385,8 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
 
         {/* Import result / error banner */}
         {importResult && (
-          <div className="mx-4 mt-3 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-200 space-y-1">
-            <div className="font-bold text-emerald-300">
+          <div className="mx-4 mt-3 p-3 bg-success-bg border border-success-bar/30 rounded-lg text-success space-y-1">
+            <div className="font-bold text-success">
               ✅ Import nhiệm kỳ {importResult.term}
               {importResult.mode === 'archive' ? ' (lưu trữ)' : ''} thành công: +{importResult.created} thành viên mới,
               cập nhật {importResult.updated}, bỏ qua {importResult.skipped}
@@ -400,7 +400,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                 : ' — thành viên mới có tài khoản đăng nhập (mật khẩu mặc định nitc123)'}
             </div>
             {importResult.skippedRows.length > 0 && (
-              <div className="text-[11px] text-amber-300">
+              <div className="text-[11px] text-warning">
                 ⚠ {importResult.skippedRows.slice(0, 3).join(' | ')}
                 {importResult.skippedRows.length > 3 ? ` … (+${importResult.skippedRows.length - 3})` : ''}
               </div>
@@ -408,7 +408,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
           </div>
         )}
         {importError && (
-          <div className="mx-4 mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-300 flex items-center gap-2">
+          <div className="mx-4 mt-3 p-3 bg-danger-bg border border-danger-bar/30 rounded-lg text-danger flex items-center gap-2">
             <AlertCircle className="w-4 h-4" />
             {importError}
           </div>
@@ -416,13 +416,13 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
 
         {/* Add/Edit Form Banner */}
         {(isAdding || editingId) && (
-          <form onSubmit={handleSave} className="p-4 bg-slate-800/80 border-b border-slate-700 space-y-3">
-            <div className="flex items-center justify-between font-bold text-white text-sm">
+          <form onSubmit={handleSave} className="p-4 bg-surface-2 border-b border-border space-y-3">
+            <div className="flex items-center justify-between font-bold text-fg text-sm">
               <span>{editingId ? 'Chỉnh Sửa Thông Tin Thành Viên' : 'Thêm thành viên mới (vào nhiệm kỳ hiện hành)'}</span>
               <button
                 type="button"
                 onClick={handleCancelForm}
-                className="text-slate-400 hover:text-white"
+                className="text-muted hover:text-fg"
               >
                 Hủy
               </button>
@@ -430,23 +430,23 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Họ và tên:</label>
+                <label className="block text-fg-2 font-semibold mb-1">Họ và tên:</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="VD: Lê Ngọc Anh Thư"
-                  className="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white"
+                  className="w-full px-3 py-1.5 bg-surface border border-border rounded-lg text-fg"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Vai trò:</label>
+                <label className="block text-fg-2 font-semibold mb-1">Vai trò:</label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value as Role)}
-                  className="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white"
+                  className="w-full px-3 py-1.5 bg-surface border border-border rounded-lg text-fg"
                 >
                   {roles.filter((r) => canEditMember(viewer, null, r)).map((r) => (
                     <option key={r} value={r}>{r}</option>
@@ -455,11 +455,11 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Phân ban:</label>
+                <label className="block text-fg-2 font-semibold mb-1">Phân ban:</label>
                 <select
                   value={department}
                   onChange={(e) => setDepartment(e.target.value as Department)}
-                  className="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white"
+                  className="w-full px-3 py-1.5 bg-surface border border-border rounded-lg text-fg"
                 >
                   {departments.map((d) => (
                     <option key={d} value={d}>Ban {d}</option>
@@ -468,46 +468,46 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Email:</label>
+                <label className="block text-fg-2 font-semibold mb-1">Email:</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="email@nitc.vn"
-                  className="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white"
+                  className="w-full px-3 py-1.5 bg-surface border border-border rounded-lg text-fg"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">SĐT:</label>
+                <label className="block text-fg-2 font-semibold mb-1">SĐT:</label>
                 <input
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="09xx..."
-                  className="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white"
+                  className="w-full px-3 py-1.5 bg-surface border border-border rounded-lg text-fg"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">MSV:</label>
+                <label className="block text-fg-2 font-semibold mb-1">MSV:</label>
                 <input
                   type="text"
                   value={studentId}
                   onChange={(e) => setStudentId(e.target.value)}
                   placeholder="112xxxxx"
-                  className="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white"
+                  className="w-full px-3 py-1.5 bg-surface border border-border rounded-lg text-fg"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Lớp:</label>
+                <label className="block text-fg-2 font-semibold mb-1">Lớp:</label>
                 <input
                   type="text"
                   value={className}
                   onChange={(e) => setClassName(e.target.value)}
                   placeholder="VD: IT67A"
-                  className="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white"
+                  className="w-full px-3 py-1.5 bg-surface border border-border rounded-lg text-fg"
                 />
               </div>
             </div>
@@ -516,7 +516,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
               <button
                 type="button"
                 onClick={handleCancelForm}
-                className="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white"
+                className="px-3 py-1.5 rounded-lg text-muted hover:text-fg"
               >
                 Hủy
               </button>
@@ -535,13 +535,13 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
           {/* Tìm kiếm + bộ lọc */}
           <div className="mb-3 flex flex-col lg:flex-row lg:items-center gap-2">
             <div className="relative flex-1 min-w-0">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
               <input
                 type="text"
                 placeholder="Tìm theo tên, MSV, lớp, email, SĐT…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                className="w-full pl-9 pr-3 py-2 bg-surface border border-border rounded-lg text-fg placeholder:text-muted focus:outline-none focus:border-emerald-500"
               />
             </div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -573,7 +573,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="px-3 py-2 rounded-lg text-xs font-semibold text-emerald-300 hover:text-white hover:bg-slate-800 flex items-center gap-1 transition cursor-pointer"
+                  className="px-3 py-2 rounded-lg text-xs font-semibold text-success hover:text-fg hover:bg-surface-2 flex items-center gap-1 transition cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                   Xóa lọc
@@ -582,10 +582,10 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
             </div>
           </div>
 
-          <div className="border border-slate-800 rounded-xl overflow-hidden">
+          <div className="border border-border rounded-xl overflow-hidden">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-950 border-b border-slate-800 text-slate-400 font-bold">
+                <tr className="bg-surface border-b border-border text-muted font-bold">
                   <th className="p-3 w-10 text-center">STT</th>
                   <th className="p-3">Họ và tên</th>
                   <th className="p-3">MSV</th>
@@ -596,26 +596,26 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                   <th className="p-3 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800 text-slate-300">
+              <tbody className="divide-y divide-border text-fg-2">
                 {filteredMembers.map((m, idx) => {
                   const isLeader = m.role === 'Chủ nhiệm' || m.role === 'Phó Chủ nhiệm';
                   return (
-                    <tr key={m.id} className="hover:bg-slate-800/50 transition">
-                      <td className="p-3 text-center font-mono text-slate-500">
+                    <tr key={m.id} className="hover:bg-surface-2 transition">
+                      <td className="p-3 text-center font-mono text-muted">
                         {idx + 1}
                       </td>
-                      <td className="p-3 font-semibold text-white">
+                      <td className="p-3 font-semibold text-fg">
                         <div>{m.name}</div>
-                        <div className="text-[10px] font-mono text-slate-500" title="Mã định danh trong hệ thống">
+                        <div className="text-[10px] font-mono text-muted" title="Mã định danh trong hệ thống">
                           #{m.id.slice(-6)}
                         </div>
                       </td>
-                      <td className="p-3 font-mono text-slate-300 whitespace-nowrap" title="Mã sinh viên — dùng để phân biệt khi trùng tên">
+                      <td className="p-3 font-mono text-fg-2 whitespace-nowrap" title="Mã sinh viên — dùng để phân biệt khi trùng tên">
                         {m.studentId || '—'}
                       </td>
                       <td className="p-3 whitespace-nowrap">
                         {m.className ? (
-                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-medium">
+                          <span className="px-1.5 py-0.5 rounded bg-surface-2 text-fg-2 text-[10px] font-medium">
                             {m.className}
                           </span>
                         ) : '—'}
@@ -623,28 +623,28 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                       <td className="p-3 whitespace-nowrap">
                         <span className={`inline-block whitespace-nowrap px-2 py-0.5 rounded text-[11px] font-bold ${
                           isLeader
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            ? 'bg-warning-bg text-warning border border-warning-bar/30'
                             : m.role === 'Trưởng ban'
-                            ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
+                            ? 'bg-info-bg text-info border border-info-bar/30'
                             : m.role === 'Phó ban'
-                            ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                            : 'bg-slate-800 text-slate-300'
+                            ? 'bg-primary-light text-primary border border-primary/30'
+                            : 'bg-surface-2 text-fg-2'
                         }`}>
                           {m.role}
                         </span>
                       </td>
-                      <td className="p-3 text-slate-300 font-medium whitespace-nowrap">
+                      <td className="p-3 text-fg-2 font-medium whitespace-nowrap">
                         {m.department === 'Ban Chủ nhiệm' ? '👑 Chủ nhiệm' : m.department}
                       </td>
-                      <td className="p-3 font-mono text-slate-400 whitespace-nowrap">
+                      <td className="p-3 font-mono text-muted whitespace-nowrap">
                         <div className="truncate max-w-[180px]" title={m.email}>{m.email}</div>
-                        {m.phone && <div className="text-[10px] text-slate-500">{m.phone}</div>}
+                        {m.phone && <div className="text-[10px] text-muted">{m.phone}</div>}
                       </td>
                       <td className="p-3 text-right space-x-1 whitespace-nowrap">
                         {canEditMember(viewer, m) && (
                         <button
                           onClick={() => handleStartEdit(m)}
-                          className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                          className="p-1 rounded text-muted hover:text-fg hover:bg-surface-2 transition"
                           title="Sửa thông tin"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
@@ -653,7 +653,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                         {onResetPassword && (
                           <button
                             onClick={() => onResetPassword(m)}
-                            className="p-1 rounded text-slate-400 hover:text-amber-300 hover:bg-amber-500/10 transition"
+                            className="p-1 rounded text-muted hover:text-warning hover:bg-warning-bg transition"
                             title="Đặt lại mật khẩu về mặc định (khi thành viên quên mật khẩu)"
                           >
                             <KeyRound className="w-3.5 h-3.5" />
@@ -662,7 +662,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                         {mayDelete && m.role !== 'Chủ nhiệm' && (
                           <button
                             onClick={() => onDeleteMember(m.id)}
-                            className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"
+                            className="p-1 rounded text-muted hover:text-danger hover:bg-danger-bg transition"
                             title="Xóa thành viên"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -674,7 +674,7 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
                 })}
                 {filteredMembers.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="p-8 text-center text-slate-500">
+                    <td colSpan={8} className="p-8 text-center text-muted">
                       {hasFilter
                         ? 'Không có thành viên nào khớp bộ lọc.'
                         : 'Không có thành viên nào trong phạm vi này. Import file Excel danh bạ hoặc thêm thủ công.'}
@@ -687,16 +687,16 @@ export const RosterManagerModal: React.FC<RosterManagerModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t border-slate-800 bg-slate-900 flex items-center justify-between text-slate-400">
+        <div className="px-6 py-3 border-t border-border bg-surface flex items-center justify-between text-muted">
           <span className="flex items-center gap-2">
             <Shield className="w-3.5 h-3.5" />
-            Đang xem <strong className="text-slate-300">{filteredMembers.length}</strong>
+            Đang xem <strong className="text-fg-2">{filteredMembers.length}</strong>
             {hasFilter ? ` / ${members.length}` : ''} thành viên
             {selectedTermId === 'active' && activeTerm ? ` — nhiệm kỳ ${activeTerm.name}` : ''}
           </span>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-semibold"
+            className="px-4 py-1.5 rounded-lg bg-surface-2 hover:bg-[#F2F4F7] text-fg font-semibold"
           >
             Đóng
           </button>

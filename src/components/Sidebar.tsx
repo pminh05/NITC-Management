@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { Department, Member, Task } from '../types';
 
-export type MainView = 'overview' | 'board' | 'calendar' | 'leaderboard' | 'analytics' | 'docs';
+export type MainView = 'overview' | 'board' | 'calendar' | 'leaderboard' | 'analytics' | 'docs' | 'meetings';
 
 interface SidebarProps {
   authMember: Member;
@@ -143,7 +143,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             ) : undefined
           }
         />
-        {canManageMeetings && <NavItem icon={Sparkles} label="Biên bản họp (AI)" onClick={onOpenParser} />}
+        {canManageMeetings && <NavItem icon={Sparkles} label="Biên bản họp (AI)" active={view === 'meetings'} onClick={onOpenParser} />}
         <NavItem icon={CalendarDays} label="Lịch tổng" active={view === 'calendar'} onClick={onOpenCalendar} />
         <NavItem icon={Trophy} label="Bảng xếp hạng" active={view === 'leaderboard'} onClick={onOpenLeaderboard} />
         <NavItem icon={BarChart3} label="Phân tích" active={view === 'analytics'} onClick={onOpenDashboard} />

@@ -399,6 +399,7 @@ export function App() {
       setIsFilterOpen(false);
       setParsedMeetingData(null);
       setParsedDraftTasks([]);
+      setMainView('board');
 
       try {
         confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
@@ -877,7 +878,7 @@ export function App() {
           canManageMeetings={canManageMeetings}
           onGoOverview={goOverview}
           onGoBoard={goBoard}
-          onOpenParser={() => setIsParserOpen(true)}
+          onOpenParser={() => goView('meetings')}
           onOpenCalendar={() => goView('calendar')}
           onOpenLeaderboard={() => goView('leaderboard')}
           onOpenDashboard={() => goView('analytics')}
@@ -910,7 +911,7 @@ export function App() {
           onMarkRead={handleMarkRead}
           onOpenNotificationTask={openTaskFromNotification}
           onChangeNotificationChannel={handleChangeNotificationChannel}
-          onOpenBBHParser={() => setIsParserOpen(true)}
+          onOpenBBHParser={() => goView('meetings')}
           onOpenMeetingHistory={() => setIsMeetingHistoryOpen(true)}
           onOpenNagModal={() => setIsNagOpen(true)}
           canNag={canUseNag(actor)}
@@ -936,7 +937,7 @@ export function App() {
               onOpenDetail={setDetailTask}
               onGoBoard={goBoard}
               onOpenQuickAdd={canCreateTask(actor) ? () => setIsQuickAddOpen(true) : undefined}
-              onOpenParser={canManageMeetings ? () => setIsParserOpen(true) : undefined}
+              onOpenParser={canManageMeetings ? () => goView('meetings') : undefined}
             />
           )}
           {mainView === 'board' && (
@@ -954,7 +955,7 @@ export function App() {
               onOpenReviewModal={handleOpenReviewModal}
               onDeleteTask={handleDeleteTask}
               onQuickApprove={handleQuickApprove}
-              onOpenBBHParser={() => setIsParserOpen(true)}
+              onOpenBBHParser={() => goView('meetings')}
               onAddNewManualTask={handleAddNewManualTask}
               onOpenDetail={setDetailTask}
               onUpdateRequest={(task) => setUpdateReqTask({ task, mode: 'request' })}
@@ -980,6 +981,9 @@ export function App() {
                 <DashboardModal isOpen asPage onClose={goOverview} tasks={tasks} meetings={meetings} authMember={authMember} />
               )}
               {mainView === 'docs' && <DocsModal isOpen asPage onClose={goOverview} terms={terms} authMember={authMember} />}
+              {mainView === 'meetings' && canManageMeetings && (
+                <MeetingParserModal isOpen asPage onClose={goOverview} members={members} onExtractionSuccess={handleParserSuccess} />
+              )}
             </Suspense>
           )}
         </main>
@@ -1070,7 +1074,7 @@ export function App() {
         tasks={tasks}
         onOpenBBHParser={() => {
           setIsMeetingHistoryOpen(false);
-          setIsParserOpen(true);
+          goView('meetings');
         }}
       />
       )}
@@ -1218,7 +1222,7 @@ export function App() {
         isLeadership={isLeadership}
         activeTasksCount={inProgressCount + pendingApprovalsCount}
         overdueCount={overdueCount}
-        onOpenBBHParser={() => setIsParserOpen(true)}
+        onOpenBBHParser={() => goView('meetings')}
         onOpenQuickAdd={() => setIsQuickAddOpen(true)}
         onOpenDashboard={() => goView('analytics')}
         onOpenOverview={goOverview}
