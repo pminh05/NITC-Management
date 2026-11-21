@@ -14,17 +14,18 @@ interface NotificationBellProps {
   onChangeChannel: (channel: string) => void;
 }
 
+// Ô icon theo loại thông báo: nền nhạt, chữ đậm cùng sắc (giao diện sáng)
 const TYPE_META: Record<string, { icon: string; color: string }> = {
-  task_assigned: { icon: '📌', color: 'bg-[#2C69FF]/15 text-[#8FB2FF] border-[#2C69FF]/30' },
-  deadline_tomorrow: { icon: '⏰', color: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
-  deadline_today: { icon: '🔥', color: 'bg-orange-500/15 text-orange-300 border-orange-500/30' },
-  overdue: { icon: '🚨', color: 'bg-red-500/15 text-red-300 border-red-500/30' },
-  evidence_submitted: { icon: '📥', color: 'bg-sky-500/15 text-sky-300 border-sky-500/30' },
-  evidence_approved: { icon: '✅', color: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
-  evidence_rejected: { icon: '↩️', color: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
-  sticky_carried: { icon: '📎', color: 'bg-purple-500/15 text-purple-300 border-purple-500/30' },
-  weekly_summary: { icon: '📊', color: 'bg-[#2C69FF]/15 text-[#8FB2FF] border-[#2C69FF]/30' },
-  broadcast: { icon: '📢', color: 'bg-slate-500/15 text-slate-300 border-slate-500/30' },
+  task_assigned: { icon: '📌', color: 'bg-primary-light border-primary/20' },
+  deadline_tomorrow: { icon: '⏰', color: 'bg-warning-bg border-warning-bar/25' },
+  deadline_today: { icon: '🔥', color: 'bg-warning-bg border-warning-bar/25' },
+  overdue: { icon: '🚨', color: 'bg-danger-bg border-danger-bar/25' },
+  evidence_submitted: { icon: '📥', color: 'bg-info-bg border-info-bar/25' },
+  evidence_approved: { icon: '✅', color: 'bg-success-bg border-success-bar/25' },
+  evidence_rejected: { icon: '↩️', color: 'bg-warning-bg border-warning-bar/25' },
+  sticky_carried: { icon: '📎', color: 'bg-surface-2 border-border' },
+  weekly_summary: { icon: '📊', color: 'bg-primary-light border-primary/20' },
+  broadcast: { icon: '📢', color: 'bg-surface-2 border-border' },
 };
 
 function timeAgoVN(iso: string): string {
@@ -56,7 +57,6 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  // Đóng dropdown khi bấm ra ngoài
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
@@ -64,8 +64,18 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
         setPrefsOpen(false);
       }
     };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        setPrefsOpen(false);
+      }
+    };
     document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
   }, []);
 
   const handleToggle = () => {
@@ -83,162 +93,158 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
   return (
     <div className="relative" ref={wrapRef}>
       <button
+        type="button"
         onClick={handleToggle}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg border border-slate-700 transition relative cursor-pointer"
+        className="relative inline-flex size-10 items-center justify-center rounded-lg text-fg-2 transition hover:bg-black/5 cursor-pointer"
         title="Thông báo của bạn"
+        aria-label={unread > 0 ? `Thông báo, ${unread} chưa đọc` : 'Thông báo'}
+        aria-expanded={open}
       >
-        <Bell className="w-3.5 h-3.5 text-amber-400" />
-        <span className="hidden lg:inline">Thông báo</span>
+        <Bell className="size-5" />
         {unread > 0 && (
-          <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold absolute -top-1.5 -right-1.5 flex items-center justify-center animate-pulse">
+          <span className="absolute right-1 top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-danger-bar px-1 text-[10px] font-bold text-white ring-2 ring-white">
             {unread > 9 ? '9+' : unread}
           </span>
         )}
       </button>
 
-      {open && (
-        <div className="absolute right-0 mt-2 w-96 max-w-[92vw] bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-          {/* Header */}
-          <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-white">Thông báo</span>
-              {unread > 0 && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500 text-white font-bold">
-                  {unread} mới
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setPrefsOpen((v) => !v)}
-                className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
-                title="Cài đặt nhận thông báo"
-              >
-                <Settings2 className="w-4 h-4" />
-              </button>
-              {unread > 0 && (
-                <button
-                  onClick={onMarkAllRead}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold text-[#8FB2FF] hover:text-white hover:bg-[#2C69FF]/20 transition cursor-pointer"
-                  title="Đánh dấu tất cả đã đọc"
-                >
-                  <CheckCheck className="w-3.5 h-3.5" />
-                  <span>Đã đọc hết</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Tabs: Tất cả vs Chưa đọc */}
-          <div className="flex items-center border-b border-slate-800 px-3 bg-slate-950/40 text-xs">
-            <button
-              onClick={() => setActiveTab('all')}
-              className={`py-2 px-3 font-semibold border-b-2 transition cursor-pointer ${
-                activeTab === 'all'
-                  ? 'border-[#2C69FF] text-[#8FB2FF]'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Tất cả ({notifications.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('unread')}
-              className={`py-2 px-3 font-semibold border-b-2 transition flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'unread'
-                  ? 'border-[#2C69FF] text-[#8FB2FF]'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <span>Chưa đọc</span>
-              {unread > 0 && (
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-red-500 text-white font-bold">
-                  {unread}
-                </span>
-              )}
-            </button>
-          </div>
-
-          {/* Cài đặt kênh nhận */}
-          {prefsOpen && (
-            <div className="px-4 py-3 bg-slate-800/60 border-b border-slate-800 space-y-1.5">
-              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Kênh nhận thông báo</div>
-              {Object.entries(CHANNEL_LABEL).map(([key, label]) => (
-                <button
-                  key={key}
-                  onClick={() => onChangeChannel(key)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition cursor-pointer ${
-                    channel === key
-                      ? 'bg-[#2C69FF]/15 text-[#8FB2FF] border border-[#2C69FF]/30 font-semibold'
-                      : 'bg-slate-900/60 text-slate-300 border border-slate-700 hover:bg-slate-800'
-                  }`}
-                >
-                  <span>{label}</span>
-                  {channel === key && <Check className="w-3.5 h-3.5" />}
-                </button>
-              ))}
-              <p className="text-[10px] text-slate-500 pt-1">
-                Email hoạt động khi máy chủ bật cấu hình SMTP (EMAIL_ENABLED=true). Kênh "email tổng hợp" gửi 1 email duy nhất lúc 20h mỗi ngày.
-              </p>
-            </div>
-          )}
-
-          {/* Danh sách */}
-          <div className="max-h-96 overflow-y-auto divide-y divide-slate-800">
-            {displayedNotifications.length === 0 && (
-              <div className="px-4 py-8 text-center text-slate-500 text-xs">
-                {activeTab === 'unread'
-                  ? '🎉 Bạn không có thông báo chưa đọc nào.'
-                  : 'Chưa có thông báo nào. Thông báo giao việc, hạn chót và kết quả duyệt sẽ hiện ở đây.'}
-              </div>
+      <div
+        data-open={open}
+        className="menu-pop absolute right-0 z-50 mt-2 w-96 max-w-[92vw] overflow-hidden rounded-xl border border-border bg-surface shadow-[0_16px_40px_-12px_rgba(16,24,40,0.22)]"
+      >
+        {/* Đầu bảng */}
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="font-display text-sm font-bold text-fg">Thông báo</span>
+            {unread > 0 && (
+              <span className="rounded-full bg-danger-bg px-1.5 py-0.5 text-[11px] font-semibold text-danger">
+                {unread} mới
+              </span>
             )}
-            {displayedNotifications.map((n) => {
-              const meta = TYPE_META[n.type] || TYPE_META.broadcast;
-              return (
-                <div
-                  key={n.id}
-                  onClick={() => {
-                    if (!n.readAt) onMarkRead(n.id);
-                    if (n.taskId) {
-                      onOpenTask(n.taskId);
-                      setOpen(false);
-                    }
-                  }}
-                  className={`w-full text-left px-4 py-3 hover:bg-slate-800/60 transition cursor-pointer flex gap-3 ${
-                    !n.readAt ? 'bg-[#2C69FF]/[0.08]' : ''
-                  }`}
-                  title={n.taskId ? 'Bấm để mở chi tiết công việc' : ''}
-                >
-                  <span className={`shrink-0 w-8 h-8 rounded-lg border flex items-center justify-center text-sm ${meta.color}`}>
-                    {meta.icon}
-                  </span>
-                  <span className="flex-1 min-w-0">
-                    <span className="flex items-center justify-between gap-2">
-                      <span className={`text-xs font-bold truncate ${!n.readAt ? 'text-white' : 'text-slate-300'}`}>
-                        {n.title}
-                      </span>
-                      {!n.readAt && <span className="w-2 h-2 rounded-full bg-[#2C69FF] shrink-0" />}
-                    </span>
-                    {n.body && (
-                      <span className="block text-[11px] text-slate-400 mt-0.5 line-clamp-2 whitespace-pre-line">
-                        {n.body}
-                      </span>
-                    )}
-                    <span className="flex items-center justify-between mt-1 text-[10px]">
-                      <span className="text-slate-500">{timeAgoVN(n.createdAt)}</span>
-                      {n.taskId && (
-                        <span className="text-[#8FB2FF] hover:underline font-semibold flex items-center gap-0.5">
-                          <span>Chi tiết việc</span>
-                          <span>&rarr;</span>
-                        </span>
-                      )}
-                    </span>
-                  </span>
-                </div>
-              );
-            })}
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setPrefsOpen((v) => !v)}
+              className="rounded-md p-1.5 text-muted transition hover:bg-surface-2 hover:text-fg cursor-pointer"
+              title="Cài đặt nhận thông báo"
+              aria-label="Cài đặt nhận thông báo"
+            >
+              <Settings2 className="size-4" />
+            </button>
+            {unread > 0 && (
+              <button
+                type="button"
+                onClick={onMarkAllRead}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] font-medium text-primary transition hover:bg-primary-light cursor-pointer"
+                title="Đánh dấu tất cả đã đọc"
+              >
+                <CheckCheck className="size-3.5" />
+                <span>Đã đọc hết</span>
+              </button>
+            )}
           </div>
         </div>
-      )}
+
+        {/* Tab: Tất cả / Chưa đọc */}
+        <div className="flex items-center gap-1 border-b border-border px-3 text-[13px]">
+          <button
+            type="button"
+            onClick={() => setActiveTab('all')}
+            className={`border-b-2 px-2 py-2 font-medium transition cursor-pointer ${
+              activeTab === 'all' ? 'border-primary text-fg' : 'border-transparent text-muted hover:text-fg'
+            }`}
+          >
+            Tất cả ({notifications.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('unread')}
+            className={`flex items-center gap-1.5 border-b-2 px-2 py-2 font-medium transition cursor-pointer ${
+              activeTab === 'unread' ? 'border-primary text-fg' : 'border-transparent text-muted hover:text-fg'
+            }`}
+          >
+            <span>Chưa đọc</span>
+            {unread > 0 && (
+              <span className="rounded-full bg-danger-bg px-1.5 text-[11px] font-semibold text-danger">{unread}</span>
+            )}
+          </button>
+        </div>
+
+        {/* Kênh nhận */}
+        {prefsOpen && (
+          <div className="space-y-1.5 border-b border-border bg-surface-2 px-4 py-3">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">Kênh nhận thông báo</div>
+            {Object.entries(CHANNEL_LABEL).map(([key, label]) => (
+              <button
+                type="button"
+                key={key}
+                onClick={() => onChangeChannel(key)}
+                className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-[13px] transition cursor-pointer ${
+                  channel === key
+                    ? 'border-primary/30 bg-primary-light font-medium text-primary'
+                    : 'border-border bg-surface text-fg-2 hover:bg-surface-2'
+                }`}
+              >
+                <span>{label}</span>
+                {channel === key && <Check className="size-3.5" />}
+              </button>
+            ))}
+            <p className="pt-1 text-[11px] text-muted">
+              Email hoạt động khi máy chủ bật cấu hình SMTP (EMAIL_ENABLED=true). Kênh "email tổng hợp" gửi 1 email duy nhất lúc 20h mỗi ngày.
+            </p>
+          </div>
+        )}
+
+        {/* Danh sách */}
+        <div className="max-h-96 divide-y divide-border overflow-y-auto">
+          {displayedNotifications.length === 0 && (
+            <div className="px-4 py-8 text-center text-[13px] text-muted">
+              {activeTab === 'unread'
+                ? 'Bạn không có thông báo chưa đọc nào.'
+                : 'Chưa có thông báo nào. Thông báo giao việc, hạn chót và kết quả duyệt sẽ hiện ở đây.'}
+            </div>
+          )}
+          {displayedNotifications.map((n) => {
+            const meta = TYPE_META[n.type] || TYPE_META.broadcast;
+            return (
+              <div
+                key={n.id}
+                onClick={() => {
+                  if (!n.readAt) onMarkRead(n.id);
+                  if (n.taskId) {
+                    onOpenTask(n.taskId);
+                    setOpen(false);
+                  }
+                }}
+                className={`flex w-full cursor-pointer gap-3 px-4 py-3 text-left transition hover:bg-surface-2 ${
+                  !n.readAt ? 'bg-primary-light/50' : ''
+                }`}
+                title={n.taskId ? 'Bấm để mở chi tiết công việc' : ''}
+              >
+                <span className={`flex size-8 shrink-0 items-center justify-center rounded-lg border text-sm ${meta.color}`}>
+                  {meta.icon}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center justify-between gap-2">
+                    <span className={`truncate text-[13px] ${!n.readAt ? 'font-semibold text-fg' : 'font-medium text-fg-2'}`}>
+                      {n.title}
+                    </span>
+                    {!n.readAt && <span className="size-2 shrink-0 rounded-full bg-primary" />}
+                  </span>
+                  {n.body && (
+                    <span className="mt-0.5 block line-clamp-2 whitespace-pre-line text-[12px] text-muted">{n.body}</span>
+                  )}
+                  <span className="mt-1 flex items-center justify-between text-[11px]">
+                    <span className="text-muted">{timeAgoVN(n.createdAt)}</span>
+                    {n.taskId && <span className="font-medium text-primary hover:underline">Chi tiết việc →</span>}
+                  </span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 };

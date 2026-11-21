@@ -78,15 +78,15 @@ export const EvidenceSubmitModal: React.FC<EvidenceSubmitModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center sm:p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-slate-900 border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom-5 sm:slide-in-from-bottom-0 sm:fade-in sm:zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center sm:p-4 bg-[#101828]/50 backdrop-blur-sm overflow-y-auto">
+      <div className="bg-surface border-t sm:border border-border rounded-t-3xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom-5 sm:slide-in-from-bottom-0 sm:fade-in sm:zoom-in-95 duration-200">
         {/* Mobile Drag Handle */}
-        <div className="sm:hidden w-12 h-1 bg-slate-600 rounded-full mx-auto my-2.5 shrink-0" />
+        <div className="sm:hidden w-12 h-1 bg-[#EAECF0] rounded-full mx-auto my-2.5 shrink-0" />
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900">
+        <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-surface">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
+            <div className="p-2 rounded-xl bg-primary-light text-primary border border-primary/30">
               {task.verificationType === 'link_required' ? (
                 <LinkIcon className="w-5 h-5" />
               ) : (
@@ -94,10 +94,10 @@ export const EvidenceSubmitModal: React.FC<EvidenceSubmitModalProps> = ({
               )}
             </div>
             <div>
-              <h3 className="font-bold text-white text-base">
+              <h3 className="font-bold text-fg text-base">
                 Nộp Bằng Chứng Hoàn Thành
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-muted">
                 {task.department} &bull; {task.assigneeName}
               </p>
             </div>
@@ -105,16 +105,16 @@ export const EvidenceSubmitModal: React.FC<EvidenceSubmitModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="p-1 rounded-lg text-muted hover:text-fg hover:bg-surface-2 transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Task Info Pill */}
-        <div className="px-6 py-3 bg-slate-950/60 border-b border-slate-800/80 text-xs">
-          <span className="text-slate-400">Nhiệm vụ: </span>
-          <strong className="text-slate-100">{task.title}</strong>
+        <div className="px-6 py-3 bg-surface-2 border-b border-border text-xs">
+          <span className="text-muted">Nhiệm vụ: </span>
+          <strong className="text-fg">{task.title}</strong>
         </div>
 
         {/* Form Body */}
@@ -123,8 +123,8 @@ export const EvidenceSubmitModal: React.FC<EvidenceSubmitModalProps> = ({
           {task.verificationType === 'link_required' ? (
             <div className="space-y-3">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1.5 flex items-center gap-1.5">
-                  <LinkIcon className="w-3.5 h-3.5 text-indigo-400" />
+                <label className="block text-fg-2 font-semibold mb-1.5 flex items-center gap-1.5">
+                  <LinkIcon className="w-3.5 h-3.5 text-primary" />
                   <span>Dán đường link minh chứng (URL):</span>
                 </label>
                 <input
@@ -132,12 +132,12 @@ export const EvidenceSubmitModal: React.FC<EvidenceSubmitModalProps> = ({
                   value={evidenceLink}
                   onChange={(e) => setEvidenceLink(e.target.value)}
                   placeholder="https://www.figma.com/... hoặc https://docs.google.com/..."
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-indigo-500 transition"
+                  className="w-full px-3.5 py-2.5 bg-surface border border-border rounded-xl text-xs sm:text-sm text-fg focus:outline-none focus:border-indigo-500 transition"
                 />
               </div>
 
-              <div className="bg-slate-800/60 rounded-xl p-3 text-slate-400 space-y-1">
-                <div className="flex items-center gap-1.5 text-indigo-300 font-semibold">
+              <div className="bg-surface-2 rounded-xl p-3 text-muted space-y-1">
+                <div className="flex items-center gap-1.5 text-primary font-semibold">
                   <Info className="w-3.5 h-3.5" />
                   <span>Gợi ý nộp sản phẩm:</span>
                 </div>
@@ -147,14 +147,14 @@ export const EvidenceSubmitModal: React.FC<EvidenceSubmitModalProps> = ({
           ) : (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-slate-300 font-semibold flex items-center gap-1.5">
-                  <FileCheck className="w-3.5 h-3.5 text-purple-400" />
+                <label className="text-fg-2 font-semibold flex items-center gap-1.5">
+                  <FileCheck className="w-3.5 h-3.5 text-primary" />
                   <span>Nội dung báo cáo ngắn (Quy tắc 2 câu):</span>
                 </label>
                 <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
                   sentenceCount >= 2
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                    : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    ? 'bg-success-bg text-success border border-success-bar/30'
+                    : 'bg-warning-bg text-warning border border-warning-bar/30'
                 }`}>
                   {sentenceCount} câu
                 </span>
@@ -165,19 +165,19 @@ export const EvidenceSubmitModal: React.FC<EvidenceSubmitModalProps> = ({
                 value={evidenceReport}
                 onChange={(e) => setEvidenceReport(e.target.value)}
                 placeholder="Câu 1: Đã làm việc với ai / khảo sát lúc nào...&#10;Câu 2: Kết quả cụ thể và bước tiếp theo..."
-                className="w-full p-3.5 bg-slate-950 border border-slate-700 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-purple-500 transition leading-relaxed resize-none"
+                className="w-full p-3.5 bg-surface border border-border rounded-xl text-xs sm:text-sm text-fg focus:outline-none focus:border-purple-500 transition leading-relaxed resize-none"
               />
 
               {/* Fast Templates */}
               <div>
-                <span className="text-slate-400 text-[11px] block mb-1">Mẫu nhanh:</span>
+                <span className="text-muted text-[11px] block mb-1">Mẫu nhanh:</span>
                 <div className="flex flex-wrap gap-1.5">
                   <button
                     type="button"
                     onClick={() =>
                       applyTemplate('Đã gặp Thầy Cố vấn sáng nay và trình kế hoạch. Thầy đã ký duyệt kinh phí và đồng ý hỗ trợ hội trường.')
                     }
-                    className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 border border-slate-700 transition"
+                    className="px-2 py-1 rounded bg-surface-2 hover:bg-[#F2F4F7] text-[11px] text-fg-2 border border-border transition"
                   >
                     Mẫu "Gặp Thầy/BQL"
                   </button>
@@ -186,7 +186,7 @@ export const EvidenceSubmitModal: React.FC<EvidenceSubmitModalProps> = ({
                     onClick={() =>
                       applyTemplate('Đã liên hệ trực tiếp đại diện 3 doanh nghiệp qua email và điện thoại. Hai đơn vị đã đồng ý tài trợ gói Bạc, đang chờ gửi hợp đồng.')
                     }
-                    className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 border border-slate-700 transition"
+                    className="px-2 py-1 rounded bg-surface-2 hover:bg-[#F2F4F7] text-[11px] text-fg-2 border border-border transition"
                   >
                     Mẫu "Liên hệ Đối tác"
                   </button>
@@ -195,7 +195,7 @@ export const EvidenceSubmitModal: React.FC<EvidenceSubmitModalProps> = ({
                     onClick={() =>
                       applyTemplate('Đã mua đầy đủ văn phòng phẩm và thẻ ban tổ chức theo đúng dự toán. Hóa đơn và chứng từ đã gửi cho Trưởng ban Tài chính.')
                     }
-                    className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 border border-slate-700 transition"
+                    className="px-2 py-1 rounded bg-surface-2 hover:bg-[#F2F4F7] text-[11px] text-fg-2 border border-border transition"
                   >
                     Mẫu "Mua đồ/Hậu cần"
                   </button>
@@ -205,17 +205,17 @@ export const EvidenceSubmitModal: React.FC<EvidenceSubmitModalProps> = ({
           )}
 
           {errorMsg && (
-            <div className="p-2.5 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-xs">
+            <div className="p-2.5 bg-danger-bg border border-danger-bar/30 rounded-lg text-danger text-xs">
               {errorMsg}
             </div>
           )}
 
           {/* Footer buttons */}
-          <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-2.5">
+          <div className="pt-3 border-t border-border flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              className="px-3.5 py-2 rounded-xl text-muted hover:text-fg hover:bg-surface-2 transition"
             >
               Hủy
             </button>

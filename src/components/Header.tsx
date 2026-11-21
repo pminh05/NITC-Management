@@ -1,23 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  FileText,
-  Bell,
   Sparkles,
-  Database,
-  CheckCircle2,
-  AlertTriangle,
-  Clock,
-  LogOut,
-  KeyRound,
-  Calendar,
+  Plus,
+  LayoutGrid,
+  AlarmClock,
+  Users,
+  RefreshCw,
+  FileDown,
   Settings as SettingsIcon,
-  PanelLeftClose,
+  KeyRound,
+  LogOut,
   PanelLeftOpen,
 } from 'lucide-react';
 import { AppNotification, Member, Task } from '../types';
 import { NotificationBell } from './NotificationBell';
-import { todayVN } from '../../shared/time';
-import { effectiveStatus } from '../../shared/taskState';
 
 interface HeaderProps {
   authMember: Member;
@@ -38,7 +34,7 @@ interface HeaderProps {
   onOpenBBHParser: () => void;
   onOpenMeetingHistory: () => void;
   onOpenNagModal: () => void;
-  /** Hiện nút Nhắc việc (Ban Chủ nhiệm, Trưởng/Phó ban) */
+  /** Hiện mục Nhắc việc (Ban Chủ nhiệm, Trưởng/Phó ban) */
   canNag?: boolean;
   /** Ban Chủ nhiệm: hộp có thêm Báo cáo tuần */
   canWeeklyReport?: boolean;
@@ -46,15 +42,49 @@ interface HeaderProps {
   onOpenDataSyncModal: () => void;
   isSidebarOpen?: boolean;
   onToggleSidebar?: () => void;
+  /** Nút "Thêm việc" trên header (ẩn nếu người dùng không được tạo việc) */
+  onOpenQuickAdd?: () => void;
+  canCreateTask?: boolean;
 }
+
+/** Menu thả nhỏ: bấm ngoài hay nhấn Esc thì đóng */
+function useDropdown() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+  return { open, setOpen, ref };
+}
+
+/** Chữ cái đầu của hai chữ cuối trong tên: "Phạm Phúc Minh" → "PM" */
+export function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+
+const menuItem =
+  'flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[14px] text-fg-2 transition hover:bg-surface-2 hover:text-fg cursor-pointer';
 
 export const Header: React.FC<HeaderProps> = ({
   authMember,
   onLogout,
   onChangePassword,
   onOpenSettings,
-  onOpenCalendar,
-  tasks,
   notifications,
   unreadCount,
   notificationChannel,
@@ -72,191 +102,183 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenDataSyncModal,
   isSidebarOpen = true,
   onToggleSidebar,
+  onOpenQuickAdd,
+  canCreateTask = false,
 }) => {
   const isPresident = authMember.role === 'Chủ nhiệm';
   const isLeadership = authMember.role === 'Chủ nhiệm' || authMember.role === 'Phó Chủ nhiệm';
+  const tools = useDropdown();
+  const account = useDropdown();
 
-  // Thống kê phạm vi vai trò (ngày là nguồn sự thật)
-  const today = todayVN();
-  const totalTasks = tasks.length;
-  const pendingCount = tasks.filter((t) => t.status === 'pending_approval').length;
-  const overdueCount = tasks.filter((t) => effectiveStatus(t, today) === 'overdue').length;
-  const completedCount = tasks.filter((t) => t.status === 'completed').length;
-  const completionRate = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
+  const roleLabel =
+    authMember.role === 'Trưởng ban' || authMember.role === 'Phó ban'
+      ? `${authMember.role} ${authMember.department}`
+      : authMember.role === 'Thành viên'
+        ? `Thành viên ${authMember.department}`
+        : authMember.role;
 
-  const roleLabel = isPresident
-    ? 'Chào Chủ nhiệm,'
-    : authMember.role === 'Phó Chủ nhiệm'
-      ? 'Chào Phó Chủ nhiệm,'
-      : authMember.role === 'Trưởng ban' || authMember.role === 'Phó ban'
-        ? `${authMember.role} ${authMember.department},`
-        : `Thành viên ${authMember.department},`;
-  const roleIcon = isPresident ? '👑' : authMember.department.charAt(0);
-
-  const ghostBtn =
-    'inline-flex items-center gap-1.5 px-2 py-1.5 md:px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg border border-slate-700 transition cursor-pointer whitespace-nowrap shrink-0';
+  const runTool = (fn: () => void) => () => {
+    tools.setOpen(false);
+    fn();
+  };
 
   return (
-    <header className="bg-[#10192F] border-b border-slate-700 dark:border-slate-800 text-white sticky top-0 z-30 shadow-md">
-      <div className="w-full px-3 sm:px-4 md:px-6">
-        {/* Hàng chính */}
-        <div className="flex items-center justify-between gap-2 h-14">
-          {/* Logo & Sidebar Toggle */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {onToggleSidebar && (
-              <button
-                onClick={onToggleSidebar}
-                className="hidden lg:inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent hover:border-slate-700 transition cursor-pointer"
-                title={isSidebarOpen ? "Thu gọn thanh bên" : "Mở thanh bên"}
-              >
-                {isSidebarOpen ? (
-                  <PanelLeftClose className="w-4 h-4" />
-                ) : (
-                  <PanelLeftOpen className="w-4 h-4 text-[#8FB2FF]" />
-                )}
-              </button>
-            )}
-            <div className="w-8 h-8 bg-[#2C69FF] rounded flex items-center justify-center font-bold text-white shadow-sm shrink-0">
-              N
-            </div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-white font-bold tracking-tight text-xs sm:text-base md:text-lg uppercase whitespace-nowrap">
-                <span className="hidden sm:inline">NITC Command Center</span>
-                <span className="sm:hidden">NITC CC</span>
-              </h1>
-              <span className="hidden lg:inline-flex bg-[#2C69FF]/20 text-[#8FB2FF] text-[10px] font-bold px-2 py-0.5 rounded border border-[#2C69FF]/30 uppercase tracking-wide whitespace-nowrap">
-                v3.0
-              </span>
-            </div>
-          </div>
+    <header className="glass-header sticky top-0 z-30 flex h-16 items-center gap-1.5 px-3 sm:gap-2 sm:px-6 lg:px-8">
+      {/* Mở lại sidebar khi đã thu gọn (máy tính) */}
+      {onToggleSidebar && !isSidebarOpen && (
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          className="hidden size-10 items-center justify-center rounded-lg text-fg-2 transition hover:bg-black/5 lg:inline-flex cursor-pointer"
+          title="Mở thanh bên"
+          aria-label="Mở thanh bên"
+        >
+          <PanelLeftOpen className="size-5" />
+        </button>
+      )}
 
-          {/* Nhóm nút điều hướng */}
-          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 shrink-0">
-            {isLeadership && (
-              <button
-                onClick={onOpenBBHParser}
-                className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 bg-[#2C69FF] hover:bg-[#1F56D6] text-white text-xs font-bold rounded-lg shadow-sm transition active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
-                title="Dán biên bản họp — AI tự trích xuất công việc"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Nhập biên bản (AI)</span>
-                <span className="sm:hidden text-xs">AI</span>
-              </button>
-            )}
+      {/* Tên sản phẩm: chỉ hiện khi không có sidebar (điện thoại, hoặc sidebar đã thu gọn) */}
+      <div className={`flex min-w-0 items-center gap-2 ${isSidebarOpen ? 'lg:hidden' : ''}`}>
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-primary font-display text-[15px] font-bold text-white">
+          N
+        </span>
+        <span className="truncate font-display text-[15px] font-bold text-fg">NITC</span>
+      </div>
 
-            <button onClick={onOpenMeetingHistory} className={`${ghostBtn} hidden md:inline-flex`} title="Lưu trữ biên bản họp & Xuất PDF">
-              <FileText className="w-3.5 h-3.5 text-sky-400" />
-              <span className="hidden md:inline">Kho biên bản</span>
+      <div className="flex-1" />
+
+      {isLeadership && (
+        <button
+          type="button"
+          onClick={onOpenBBHParser}
+          className="hidden h-10 shrink-0 items-center gap-2 rounded-[10px] border border-border-strong bg-surface px-3.5 text-[14px] font-medium text-fg-2 transition hover:bg-surface-2 sm:inline-flex cursor-pointer"
+          title="Dán biên bản họp — AI tự trích xuất công việc"
+        >
+          <Sparkles className="size-4" />
+          <span className="hidden xl:inline">Nhập biên bản AI</span>
+          <span className="xl:hidden">Biên bản AI</span>
+        </button>
+      )}
+
+      {canCreateTask && onOpenQuickAdd && (
+        <button
+          type="button"
+          onClick={onOpenQuickAdd}
+          className="btn-primary hidden h-10 shrink-0 items-center gap-2 rounded-[10px] px-3.5 text-[14px] font-medium transition sm:inline-flex cursor-pointer"
+        >
+          <Plus className="size-4" />
+          Thêm việc
+        </button>
+      )}
+
+      <NotificationBell
+        notifications={notifications}
+        unread={unreadCount}
+        onRefresh={onRefreshNotifications}
+        onMarkAllRead={onMarkAllRead}
+        onMarkRead={onMarkRead}
+        onOpenTask={onOpenNotificationTask}
+        channel={notificationChannel}
+        onChangeChannel={onChangeNotificationChannel}
+      />
+
+      {/* Công cụ: gom các nút cũ trên header (điện thoại đã có ở thanh dưới) */}
+      <div className="relative hidden sm:block" ref={tools.ref}>
+        <button
+          type="button"
+          onClick={() => tools.setOpen((v) => !v)}
+          className="inline-flex size-10 items-center justify-center rounded-lg text-fg-2 transition hover:bg-black/5 cursor-pointer"
+          title="Công cụ"
+          aria-label="Công cụ"
+          aria-expanded={tools.open}
+        >
+          <LayoutGrid className="size-5" />
+        </button>
+        <div
+          data-open={tools.open}
+          className="menu-pop absolute right-0 top-12 z-50 w-64 rounded-xl border border-border bg-surface p-1.5 shadow-[0_16px_40px_-12px_rgba(16,24,40,0.22)]"
+        >
+          <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">Công cụ</p>
+          <button type="button" className={menuItem} onClick={runTool(onOpenMeetingHistory)}>
+            <FileDown className="size-4" />
+            Kho biên bản & xuất PDF
+          </button>
+          {canNag && (
+            <button type="button" className={menuItem} onClick={runTool(onOpenNagModal)}>
+              <AlarmClock className="size-4" />
+              {canWeeklyReport ? 'Nhắc việc & báo cáo tuần' : 'Nhắc việc quá hạn'}
             </button>
-
-            <NotificationBell
-              notifications={notifications}
-              unread={unreadCount}
-              onRefresh={onRefreshNotifications}
-              onMarkAllRead={onMarkAllRead}
-              onMarkRead={onMarkRead}
-              onOpenTask={onOpenNotificationTask}
-              channel={notificationChannel}
-              onChangeChannel={onChangeNotificationChannel}
-            />
-
-            {canNag && (
-              <button
-                onClick={onOpenNagModal}
-                className={`${ghostBtn} hidden md:inline-flex`}
-                title={canWeeklyReport ? 'Nhắc việc quá hạn & Báo cáo tuần' : 'Nhắc việc quá hạn của ban'}
-              >
-                <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
-                <span className="hidden md:inline">Nhắc việc</span>
+          )}
+          {isLeadership && (
+            <>
+              <button type="button" className={menuItem} onClick={runTool(onOpenRosterModal)}>
+                <Users className="size-4" />
+                Danh sách thành viên
               </button>
-            )}
-
-            <button onClick={onOpenCalendar} className={`${ghostBtn} hidden md:inline-flex`} title="Lịch deadline & kỳ họp">
-              <Calendar className="w-3.5 h-3.5 text-violet-400" />
-              <span className="hidden md:inline">Lịch</span>
-            </button>
-
-            {isPresident && (
-                <button
-                  onClick={onOpenSettings}
-                  className="hidden md:inline-flex p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition cursor-pointer shrink-0"
-                  title="Cấu hình hệ thống (điểm KPI, lịch báo cáo tuần...)"
-                >
-                  <SettingsIcon className="w-3.5 h-3.5" />
-                </button>
-            )}
-            {isLeadership && (
-              <>
-                <button onClick={onOpenRosterModal} className={`${ghostBtn} hidden md:inline-flex`} title="Danh sách thành viên & Quản lý ban">
-                  <span className="hidden md:inline">Danh sách thành viên</span>
-                </button>
-                <button
-                  onClick={onOpenDataSyncModal}
-                  className="hidden md:inline-flex p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition cursor-pointer shrink-0"
-                  title="Đồng bộ / Xuất Sheets, CSV, JSON"
-                >
-                  <Database className="w-4 h-4" />
-                </button>
-              </>
-            )}
-          </div>
-
-          {/* Người dùng + đăng xuất */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-            <div className="hidden lg:flex flex-col items-end text-xs">
-              <span className="text-slate-400 text-[10px]">{roleLabel}</span>
-              <span className="text-white font-medium text-xs truncate max-w-[140px]">{authMember.name}</span>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-slate-600 border-2 border-slate-400 flex items-center justify-center font-bold text-xs text-white uppercase shadow-sm shrink-0">
-              {roleIcon}
-            </div>
-            {onChangePassword && (
-              <button
-                onClick={onChangePassword}
-                title="Đổi mật khẩu"
-                className="hidden sm:inline-flex p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 transition cursor-pointer shrink-0"
-              >
-                <KeyRound className="w-4 h-4" />
+              <button type="button" className={menuItem} onClick={runTool(onOpenDataSyncModal)}>
+                <RefreshCw className="size-4" />
+                Đồng bộ dữ liệu
               </button>
-            )}
-            <button
-              onClick={onLogout}
-              title="Đăng xuất"
-              className="p-1.5 bg-slate-800 hover:bg-red-600/80 text-slate-300 hover:text-white rounded-lg border border-slate-700 transition cursor-pointer shrink-0"
-            >
-              <LogOut className="w-4 h-4" />
+            </>
+          )}
+          {isPresident && (
+            <button type="button" className={menuItem} onClick={runTool(onOpenSettings)}>
+              <SettingsIcon className="size-4" />
+              Cài đặt hệ thống
             </button>
-          </div>
+          )}
         </div>
+      </div>
 
-        {/* Hàng phụ: phạm vi + chỉ số */}
-        <div className="py-1.5 border-t border-slate-700/70 flex items-center justify-between gap-2 text-xs overflow-hidden">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-800 rounded border border-slate-700 whitespace-nowrap shrink-0 text-[11px]">
-              {isLeadership ? '👑 Toàn CLB' : `Phạm vi: ${authMember.department}`}
-            </span>
+      {/* Tài khoản */}
+      <div className="relative shrink-0" ref={account.ref}>
+        <button
+          type="button"
+          onClick={() => account.setOpen((v) => !v)}
+          className="flex items-center gap-2.5 rounded-full p-0.5 transition hover:bg-black/5 lg:rounded-xl lg:py-1 lg:pl-1 lg:pr-3 cursor-pointer"
+          aria-label="Tài khoản"
+          aria-expanded={account.open}
+        >
+          <span className="flex size-9 items-center justify-center rounded-full bg-[#E0EAFF] text-[12px] font-semibold text-[#3538CD]">
+            {initialsOf(authMember.name)}
+          </span>
+          <span className="hidden min-w-0 text-left lg:block">
+            <span className="block max-w-[160px] truncate text-[13px] font-medium leading-tight text-fg">{authMember.name}</span>
+            <span className="block max-w-[160px] truncate text-[12px] leading-tight text-muted">{roleLabel}</span>
+          </span>
+        </button>
+        <div
+          data-open={account.open}
+          className="menu-pop absolute right-0 top-12 z-50 w-60 rounded-xl border border-border bg-surface p-1.5 shadow-[0_16px_40px_-12px_rgba(16,24,40,0.22)]"
+        >
+          <div className="px-2.5 py-2">
+            <p className="truncate text-[14px] font-medium text-fg">{authMember.name}</p>
+            <p className="truncate text-[12px] text-muted">{roleLabel}</p>
           </div>
-
-          <div className="flex items-center gap-2 md:gap-3 text-slate-300 text-[11px] overflow-x-auto whitespace-nowrap">
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>
-                Tiến độ: <strong className="text-white">{completionRate}%</strong>
-              </span>
-            </div>
-            {pendingCount > 0 && (
-              <div className="flex items-center gap-1 bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30 font-semibold">
-                <Clock className="w-3 h-3" />
-                Chờ duyệt: {pendingCount}
-              </div>
-            )}
-            {overdueCount > 0 && (
-              <div className="flex items-center gap-1 bg-red-500/20 text-red-300 px-2 py-0.5 rounded border border-red-500/30 font-semibold">
-                <AlertTriangle className="w-3 h-3" />
-                Quá hạn: {overdueCount}
-              </div>
-            )}
-          </div>
+          {onChangePassword && (
+            <button
+              type="button"
+              className={menuItem}
+              onClick={() => {
+                account.setOpen(false);
+                onChangePassword();
+              }}
+            >
+              <KeyRound className="size-4" />
+              Đổi mật khẩu
+            </button>
+          )}
+          <button
+            type="button"
+            className={`${menuItem} hover:!text-danger`}
+            onClick={() => {
+              account.setOpen(false);
+              onLogout();
+            }}
+          >
+            <LogOut className="size-4" />
+            Đăng xuất
+          </button>
         </div>
       </div>
     </header>

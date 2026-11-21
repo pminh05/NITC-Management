@@ -1,13 +1,145 @@
 @import "tailwindcss";
 
+/* ===== Giao diện mới (nhánh ui-redesign): sáng, phẳng, header kính =====
+   Gu: Kestrel (bố cục dashboard) + Liquid Glass (header kính, vệt sáng xanh).
+   Đổi màu nhấn: sửa --app-primary (+ -hover, -light, --app-ring) ở :root dưới đây.
+   Font: tiêu đề Plus Jakarta Sans (có dấu tiếng Việt), chữ thường Inter. Fustat không dùng vì thiếu dấu tiếng Việt. */
 @theme {
-  --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+}
+
+:root {
+  --app-bg: #F6F7F9;
+  --app-surface: #FFFFFF;
+  --app-surface-2: #F9FAFB;
+  --app-border: #EAECF0;
+  --app-border-strong: #D0D5DD;
+  --app-fg: #101828;
+  --app-fg-2: #344054;
+  --app-muted: #667085;
+  --app-primary: #0A6CFF;
+  --app-primary-hover: #0058D6;
+  --app-primary-light: #EAF2FF;
+  --app-ring: rgb(10 108 255 / 0.22);
+  --app-glow-1: #60B1FF;
+  --app-glow-2: #319AFF;
+  --app-danger: #B42318;  --app-danger-bg: #FEF3F2;  --app-danger-bar: #F04438;
+  --app-warning: #B54708; --app-warning-bg: #FFFAEB; --app-warning-bar: #F79009;
+  --app-info: #175CD3;    --app-info-bg: #EFF8FF;    --app-info-bar: #2E90FA;
+  --app-success: #067647; --app-success-bg: #ECFDF3; --app-success-bar: #17B26A;
+}
+
+@theme inline {
+  --color-app-bg: var(--app-bg);
+  --color-surface: var(--app-surface);
+  --color-surface-2: var(--app-surface-2);
+  --color-border: var(--app-border);
+  --color-border-strong: var(--app-border-strong);
+  --color-fg: var(--app-fg);
+  --color-fg-2: var(--app-fg-2);
+  --color-muted: var(--app-muted);
+  --color-primary: var(--app-primary);
+  --color-primary-hover: var(--app-primary-hover);
+  --color-primary-light: var(--app-primary-light);
+  --color-danger: var(--app-danger);   --color-danger-bg: var(--app-danger-bg);   --color-danger-bar: var(--app-danger-bar);
+  --color-warning: var(--app-warning); --color-warning-bg: var(--app-warning-bg); --color-warning-bar: var(--app-warning-bar);
+  --color-info: var(--app-info);       --color-info-bg: var(--app-info-bg);       --color-info-bar: var(--app-info-bar);
+  --color-success: var(--app-success); --color-success-bg: var(--app-success-bg); --color-success-bar: var(--app-success-bar);
 }
 
 html, body {
-  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Header kính sáng: phía sau có vệt sáng xanh (.app-glow) */
+.glass-header {
+  background: rgb(255 255 255 / 0.62);
+  border-bottom: 1px solid rgb(16 24 40 / 0.08);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-header { background: rgb(255 255 255 / 0.95); }
+}
+
+/* Nút chính: viền sáng phía trong như CTA của Liquid Glass */
+.btn-primary {
+  background: var(--app-primary);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22);
+}
+.btn-primary:hover { background: var(--app-primary-hover); }
+
+/* Lớp nổi nhỏ (menu header): mở đóng có chuyển động */
+.menu-pop {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 150ms ease-out, transform 150ms ease-out, visibility 0s linear 150ms;
+}
+.menu-pop[data-open='true'] {
+  opacity: 1;
+  transform: none;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 150ms ease-out, transform 150ms ease-out, visibility 0s;
+}
+
+/* Khối cầu kính (màn đăng nhập) — dựng bằng CSS, không dùng video */
+.orb { position: relative; aspect-ratio: 1; border-radius: 9999px; }
+.orb > * { position: absolute; inset: 0; border-radius: inherit; }
+.orb-halo { inset: -14%; background: radial-gradient(closest-side, rgb(10 108 255 / 0.32), rgb(96 177 255 / 0.12) 60%, transparent); filter: blur(24px); }
+.orb-core {
+  background: radial-gradient(circle at 30% 25%, #FFFFFF 0%, #CFE8FF 9%, #74BDFF 28%, #1A86FF 52%, #0A52DC 76%, #072F92 100%);
+  box-shadow: inset -30px -40px 80px rgb(0 20 90 / 0.4), inset 20px 30px 60px rgb(255 255 255 / 0.35);
+}
+.orb-caustic {
+  background: radial-gradient(ellipse 55% 30% at 58% 86%, rgb(190 232 255 / 0.95), rgb(120 200 255 / 0.35) 55%, transparent 75%);
+  mix-blend-mode: screen;
+  filter: blur(8px);
+}
+.orb-swirl {
+  background: conic-gradient(from 0deg, transparent 0 12%, rgb(255 255 255 / 0.55) 18%, transparent 30%, rgb(120 200 255 / 0.7) 46%, transparent 58%, rgb(0 90 255 / 0.6) 72%, transparent 84%);
+  mix-blend-mode: screen;
+  filter: blur(22px);
+  animation: orb-spin 16s linear infinite;
+  -webkit-mask: radial-gradient(circle, #000 55%, transparent 72%);
+  mask: radial-gradient(circle, #000 55%, transparent 72%);
+}
+.orb-swirl.reverse { animation-duration: 24s; animation-direction: reverse; opacity: 0.7; }
+.orb-shine { inset: 8% 40% 52% 14%; background: radial-gradient(closest-side, rgb(255 255 255 / 0.95), rgb(255 255 255 / 0)); filter: blur(6px); transform: rotate(-24deg); }
+.orb-rim { box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / 0.55), inset 0 -10px 30px rgb(140 210 255 / 0.55), 0 30px 80px -20px rgb(0 100 255 / 0.45); }
+.orb-float { animation: orb-float 9s ease-in-out infinite; }
+@keyframes orb-spin { to { transform: rotate(360deg); } }
+@keyframes orb-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+
+/* Thẻ kính nhỏ nổi trên khối cầu */
+.glass-chip {
+  background: rgb(255 255 255 / 0.72);
+  border: 1px solid rgb(255 255 255 / 0.75);
+  box-shadow: 0 16px 40px -16px rgb(0 60 140 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.8);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+
+/* Khung chờ tải */
+@keyframes app-shimmer { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+.skeleton { background: #EAECF0; border-radius: 6px; animation: app-shimmer 1.4s ease-in-out infinite; }
+
+/* Thanh cuộn tự ẩn (evon I18): ẩn tới khi rê chuột vào vùng cuộn */
+* { --scrollbar-thumb: transparent; }
+*:hover { --scrollbar-thumb: color-mix(in srgb, var(--app-fg) 16%, transparent); }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--app-fg) 40%, transparent); }
+@supports not selector(::-webkit-scrollbar) {
+  * { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+  *:hover { scrollbar-color: color-mix(in srgb, var(--app-fg) 18%, transparent) transparent; }
 }
 
 /* Khóa biến thể dark theo class (main.tsx luôn xóa class này lúc khởi động)

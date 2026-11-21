@@ -32,6 +32,8 @@ import { UpdateRequestFlowModal } from './components/UpdateRequestFlowModal';
 import { QuickAddTaskModal } from './components/QuickAddTaskModal';
 import { RemindConfirmModal } from './components/RemindConfirmModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import { Sidebar, MainView } from './components/Sidebar';
+import { OverviewPage } from './components/OverviewPage';
 import { ChangePasswordModal } from './components/ChangePasswordModal';
 
 // Các hộp thoại lớn tải theo nhu cầu (tách khỏi gói JS đầu vào) và được tải sẵn lúc trình duyệt rảnh
@@ -65,6 +67,7 @@ function preloadModals() {
 }
 import { confirmDialog, toast } from './components/ui/Feedback';
 import {
+  canCreateTask,
   canDestructiveAdmin,
   canManageRoster,
   canPublishMeeting,
@@ -396,6 +399,7 @@ export function App() {
       setIsFilterOpen(false);
       setParsedMeetingData(null);
       setParsedDraftTasks([]);
+      setMainView('board');
 
       try {
         confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
@@ -789,6 +793,23 @@ export function App() {
     }
   });
 
+  // Màn chính: Tổng quan (mặc định) hoặc Bảng việc
+  const [mainView, setMainView] = useState<MainView>('overview');
+  const goOverview = () => {
+    setMainView('overview');
+    window.scrollTo({ top: 0 });
+  };
+  const goView = (view: MainView) => {
+    setMainView(view);
+    window.scrollTo({ top: 0 });
+  };
+  const goBoard = (dept: string, status: string) => {
+    setSidebarDeptFilter(dept);
+    setSidebarStatusFilter(status);
+    setMainView('board');
+    window.scrollTo({ top: 0 });
+  };
+
   const handleToggleSidebar = () => {
     setIsSidebarOpen((prev) => {
       const next = !prev;
@@ -803,12 +824,12 @@ export function App() {
 
   if (booting) {
     return (
-      <div className="min-h-screen bg-[#10192F] flex items-center justify-center">
+      <div className="min-h-screen bg-surface flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 bg-[#2C69FF]/100 rounded-xl flex items-center justify-center font-bold text-white text-xl mx-auto animate-pulse">
+          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center font-display font-bold text-white text-xl mx-auto animate-pulse">
             N
           </div>
-          <p className="text-slate-400 text-sm mt-3">Đang khởi động NITC Command Center...</p>
+          <p className="text-muted text-sm mt-3">Đang khởi động NITC Command Center...</p>
         </div>
       </div>
     );
@@ -842,243 +863,142 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F1F5F9] dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans antialiased selection:bg-[#2C69FF]/100 selection:text-white">
+    <div className="min-h-screen bg-app-bg text-fg flex font-sans antialiased selection:bg-primary selection:text-white">
 
-      {/* Toast Notification */}
-      {/* 1. Global Navigation Header */}
-      <Header
-        authMember={authMember}
-        onLogout={handleLogout}
-        onChangePassword={() => setIsChangePasswordOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenCalendar={() => setIsCalendarOpen(true)}
-        clubName={clubName}
-        tasks={tasks}
-        notifications={notifications}
-        unreadCount={unreadCount}
-        notificationChannel={notificationChannel}
-        onRefreshNotifications={refreshNotifications}
-        onMarkAllRead={handleMarkAllRead}
-        onMarkRead={handleMarkRead}
-        onOpenNotificationTask={openTaskFromNotification}
-        onChangeNotificationChannel={handleChangeNotificationChannel}
-        onOpenBBHParser={() => setIsParserOpen(true)}
-        onOpenMeetingHistory={() => setIsMeetingHistoryOpen(true)}
-        onOpenNagModal={() => setIsNagOpen(true)}
-        canNag={canUseNag(actor)}
-        canWeeklyReport={canViewWeeklyReport(actor)}
-        onOpenRosterModal={() => setIsRosterOpen(true)}
-        onOpenDataSyncModal={() => setIsDataSyncOpen(true)}
-        isSidebarOpen={isSidebarOpen}
-        onToggleSidebar={handleToggleSidebar}
-      />
-
-      {/* 2. High Density Dashboard Layout: Sidebar + Main Area */}
-      <div className="flex flex-1 w-full relative">
-
-        {/* Nút nổi mở nhanh thanh bên khi Sidebar bị ẩn */}
-        {!isSidebarOpen && (
-          <button
-            onClick={handleToggleSidebar}
-            className="hidden lg:flex fixed left-3 top-18 z-30 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-md text-slate-700 dark:text-slate-200 hover:text-[#2C69FF] hover:border-[#2C69FF] transition items-center gap-2 text-xs font-semibold cursor-pointer animate-in fade-in slide-in-from-left-2 duration-150"
-            title="Mở thanh bên (Sidebar)"
-          >
-            <PanelLeftOpen className="w-4 h-4 text-[#2C69FF]" />
-            <span>Mở menu</span>
-          </button>
-        )}
-
-        {/* High Density Desktop Sidebar - Cố định khi cuộn trang, cho phép ẩn/hiện */}
-        {isSidebarOpen && (
-          <aside className="w-60 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 hidden lg:flex flex-col shrink-0 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto z-20 animate-in fade-in duration-200">
-            <div className="p-4 space-y-1">
-              <div className="flex items-center justify-between mb-2 px-2">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Hệ thống
-                </span>
-                <button
-                  onClick={handleToggleSidebar}
-                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-                  title="Thu gọn thanh bên"
-                >
-                  <PanelLeftClose className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            <button
-              onClick={() => {
-                setSidebarDeptFilter('all');
-                setSidebarStatusFilter('all');
-              }}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-semibold transition cursor-pointer ${sidebarDeptFilter === 'all' && sidebarStatusFilter === 'all'
-                  ? 'bg-[#2C69FF]/10 text-[#1E4FC4] font-bold border border-[#2C69FF]/30'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50'
-                }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span>📊</span>
-                <span>Tổng quan</span>
-              </div>
-              <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded font-mono">
-                {dataLoading ? '...' : totalTasksCount}
-              </span>
-            </button>
-
-            {canManageMeetings && (
-              <button
-                onClick={() => setIsParserOpen(true)}
-                className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-900 rounded-md text-xs transition cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span>🤖</span>
-                  <span>AI đọc biên bản họp</span>
-                </div>
-                <span className="text-[10px] bg-[#2C69FF]/15 text-[#1E4FC4] px-1.5 py-0.5 rounded font-bold">
-                  Mới
-                </span>
-              </button>
-            )}
-
-            <button
-              onClick={() => setIsDashOpen(true)}
-              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-md text-xs transition cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5">
-                <span>📊</span>
-                <span>Dashboard</span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setIsLeaderboardOpen(true)}
-              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-900 rounded-md text-xs transition cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5">
-                <span>🏆</span>
-                <span>Bảng xếp hạng</span>
-              </div>
-              <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold">
-                KPI
-              </span>
-            </button>
-
-            <button
-              onClick={() => setIsCalendarOpen(true)}
-              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-900 rounded-md text-xs transition cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5">
-                <span>📅</span>
-                <span>Lịch tổng</span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setIsDocsOpen(true)}
-              className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-900 rounded-md text-xs transition cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5">
-                <span>📚</span>
-                <span>Kho tài liệu</span>
-              </div>
-            </button>
-          </div>
-
-          <div className="p-4 space-y-1 border-t border-slate-100 dark:border-slate-800">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">
-              Ban Điều Hành
-            </div>
-
-            {(['Học thuật', 'Truyền thông', 'Sự kiện', 'Đối ngoại', 'Ban Chủ nhiệm'] as Department[]).map((dept) => {
-              const count = tasks.filter((t) => t.department === dept).length;
-              const isSelected = sidebarDeptFilter === dept;
-              const emoji =
-                dept === 'Học thuật'
-                  ? '💻'
-                  : dept === 'Truyền thông'
-                    ? '📢'
-                    : dept === 'Sự kiện'
-                      ? '📅'
-                      : dept === 'Đối ngoại'
-                        ? '🤝'
-                        : '👑';
-
-              return (
-                <button
-                  key={dept}
-                  onClick={() => {
-                    setSidebarDeptFilter(dept);
-                    setSidebarStatusFilter('all');
-                  }}
-                  className={`w-full flex items-center justify-between px-3 py-1.5 rounded-md text-xs transition cursor-pointer ${isSelected
-                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50'
-                    }`}
-                >
-                  <span className="flex items-center gap-2 truncate">
-                    <span>{emoji}</span>
-                    <span className="truncate">{dept}</span>
-                  </span>
-                  <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono text-slate-600">
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Xuất PDF biên bản & Phiên bản - Được đẩy lên ngay dưới danh sách ban, luôn hiển thị */}
-          <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
-            <button
-              onClick={() => setIsMeetingHistoryOpen(true)}
-              className="w-full py-2 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-slate-900 flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer shadow-sm"
-            >
-              <span>📤</span>
-              <span>Xuất PDF biên bản</span>
-            </button>
-            <div className="text-[11px] text-slate-400 text-center font-medium">
-              CLB CNTT NITC &bull; v3.0
-            </div>
-          </div>
-        </aside>
+      {/* 1. Sidebar (máy tính) — cố định khi cuộn, thu gọn được */}
+      {isSidebarOpen && (
+        <Sidebar
+          authMember={authMember}
+          tasks={tasks}
+          loading={dataLoading}
+          view={mainView}
+          deptFilter={sidebarDeptFilter}
+          statusFilter={sidebarStatusFilter}
+          pendingCount={pendingApprovalsCount}
+          canManageMeetings={canManageMeetings}
+          onGoOverview={goOverview}
+          onGoBoard={goBoard}
+          onOpenParser={() => goView('meetings')}
+          onOpenCalendar={() => goView('calendar')}
+          onOpenLeaderboard={() => goView('leaderboard')}
+          onOpenDashboard={() => goView('analytics')}
+          onOpenDocs={() => goView('docs')}
+          onCollapse={handleToggleSidebar}
+        />
       )}
 
-        {/* Main Content Pane */}
-        <main className="flex-1 min-w-0 flex flex-col p-3 sm:p-5 md:p-6 gap-4 sm:gap-5 max-w-full overflow-x-hidden pb-24 lg:pb-6">
-
-          {/* 3. Task Management Board */}
-          <TaskBoard
-            tasks={tasks}
-            members={members}
-            currentRole={currentRole}
-            currentDepartment={currentDepartment}
-            currentUserId={currentUserId}
-            selectedDeptProp={sidebarDeptFilter}
-            selectedStatusProp={sidebarStatusFilter}
-            onSelectDeptFilter={setSidebarDeptFilter}
-            onSelectStatusFilter={setSidebarStatusFilter}
-            onOpenSubmitModal={handleOpenSubmitModal}
-            onOpenReviewModal={handleOpenReviewModal}
-            onDeleteTask={handleDeleteTask}
-            onQuickApprove={handleQuickApprove}
-            onOpenBBHParser={() => setIsParserOpen(true)}
-            onAddNewManualTask={handleAddNewManualTask}
-            onOpenDetail={setDetailTask}
-            onUpdateRequest={(task) => setUpdateReqTask({ task, mode: 'request' })}
-            onRemindTask={handleOpenRemindConfirm}
-          />
-
-        </main>
-      </div>
-
-      {/* 4. Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white py-3 pb-20 lg:pb-3 text-center text-xs text-slate-500">
-        <div className="w-full px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>NITC Command Center &copy; 2026 {clubName}</span>
-          <div className="flex items-center gap-4 text-[11px] text-slate-400">
-            <span className="text-emerald-600 font-medium">● Server + AI Engine Active</span>
-            <span>Phiên bản v3.0 Multi-user</span>
-          </div>
+      {/* 2. Vùng chính: header kính + nội dung */}
+      <div className="relative flex min-w-0 flex-1 flex-col">
+        {/* Vệt sáng xanh phía sau header kính */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[360px] overflow-hidden">
+          <div className="absolute -left-[160px] -top-[220px] h-[420px] w-[620px] rounded-full bg-[var(--app-glow-1)] opacity-30 blur-[110px]" />
+          <div className="absolute -left-[60px] -top-[140px] h-[260px] w-[360px] rounded-full bg-[var(--app-glow-2)] opacity-[0.28] blur-[90px]" />
         </div>
-      </footer>
+
+        <Header
+          authMember={authMember}
+          onLogout={handleLogout}
+          onChangePassword={() => setIsChangePasswordOpen(true)}
+          onOpenSettings={() => setIsSettingsOpen(true)}
+          onOpenCalendar={() => setIsCalendarOpen(true)}
+          clubName={clubName}
+          tasks={tasks}
+          notifications={notifications}
+          unreadCount={unreadCount}
+          notificationChannel={notificationChannel}
+          onRefreshNotifications={refreshNotifications}
+          onMarkAllRead={handleMarkAllRead}
+          onMarkRead={handleMarkRead}
+          onOpenNotificationTask={openTaskFromNotification}
+          onChangeNotificationChannel={handleChangeNotificationChannel}
+          onOpenBBHParser={() => goView('meetings')}
+          onOpenMeetingHistory={() => setIsMeetingHistoryOpen(true)}
+          onOpenNagModal={() => setIsNagOpen(true)}
+          canNag={canUseNag(actor)}
+          canWeeklyReport={canViewWeeklyReport(actor)}
+          onOpenRosterModal={() => setIsRosterOpen(true)}
+          onOpenDataSyncModal={() => setIsDataSyncOpen(true)}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={handleToggleSidebar}
+          onOpenQuickAdd={() => setIsQuickAddOpen(true)}
+          canCreateTask={canCreateTask(actor)}
+        />
+
+        {/* Nội dung chính */}
+        <main className="relative mx-auto flex w-full min-w-0 max-w-[1320px] flex-1 flex-col gap-4 px-3 pb-24 pt-6 sm:gap-5 sm:px-6 lg:px-8 lg:pb-10">
+          {mainView === 'overview' && (
+            <OverviewPage
+              tasks={tasks}
+              authMember={authMember}
+              actor={actor}
+              loading={dataLoading}
+              onReview={handleOpenReviewModal}
+              onRemind={handleOpenRemindConfirm}
+              onOpenDetail={setDetailTask}
+              onGoBoard={goBoard}
+              onOpenQuickAdd={canCreateTask(actor) ? () => setIsQuickAddOpen(true) : undefined}
+              onOpenParser={canManageMeetings ? () => goView('meetings') : undefined}
+            />
+          )}
+          {mainView === 'board' && (
+            <TaskBoard
+              tasks={tasks}
+              members={members}
+              currentRole={currentRole}
+              currentDepartment={currentDepartment}
+              currentUserId={currentUserId}
+              selectedDeptProp={sidebarDeptFilter}
+              selectedStatusProp={sidebarStatusFilter}
+              onSelectDeptFilter={setSidebarDeptFilter}
+              onSelectStatusFilter={setSidebarStatusFilter}
+              onOpenSubmitModal={handleOpenSubmitModal}
+              onOpenReviewModal={handleOpenReviewModal}
+              onDeleteTask={handleDeleteTask}
+              onQuickApprove={handleQuickApprove}
+              onOpenBBHParser={() => goView('meetings')}
+              onAddNewManualTask={handleAddNewManualTask}
+              onOpenDetail={setDetailTask}
+              onUpdateRequest={(task) => setUpdateReqTask({ task, mode: 'request' })}
+              onRemindTask={handleOpenRemindConfirm}
+            />
+          )}
+          {/* Các tính năng mở thành trang trong vùng chính (không còn là hộp thoại) */}
+          {mainView !== 'overview' && mainView !== 'board' && (
+            <Suspense
+              fallback={
+                <div className="rounded-2xl border border-border bg-surface p-6" aria-busy="true" aria-label="Đang tải">
+                  <div className="skeleton h-5 w-48" />
+                  <div className="skeleton mt-3 h-3 w-72" />
+                  <div className="skeleton mt-6 h-64 w-full" />
+                </div>
+              }
+            >
+              {mainView === 'calendar' && (
+                <CalendarModal isOpen asPage onClose={goOverview} tasks={tasks} meetings={meetings} onOpenDetail={setDetailTask} />
+              )}
+              {mainView === 'leaderboard' && <LeaderboardModal isOpen asPage onClose={goOverview} authMember={authMember} />}
+              {mainView === 'analytics' && (
+                <DashboardModal isOpen asPage onClose={goOverview} tasks={tasks} meetings={meetings} authMember={authMember} />
+              )}
+              {mainView === 'docs' && <DocsModal isOpen asPage onClose={goOverview} terms={terms} authMember={authMember} />}
+              {mainView === 'meetings' && canManageMeetings && (
+                <MeetingParserModal isOpen asPage onClose={goOverview} members={members} onExtractionSuccess={handleParserSuccess} />
+              )}
+            </Suspense>
+          )}
+        </main>
+
+        {/* Chân trang */}
+        <footer className="border-t border-border bg-surface py-3 pb-20 text-center text-xs text-muted lg:pb-3">
+          <div className="flex w-full flex-col items-center justify-between gap-2 px-6 sm:flex-row">
+            <span>NITC Command Center &copy; 2026 {clubName}</span>
+            <div className="flex items-center gap-4 text-[11px]">
+              <span className="font-medium text-success">● Server + AI Engine Active</span>
+              <span>Phiên bản v3.0 Multi-user</span>
+            </div>
+          </div>
+        </footer>
+      </div>
 
       {/* 5. Modals System — modal tải theo nhu cầu nằm trong Suspense (chưa tải xong thì chưa hiện gì) */}
       <Suspense fallback={null}>
@@ -1154,7 +1074,7 @@ export function App() {
         tasks={tasks}
         onOpenBBHParser={() => {
           setIsMeetingHistoryOpen(false);
-          setIsParserOpen(true);
+          goView('meetings');
         }}
       />
       )}
@@ -1302,12 +1222,15 @@ export function App() {
         isLeadership={isLeadership}
         activeTasksCount={inProgressCount + pendingApprovalsCount}
         overdueCount={overdueCount}
-        onOpenBBHParser={() => setIsParserOpen(true)}
+        onOpenBBHParser={() => goView('meetings')}
         onOpenQuickAdd={() => setIsQuickAddOpen(true)}
-        onOpenDashboard={() => setIsDashOpen(true)}
-        onOpenCalendar={() => setIsCalendarOpen(true)}
-        onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
-        onOpenDocs={() => setIsDocsOpen(true)}
+        onOpenDashboard={() => goView('analytics')}
+        onOpenOverview={goOverview}
+        onOpenBoard={() => goBoard('all', 'all')}
+        activeView={mainView}
+        onOpenCalendar={() => goView('calendar')}
+        onOpenLeaderboard={() => goView('leaderboard')}
+        onOpenDocs={() => goView('docs')}
         onOpenNag={() => setIsNagOpen(true)}
         canNag={canUseNag(actor)}
         onOpenMeetingHistory={() => setIsMeetingHistoryOpen(true)}

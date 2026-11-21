@@ -25,8 +25,8 @@ export const UpdateRequestAction: React.FC<UpdateRequestActionProps> = ({
   compact = false,
 }) => {
   if (task.status !== 'pending_approval' || !onUpdateRequest) return null;
-  const size = compact ? 'px-2 py-0.5 text-[11px] rounded-md' : 'px-3 py-1.5 text-xs rounded-lg';
-  const icon = compact ? 'w-3 h-3' : 'w-3.5 h-3.5';
+  const size = compact ? 'h-8 px-2.5 text-[13px] rounded-lg' : 'h-9 px-3 text-[13px] rounded-lg';
+  const icon = 'size-3.5';
   const open = (e: React.MouseEvent) => {
     e.stopPropagation();
     onUpdateRequest(task);
@@ -38,7 +38,7 @@ export const UpdateRequestAction: React.FC<UpdateRequestActionProps> = ({
     if (task.updateRequestedAt) {
       return (
         <span
-          className={`${compact ? 'px-1.5 py-0.5 text-[10px] rounded' : 'px-2.5 py-1 text-xs rounded-lg'} font-semibold flex items-center gap-1 bg-violet-50 text-violet-700 border border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-700`}
+          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-warning-bg px-2 py-0.5 text-[12px] font-medium text-warning"
           title="Đã gửi yêu cầu sửa minh chứng — chờ người duyệt phản hồi"
         >
           <RotateCcw className={icon} />
@@ -49,7 +49,7 @@ export const UpdateRequestAction: React.FC<UpdateRequestActionProps> = ({
     return (
       <button
         onClick={open}
-        className={`${size} font-semibold flex items-center gap-1 transition active:scale-95 cursor-pointer bg-white hover:bg-violet-50 text-violet-700 border border-violet-300 dark:bg-slate-900 dark:hover:bg-violet-900/30 dark:text-violet-300 dark:border-violet-700`}
+        className={`${size} inline-flex shrink-0 items-center gap-1.5 font-medium transition cursor-pointer border border-border-strong bg-surface text-fg-2 hover:bg-surface-2 hover:text-fg`}
         title="Minh chứng đã nộp cần sửa? Gửi yêu cầu để người duyệt cho phép nộp lại"
       >
         <RotateCcw className={icon} />
