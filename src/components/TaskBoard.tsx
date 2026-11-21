@@ -23,6 +23,8 @@ import {
   ChevronDown,
   ChevronUp,
   X,
+  Star,
+  Inbox,
 } from 'lucide-react';
 import { Department, Role, Task, Member } from '../types';
 import { canReviewTask } from '../../shared/permissions';
@@ -31,6 +33,7 @@ import { formatDateVN, getDaysRemaining } from '../utils/dateUtils';
 import { AssigneeMultiSelect } from './AssigneeMultiSelect';
 import { TaskCard } from './TaskCard';
 import { QuickAddTaskModal } from './QuickAddTaskModal';
+import { AssigneeLine, DeptLabel, DueText, StatusChip, btnOutlineSm, btnPrimarySm, btnSoftSm, iconBtnSm } from './taskUi';
 
 export type ViewMode = 'grid' | 'kanban' | 'table';
 
@@ -58,31 +61,27 @@ interface TaskBoardProps {
 type StatusKey = 'all' | 'in_progress' | 'pending_approval' | 'overdue' | 'completed';
 
 /** Tab trạng thái: màu chấm, chữ và gạch chân khi đang chọn */
-const STATUS_TABS: { key: StatusKey; label: string; dot?: string; activeText: string; activeBar: string; badge: string }[] = [
-  { key: 'all', label: 'Tất cả', activeText: 'text-slate-900', activeBar: 'bg-slate-900', badge: 'bg-slate-900 text-white' },
-  { key: 'in_progress', label: 'Đang làm', dot: 'bg-blue-500', activeText: 'text-blue-700', activeBar: 'bg-blue-600', badge: 'bg-blue-100 text-blue-800' },
-  { key: 'pending_approval', label: 'Chờ duyệt', dot: 'bg-amber-500', activeText: 'text-amber-700', activeBar: 'bg-amber-500', badge: 'bg-amber-100 text-amber-800' },
-  { key: 'overdue', label: 'Quá hạn', dot: 'bg-red-500', activeText: 'text-red-700', activeBar: 'bg-red-600', badge: 'bg-red-100 text-red-700' },
-  { key: 'completed', label: 'Đã xong', dot: 'bg-emerald-500', activeText: 'text-emerald-700', activeBar: 'bg-emerald-600', badge: 'bg-emerald-100 text-emerald-800' },
+const STATUS_TABS: { key: StatusKey; label: string; dot?: string }[] = [
+  { key: 'all', label: 'Tất cả' },
+  { key: 'in_progress', label: 'Đang làm', dot: 'bg-info-bar' },
+  { key: 'pending_approval', label: 'Chờ duyệt', dot: 'bg-warning-bar' },
+  { key: 'overdue', label: 'Quá hạn', dot: 'bg-danger-bar' },
+  { key: 'completed', label: 'Đã xong', dot: 'bg-success-bar' },
 ];
 
-const VIEW_OPTIONS: { mode: ViewMode; label: string; Icon: React.ComponentType<{ className?: string }>; color: string }[] = [
-  { mode: 'grid', label: 'Lưới', Icon: LayoutGrid, color: 'text-[#2C69FF]' },
-  { mode: 'kanban', label: 'Kanban', Icon: Kanban, color: 'text-amber-600' },
-  { mode: 'table', label: 'Bảng', Icon: TableIcon, color: 'text-emerald-600' },
+const VIEW_OPTIONS: { mode: ViewMode; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
+  { mode: 'grid', label: 'Lưới', Icon: LayoutGrid },
+  { mode: 'kanban', label: 'Kanban', Icon: Kanban },
+  { mode: 'table', label: 'Bảng', Icon: TableIcon },
 ];
 
 const scopeChip =
-  'px-3.5 py-2 rounded-xl border text-sm font-semibold transition shrink-0 cursor-pointer flex items-center gap-2 whitespace-nowrap';
+  'flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-medium transition cursor-pointer';
+const scopeActive = 'border-primary/30 bg-primary-light text-primary';
+const scopeIdle = 'border-border bg-surface text-fg-2 hover:bg-surface-2 hover:text-fg';
 
 const CountBadge: React.FC<{ value: number; active?: boolean }> = ({ value, active }) => (
-  <span
-    className={`min-w-[1.5rem] px-1.5 py-0.5 rounded-full text-xs font-bold text-center tabular-nums ${
-      active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-    }`}
-  >
-    {value}
-  </span>
+  <span className={`text-[12px] tabular-nums ${active ? 'text-primary' : 'text-muted'}`}>{value}</span>
 );
 
 export const TaskBoard: React.FC<TaskBoardProps> = ({
@@ -248,96 +247,83 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
   return (
     <div id="task-board" className="space-y-4">
 
-      {/* Thanh điều khiển bảng việc: 1) tìm kiếm + chế độ xem + giao việc  2) phạm vi ban  3) trạng thái */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm">
+      {/* Thanh điều khiển bảng việc: 1) tìm kiếm + chế độ xem  2) phạm vi ban  3) trạng thái.
+          Nút "Thêm việc" nằm trên header (một chỗ cho cả app). */}
+      <div className="rounded-2xl border border-border bg-surface">
 
-        {/* Hàng 1: Tìm kiếm · Chế độ xem · Thêm việc */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 p-3 sm:p-4">
-          <div className="relative flex-1 min-w-0">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        {/* Hàng 1: Tìm kiếm · Chế độ xem */}
+        <div className="flex flex-col gap-2.5 p-3 sm:flex-row sm:items-center sm:p-4">
+          <label className="relative block min-w-0 flex-1">
+            <span className="sr-only">Tìm việc</span>
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
             <input
               type="text"
-              placeholder="Tìm theo tên việc, người phụ trách hoặc ban…"
+              placeholder="Tìm việc, người phụ trách, ban"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#2C69FF] focus:ring-2 focus:ring-[#2C69FF]/15 transition"
+              className="h-10 w-full rounded-[10px] border border-border-strong bg-surface pl-10 pr-10 text-[14px] text-fg outline-none transition placeholder:text-muted focus:border-primary focus:ring-4 focus:ring-[var(--app-ring)]"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition cursor-pointer"
+                className="absolute right-1.5 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted transition hover:bg-surface-2 hover:text-fg cursor-pointer"
                 title="Xóa từ khóa"
+                aria-label="Xóa từ khóa"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="size-3.5" />
               </button>
             )}
-          </div>
+          </label>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Chế độ xem */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-xl" role="tablist" aria-label="Chế độ xem">
-              {VIEW_OPTIONS.map(({ mode, label, Icon, color }) => (
-                <button
-                  key={mode}
-                  role="tab"
-                  aria-selected={viewMode === mode}
-                  onClick={() => handleSetViewMode(mode)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-                    viewMode === mode ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
-                  }`}
-                  title={label}
-                >
-                  <Icon className={`w-4 h-4 ${viewMode === mode ? color : ''}`} />
-                  <span className="hidden md:inline">{label}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Giao việc nhanh: Ban lãnh đạo + Trưởng/Phó ban */}
-            {['Chủ nhiệm', 'Phó Chủ nhiệm', 'Trưởng ban', 'Phó ban'].includes(currentRole) && (
+          {/* Chế độ xem */}
+          <div className="flex shrink-0 items-center gap-1 self-start rounded-[10px] bg-[#F2F4F7] p-1 sm:self-auto" role="tablist" aria-label="Chế độ xem">
+            {VIEW_OPTIONS.map(({ mode, label, Icon }) => (
               <button
-                onClick={() => setShowQuickAddModal(true)}
-                className="ml-auto sm:ml-0 px-3.5 py-2.5 rounded-xl bg-[#2C69FF] hover:bg-[#1F56D6] text-white text-sm font-bold flex items-center gap-1.5 transition cursor-pointer shadow-sm active:scale-[0.98]"
+                key={mode}
+                type="button"
+                role="tab"
+                aria-selected={viewMode === mode}
+                onClick={() => handleSetViewMode(mode)}
+                className={`flex h-8 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium transition cursor-pointer ${
+                  viewMode === mode ? 'bg-surface text-fg shadow-[0_1px_2px_rgba(16,24,40,0.08)]' : 'text-muted hover:text-fg'
+                }`}
+                title={label}
               >
-                <Plus className="w-4 h-4" />
-                <span>Thêm việc</span>
+                <Icon className="size-4" />
+                <span>{label}</span>
               </button>
-            )}
+            ))}
           </div>
         </div>
 
         {/* Hàng 2: Phạm vi — Việc của tôi · Toàn CLB · từng ban (ban nhiều việc đứng trước) */}
-        <div className="px-3 sm:px-4 pb-3 flex items-center gap-2 overflow-x-auto md:flex-wrap md:overflow-visible [scrollbar-width:none]">
+        <div className="flex items-center gap-2 overflow-x-auto px-3 pb-3 [scrollbar-width:none] sm:px-4 md:flex-wrap md:overflow-visible">
           <button
+            type="button"
             onClick={() => {
               setOnlyMyTasks(!onlyMyTasks);
               if (!onlyMyTasks) setDept('all');
             }}
-            className={`${scopeChip} ${
-              onlyMyTasks
-                ? 'bg-amber-500 border-amber-500 text-white shadow-sm'
-                : 'bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100'
-            }`}
+            aria-pressed={onlyMyTasks}
+            className={`${scopeChip} ${onlyMyTasks ? scopeActive : scopeIdle}`}
             title="Chỉ hiển thị các công việc giao cho bạn"
           >
-            <span aria-hidden>⭐</span>
+            <Star className={`size-3.5 ${onlyMyTasks ? 'fill-current' : ''}`} />
             <span>Việc của tôi</span>
             <CountBadge value={myTasksCount} active={onlyMyTasks} />
           </button>
 
-          <span className="h-6 w-px bg-slate-200 shrink-0" aria-hidden />
+          <span className="h-5 w-px shrink-0 bg-border" aria-hidden />
 
           <button
+            type="button"
             onClick={() => {
               setOnlyMyTasks(false);
               setDept('all');
             }}
-            className={`${scopeChip} ${
-              !onlyMyTasks && selectedDept === 'all'
-                ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
-                : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-            }`}
+            aria-pressed={!onlyMyTasks && selectedDept === 'all'}
+            className={`${scopeChip} ${!onlyMyTasks && selectedDept === 'all' ? scopeActive : scopeIdle}`}
           >
             <span>Toàn CLB</span>
             <CountBadge value={tasks.length} active={!onlyMyTasks && selectedDept === 'all'} />
@@ -348,17 +334,13 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
             return (
               <button
                 key={dept}
+                type="button"
                 onClick={() => {
                   setOnlyMyTasks(false);
                   setDept(dept);
                 }}
-                className={`${scopeChip} ${
-                  isActive
-                    ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
-                    : total === 0
-                    ? 'bg-white border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50'
-                    : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                }`}
+                aria-pressed={isActive}
+                className={`${scopeChip} ${isActive ? scopeActive : total === 0 ? 'border-border bg-surface text-muted hover:bg-surface-2' : scopeIdle}`}
               >
                 <span>{dept === 'Ban Chủ nhiệm' ? dept : `Ban ${dept}`}</span>
                 <CountBadge value={total} active={isActive} />
@@ -369,33 +351,31 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
 
         {/* Hàng 3: Trạng thái — tab gạch chân; số đếm theo phạm vi đang chọn. Kanban đã chia cột theo trạng thái nên ẩn hàng này. */}
         {viewMode !== 'kanban' && (
-          <div className="border-t border-slate-100 px-1.5 sm:px-2.5 flex items-center gap-0.5 overflow-x-auto [scrollbar-width:none]" role="tablist" aria-label="Lọc theo trạng thái">
-            {STATUS_TABS.map(({ key, label, dot, activeText, activeBar, badge }) => {
+          <div className="flex items-center gap-1 overflow-x-auto border-t border-border px-2 [scrollbar-width:none] sm:px-3" role="tablist" aria-label="Lọc theo trạng thái">
+            {STATUS_TABS.map(({ key, label, dot }) => {
               const isActive = selectedStatus === key;
               const n = statusCounts[key];
               return (
                 <button
                   key={key}
+                  type="button"
                   role="tab"
                   aria-selected={isActive}
                   onClick={() => setStatus(key)}
-                  className={`relative px-3 py-3 text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
-                    isActive ? activeText : 'text-slate-500 hover:text-slate-800'
+                  className={`relative flex h-11 items-center gap-2 whitespace-nowrap px-3 text-[14px] font-medium transition cursor-pointer ${
+                    isActive ? 'text-fg' : 'text-muted hover:text-fg'
                   }`}
                 >
-                  {dot && <span className={`w-2 h-2 rounded-full ${dot}`} aria-hidden />}
+                  {dot && <span className={`size-2 rounded-full ${dot}`} aria-hidden />}
                   <span>{label}</span>
                   <span
-                    className={`min-w-[1.5rem] px-1.5 py-0.5 rounded-full text-xs font-bold text-center tabular-nums ${
-                      isActive ? badge : 'bg-slate-100 text-slate-500'
+                    className={`min-w-6 rounded-full px-1.5 text-center text-[12px] tabular-nums ${
+                      isActive ? 'bg-fg text-white' : 'bg-[#F2F4F7] text-muted'
                     }`}
                   >
                     {n}
                   </span>
-                  <span
-                    className={`absolute left-2 right-2 -bottom-px h-0.5 rounded-full transition ${isActive ? activeBar : 'bg-transparent'}`}
-                    aria-hidden
-                  />
+                  <span className={`absolute inset-x-2 -bottom-px h-0.5 rounded-full ${isActive ? 'bg-primary' : 'bg-transparent'}`} aria-hidden />
                 </button>
               );
             })}
@@ -405,23 +385,23 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
 
       {/* Đang lọc → cho biết còn bao nhiêu việc và cách bỏ lọc nhanh */}
       {hasActiveFilter && (
-        <div className="flex items-center justify-between gap-3 px-1 text-sm text-slate-600 animate-in fade-in duration-150">
+        <div className="flex items-center justify-between gap-3 px-1 text-[14px] text-muted animate-in fade-in duration-150">
           <span>
-            {onlyMyTasks && <span className="mr-1">⭐</span>}
-            Đang hiển thị <strong className="text-slate-900">{filteredTasks.length}</strong> việc
+            Đang hiển thị <strong className="font-semibold text-fg">{filteredTasks.length}</strong> việc
             {onlyMyTasks && ' được giao cho bạn'}
             {selectedDept !== 'all' && !onlyMyTasks && (
-              <> của <strong className="text-slate-900">{selectedDept === 'Ban Chủ nhiệm' ? selectedDept : `Ban ${selectedDept}`}</strong></>
+              <> của <strong className="font-semibold text-fg">{selectedDept === 'Ban Chủ nhiệm' ? selectedDept : `Ban ${selectedDept}`}</strong></>
             )}
             {searchQuery.trim() && (
-              <> khớp “<strong className="text-slate-900">{searchQuery.trim()}</strong>”</>
+              <> khớp “<strong className="font-semibold text-fg">{searchQuery.trim()}</strong>”</>
             )}
           </span>
           <button
+            type="button"
             onClick={clearFilters}
-            className="shrink-0 text-[#1F56D6] font-semibold hover:underline cursor-pointer flex items-center gap-1"
+            className="flex shrink-0 items-center gap-1 font-medium text-primary hover:underline cursor-pointer"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="size-3.5" />
             Xóa bộ lọc
           </button>
         </div>
@@ -433,7 +413,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
       {viewMode === 'grid' && (
         <>
           {filteredTasks.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {filteredTasks.map((task) => (
                 <TaskCard
                   key={task.id}
@@ -476,78 +456,42 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
       {viewMode === 'kanban' && (
         <div className="space-y-3 pb-4">
           {/* Thanh chuyển tab cột trạng thái trên Mobile (sm:hidden) */}
-          <div className="sm:hidden flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto [scrollbar-width:none] sticky top-14 z-10 shadow-xs">
-            <button
-              type="button"
-              onClick={() => setMobileKanbanTab('in_progress')}
-              className={`flex-1 min-w-[75px] py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
-                mobileKanbanTab === 'in_progress'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-              }`}
-            >
-              <span>Đang làm</span>
-              <span className={`text-[10px] px-1 rounded-full font-mono ${mobileKanbanTab === 'in_progress' ? 'bg-blue-700 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
-                {countInProgress}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMobileKanbanTab('pending_approval')}
-              className={`flex-1 min-w-[75px] py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
-                mobileKanbanTab === 'pending_approval'
-                  ? 'bg-amber-500 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-              }`}
-            >
-              <span>Chờ duyệt</span>
-              <span className={`text-[10px] px-1 rounded-full font-mono ${mobileKanbanTab === 'pending_approval' ? 'bg-amber-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
-                {countPending}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMobileKanbanTab('overdue')}
-              className={`flex-1 min-w-[75px] py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
-                mobileKanbanTab === 'overdue'
-                  ? 'bg-red-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-              }`}
-            >
-              <span>Quá hạn</span>
-              <span className={`text-[10px] px-1 rounded-full font-mono ${mobileKanbanTab === 'overdue' ? 'bg-red-700 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
-                {countOverdue}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMobileKanbanTab('completed')}
-              className={`flex-1 min-w-[75px] py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
-                mobileKanbanTab === 'completed'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-              }`}
-            >
-              <span>Đã xong</span>
-              <span className={`text-[10px] px-1 rounded-full font-mono ${mobileKanbanTab === 'completed' ? 'bg-emerald-700 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
-                {countCompleted}
-              </span>
-            </button>
+          <div className="sticky top-16 z-10 flex items-center gap-1 overflow-x-auto rounded-[10px] bg-[#F2F4F7] p-1 [scrollbar-width:none] sm:hidden" role="tablist" aria-label="Cột trạng thái">
+            {(
+              [
+                { key: 'in_progress', label: 'Đang làm', n: countInProgress, dot: 'bg-info-bar' },
+                { key: 'pending_approval', label: 'Chờ duyệt', n: countPending, dot: 'bg-warning-bar' },
+                { key: 'overdue', label: 'Quá hạn', n: countOverdue, dot: 'bg-danger-bar' },
+                { key: 'completed', label: 'Đã xong', n: countCompleted, dot: 'bg-success-bar' },
+              ] as const
+            ).map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                role="tab"
+                aria-selected={mobileKanbanTab === t.key}
+                onClick={() => setMobileKanbanTab(t.key)}
+                className={`flex h-8 shrink-0 grow items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-medium transition cursor-pointer ${
+                  mobileKanbanTab === t.key ? 'bg-surface text-fg shadow-[0_1px_2px_rgba(16,24,40,0.08)]' : 'text-muted'
+                }`}
+              >
+                <i className={`size-1.5 rounded-full ${t.dot}`} aria-hidden />
+                <span>{t.label}</span>
+                <span className="tabular-nums text-muted">{t.n}</span>
+              </button>
+            ))}
           </div>
 
           {/* Lưới cột Kanban: Trên mobile chỉ hiển thị cột đang chọn; trên tablet/desktop hiển thị đủ lưới */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4.5 sm:gap-5 xl:gap-6 items-start">
+          <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {/* Cột 1: Đang làm */}
             <div className={mobileKanbanTab === 'in_progress' ? 'block' : 'hidden sm:block'}>
               <KanbanColumn
-                title="Đang thực hiện"
-                icon={<Clock className="w-4 h-4 text-blue-600" />}
+                title="Đang làm"
+                icon={<i className="size-2 rounded-full bg-info-bar" />}
                 badgeCount={baseTasks.filter((t) => t.status === 'in_progress' && (selectedDept === 'all' || t.department === selectedDept)).length}
-                headerColor="bg-blue-50 border-blue-200 text-blue-800"
-                badgeColor="bg-blue-100 text-blue-800"
+                headerColor=""
+                badgeColor=""
                 tasks={filteredTasks.filter((t) => t.status === 'in_progress')}
                 members={members}
                 currentRole={currentRole}
@@ -567,11 +511,11 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
             {/* Cột 2: Chờ duyệt */}
             <div className={mobileKanbanTab === 'pending_approval' ? 'block' : 'hidden sm:block'}>
               <KanbanColumn
-                title="Chờ duyệt minh chứng"
-                icon={<Clock className="w-4 h-4 text-amber-600" />}
+                title="Chờ duyệt"
+                icon={<i className="size-2 rounded-full bg-warning-bar" />}
                 badgeCount={baseTasks.filter((t) => t.status === 'pending_approval' && (selectedDept === 'all' || t.department === selectedDept)).length}
-                headerColor="bg-amber-50 border-amber-200 text-amber-900"
-                badgeColor="bg-amber-100 text-amber-800"
+                headerColor=""
+                badgeColor=""
                 tasks={filteredTasks.filter((t) => t.status === 'pending_approval')}
                 members={members}
                 currentRole={currentRole}
@@ -592,10 +536,10 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
             <div className={mobileKanbanTab === 'overdue' ? 'block' : 'hidden sm:block'}>
               <KanbanColumn
                 title="Quá hạn"
-                icon={<AlertTriangle className="w-4 h-4 text-red-600" />}
+                icon={<i className="size-2 rounded-full bg-danger-bar" />}
                 badgeCount={baseTasks.filter((t) => t.status === 'overdue' && (selectedDept === 'all' || t.department === selectedDept)).length}
-                headerColor="bg-red-50 border-red-200 text-red-900"
-                badgeColor="bg-red-100 text-red-700"
+                headerColor=""
+                badgeColor=""
                 tasks={filteredTasks.filter((t) => t.status === 'overdue')}
                 members={members}
                 currentRole={currentRole}
@@ -615,11 +559,11 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
             {/* Cột 4: Đã xong */}
             <div className={mobileKanbanTab === 'completed' ? 'block' : 'hidden sm:block'}>
               <KanbanColumn
-                title="Đã hoàn thành"
-                icon={<CheckCircle2 className="w-4 h-4 text-emerald-600" />}
+                title="Đã xong"
+                icon={<i className="size-2 rounded-full bg-success-bar" />}
                 badgeCount={baseTasks.filter((t) => t.status === 'completed' && (selectedDept === 'all' || t.department === selectedDept)).length}
-                headerColor="bg-emerald-50 border-emerald-200 text-emerald-900"
-                badgeColor="bg-emerald-100 text-emerald-800"
+                headerColor=""
+                badgeColor=""
                 tasks={filteredTasks.filter((t) => t.status === 'completed')}
                 members={members}
                 currentRole={currentRole}
@@ -645,21 +589,21 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
       {viewMode === 'table' && (
         <>
           {filteredTasks.length > 0 ? (
-            <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+            <div className="overflow-hidden rounded-2xl border border-border bg-surface">
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
+                <table className="w-full border-collapse text-left text-[13px]">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
-                      <th className="py-3 px-4">Tên nhiệm vụ</th>
-                      <th className="py-3 px-3">Ban</th>
-                      <th className="py-3 px-3">Người phụ trách</th>
-                      <th className="py-3 px-3">Hạn chót</th>
-                      <th className="py-3 px-3">Xác minh</th>
-                      <th className="py-3 px-3">Trạng thái</th>
-                      <th className="py-3 px-4 text-center">Thao tác</th>
+                    <tr className="whitespace-nowrap border-b border-border bg-surface-2 text-[12px] font-medium text-muted">
+                      <th className="px-4 py-3 font-medium">Tên việc</th>
+                      <th className="px-3 py-3 font-medium">Ban</th>
+                      <th className="px-3 py-3 font-medium">Người phụ trách</th>
+                      <th className="px-3 py-3 font-medium">Hạn chót</th>
+                      <th className="hidden px-3 py-3 font-medium 2xl:table-cell">Minh chứng</th>
+                      <th className="px-3 py-3 font-medium">Trạng thái</th>
+                      <th className="px-4 py-3 text-right font-medium">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-border">
                     {filteredTasks.map((task) => {
                       const daysInfo = getDaysRemaining(task.deadline);
                       const isPresident = currentRole === 'Chủ nhiệm';
@@ -706,167 +650,94 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                           }}
                           tabIndex={onOpenDetail ? 0 : undefined}
                           title="Bấm để xem chi tiết"
-                          className={`transition group ${
+                          className={`group transition ${
                             onOpenDetail
-                              ? 'cursor-pointer hover:bg-blue-50/50 focus-visible:outline-none focus-visible:bg-blue-50/70'
-                              : 'hover:bg-slate-50/80'
+                              ? 'cursor-pointer hover:bg-surface-2 focus-visible:bg-primary-light/60 focus-visible:outline-none'
+                              : 'hover:bg-surface-2'
                           }`}
                         >
-                          {/* 1. Tên nhiệm vụ */}
-                          <td className="py-3 px-4 max-w-xs">
+                          {/* 1. Tên việc */}
+                          <td className="max-w-[280px] px-4 py-3">
                             <div
-                              className={`font-semibold text-slate-900 group-hover:text-[#2C69FF] line-clamp-1 ${task.status === 'completed' ? 'line-through text-slate-400' : ''
-                                }`}
+                              className={`line-clamp-1 font-medium group-hover:text-primary ${task.status === 'completed' ? 'text-muted line-through' : 'text-fg'}`}
                               title={task.title}
                             >
                               {task.title}
                             </div>
                             {task.description && (
-                              <div className="text-[11px] text-slate-500 truncate mt-0.5" title={task.description}>
+                              <div className="mt-0.5 truncate text-[12px] text-muted" title={task.description}>
                                 {task.description}
                               </div>
                             )}
                           </td>
 
                           {/* 2. Ban */}
-                          <td className="py-3 px-3 whitespace-nowrap">
-                            <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border ${departmentColorMap[task.department] || 'bg-slate-100 text-slate-700'}`}>
-                              {task.department}
-                            </span>
+                          <td className="whitespace-nowrap px-3 py-3">
+                            <DeptLabel department={task.department} />
                           </td>
 
                           {/* 3. Người phụ trách */}
-                          <td className="py-3 px-3 whitespace-nowrap">
-                            <div className="flex items-center gap-1.5">
-                              {finalAssigneeNames.length > 1 ? (
-                                <Users className="w-3.5 h-3.5 text-[#2C69FF] shrink-0" />
-                              ) : (
-                                <User className="w-3.5 h-3.5 text-[#2C69FF] shrink-0" />
-                              )}
-                              {finalAssigneeNames.length > 0 && (
-                                <span
-                                  className="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-50 text-[#1F56D6] border border-blue-200 text-[11px] font-semibold truncate max-w-[130px]"
-                                  title={finalAssigneeNames[0]}
-                                >
-                                  {finalAssigneeNames[0]}
-                                </span>
-                              )}
-                              {finalAssigneeNames.length > 1 && (
-                                <span
-                                  className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-blue-100 hover:bg-blue-200 text-[#1F56D6] border border-blue-300 text-[10px] font-bold cursor-help transition shadow-2xs shrink-0"
-                                  title={`Còn lại ${finalAssigneeNames.length - 1} người phụ trách:\n• ${finalAssigneeNames.slice(1).join('\n• ')}`}
-                                >
-                                  +{finalAssigneeNames.length - 1}
-                                </span>
-                              )}
-                            </div>
+                          <td className="max-w-[190px] whitespace-nowrap px-3 py-3">
+                            <AssigneeLine names={finalAssigneeNames} />
                           </td>
 
-                          {/* 4. Hạn chót & Còn lại */}
-                          <td className="py-3 px-3 whitespace-nowrap">
-                            <div className="flex flex-col gap-0.5">
-                              <span className="font-mono text-slate-700 font-medium">
-                                {formatDateVN(task.deadline)}
-                              </span>
-                              {task.status !== 'completed' && (
-                                <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold border w-fit ${daysInfo.badgeColor}`}>
-                                  {daysInfo.label}
-                                </span>
-                              )}
-                            </div>
+                          {/* 4. Hạn chót & còn lại */}
+                          <td className="whitespace-nowrap px-3 py-3">
+                            <DueText deadline={task.deadline} status={task.status} />
                           </td>
 
-                          {/* 5. Loại xác minh */}
-                          <td className="py-3 px-3 whitespace-nowrap">
-                            {task.verificationType === 'link_required' ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 font-semibold">
-                                <LinkIcon className="w-3 h-3" />
-                                <span>Link URL</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 text-[11px] text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 font-semibold">
-                                <FileCheck className="w-3 h-3" />
-                                <span>Báo cáo 2 câu</span>
-                              </span>
-                            )}
-                          </td>
-
-                          {/* 6. Trạng thái */}
-                          <td className="py-3 px-3 whitespace-nowrap">
-                            <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${statusBadgeMap[task.status]?.color || 'bg-slate-100 text-slate-700'}`}>
-                              {statusBadgeMap[task.status]?.label || task.status}
+                          {/* 5. Loại minh chứng */}
+                          <td className="hidden whitespace-nowrap px-3 py-3 text-[12px] text-muted 2xl:table-cell">
+                            <span className="inline-flex items-center gap-1">
+                              {task.verificationType === 'link_required' ? <LinkIcon className="size-3.5" /> : <FileCheck className="size-3.5" />}
+                              {task.verificationType === 'link_required' ? 'Link' : 'Báo cáo'}
                             </span>
                           </td>
 
+                          {/* 6. Trạng thái */}
+                          <td className="whitespace-nowrap px-3 py-3">
+                            <StatusChip status={task.status} />
+                          </td>
+
                           {/* 7. Thao tác */}
-                          <td className="py-3 px-4 whitespace-nowrap align-middle">
-                            {/* Các nút trên một hàng, căn giữa ô (bấm vào hàng đã mở chi tiết nên bỏ nút "Xem chi tiết") */}
-                            <div className="flex items-center justify-center gap-1.5 flex-nowrap">
-                              {/* 1. Nộp minh chứng (chỉ cho người phụ trách) */}
+                          <td className="whitespace-nowrap px-4 py-3 align-middle">
+                            {/* Các nút trên một hàng (bấm vào hàng đã mở chi tiết nên bỏ nút "Xem chi tiết") */}
+                            <div className="flex flex-nowrap items-center justify-end gap-1">
                               {canSubmit && task.status !== 'completed' && task.status !== 'pending_approval' && (
-                                <button
-                                  onClick={() => onOpenSubmitModal(task)}
-                                  className="px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 bg-[#2C69FF] hover:bg-[#1F56D6] text-white shadow-xs transition active:scale-95 cursor-pointer"
-                                  title="Nộp minh chứng"
-                                >
-                                  <Send className="w-3 h-3" />
-                                  <span>Nộp</span>
+                                <button type="button" onClick={() => onOpenSubmitModal(task)} className={btnPrimarySm} title="Nộp minh chứng">
+                                  <Send className="size-3.5" />
+                                  Nộp
                                 </button>
                               )}
-
-                              {/* 2. Nhắc nộp (cho Ban quản lý khi chưa hoàn thành) */}
                               {canRemind && (task.status === 'in_progress' || task.status === 'overdue') && onRemindTask && (
                                 <button
+                                  type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     onRemindTask(task);
                                   }}
-                                  className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs transition active:scale-95 cursor-pointer ${
-                                    task.status === 'overdue'
-                                      ? 'bg-red-500 hover:bg-red-600 text-white'
-                                      : 'bg-amber-500 hover:bg-amber-600 text-white'
-                                  }`}
+                                  className={btnOutlineSm}
                                   title="Gửi thông báo nhắc nộp minh chứng"
                                 >
-                                  <Bell className="w-3 h-3" />
-                                  <span>Nhắc nộp</span>
+                                  <Bell className="size-3.5" />
+                                  Nhắc nộp
                                 </button>
                               )}
-
-                              {/* 3. Kiểm tra (cho Ban quản lý khi chờ duyệt) */}
                               {task.status === 'pending_approval' && canReview && (
-                                <button
-                                  onClick={() => onOpenReviewModal(task)}
-                                  className="px-2.5 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 text-xs font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer"
-                                  title="Kiểm tra minh chứng"
-                                >
-                                  <ShieldCheck className="w-3.5 h-3.5" />
-                                  <span>Kiểm tra</span>
+                                <button type="button" onClick={() => onOpenReviewModal(task)} className={btnSoftSm} title="Kiểm tra minh chứng">
+                                  <ShieldCheck className="size-3.5" />
+                                  Kiểm tra
                                 </button>
                               )}
-
-                              {/* 3b. Xin sửa / phản hồi yêu cầu sửa minh chứng */}
                               <UpdateRequestAction task={task} isAssignee={isAssignee} canReview={canReview} onUpdateRequest={onUpdateRequest} compact />
-
-                              {/* Duyệt nhanh (Chủ nhiệm) */}
                               {isPresident && task.status !== 'completed' && task.status !== 'pending_approval' && onQuickApprove && (
-                                <button
-                                  onClick={() => onQuickApprove(task.id)}
-                                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-emerald-100 text-slate-500 hover:text-emerald-700 border border-slate-200 transition cursor-pointer"
-                                  title="Duyệt nhanh hoàn thành"
-                                >
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                <button type="button" onClick={() => onQuickApprove(task.id)} className={`${iconBtnSm} hover:text-success`} title="Duyệt nhanh hoàn thành" aria-label="Duyệt nhanh hoàn thành">
+                                  <CheckCircle2 className="size-4" />
                                 </button>
                               )}
-
-                              {/* Xóa việc (Chủ nhiệm) */}
                               {isPresident && (
-                                <button
-                                  onClick={() => onDeleteTask(task.id)}
-                                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-red-100 text-slate-400 hover:text-red-600 border border-slate-200 transition cursor-pointer"
-                                  title="Xóa nhiệm vụ"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
+                                <button type="button" onClick={() => onDeleteTask(task.id)} className={`${iconBtnSm} hover:text-danger`} title="Xóa nhiệm vụ" aria-label="Xóa nhiệm vụ">
+                                  <Trash2 className="size-4" />
                                 </button>
                               )}
                             </div>
@@ -966,25 +837,20 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   const remainingCount = tasks.length - displayLimit;
 
   return (
-    <div className="bg-slate-50/80 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col p-3 sm:p-3.5 min-w-[275px] sm:min-w-[285px] xl:min-w-[305px]">
-      {/* Column Header */}
-      <div className={`p-2.5 sm:p-3 rounded-xl border flex items-center justify-between mb-3 shadow-2xs ${headerColor}`}>
-        <div className="flex items-center gap-1.5 font-bold text-xs sm:text-[13px]">
+    <div className="flex min-w-[275px] flex-col rounded-2xl bg-[#F2F4F7] p-2.5 sm:min-w-[285px] xl:min-w-[290px]">
+      {/* Đầu cột: chấm màu trạng thái · tên · số việc */}
+      <div className={`mb-2.5 flex items-center justify-between px-1.5 pt-1 ${headerColor}`}>
+        <div className="flex items-center gap-2 text-[14px] font-semibold text-fg">
           {icon}
           <span>{title}</span>
         </div>
-        <div className="flex items-center gap-1">
-          <span
-            className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${badgeColor}`}
-            title={`Tổng số công việc: ${tasks.length}`}
-          >
-            {tasks.length > displayLimit ? `${displayLimit}/${tasks.length}` : badgeCount}
-          </span>
-        </div>
+        <span className={`rounded-full bg-surface px-2 text-[12px] font-medium tabular-nums text-muted ring-1 ring-border ${badgeColor}`} title={`Tổng số công việc: ${tasks.length}`}>
+          {tasks.length > displayLimit ? `${displayLimit}/${tasks.length}` : badgeCount}
+        </span>
       </div>
 
       {/* Column Tasks Stack */}
-      <div className="flex-1 space-y-2.5 sm:space-y-3 min-h-[220px]">
+      <div className="min-h-[220px] flex-1 space-y-2">
         {visibleTasks.length > 0 ? (
           visibleTasks.map((task) => {
             const daysInfo = getDaysRemaining(task.deadline);
@@ -1017,153 +883,80 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
             return (
               <div
                 key={task.id}
-                className="bg-white dark:bg-slate-900 rounded-xl p-3 sm:p-3.5 border border-slate-200 dark:border-slate-800 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm transition-all duration-150 space-y-2.5 relative"
+                className={`space-y-2.5 rounded-xl border border-border p-3 transition hover:border-border-strong ${task.status === 'completed' ? 'bg-surface-2/70' : 'bg-surface'}`}
               >
-                {/* Top strip: Department & Countdown */}
-                <div className="flex items-center justify-between gap-1 text-[11px]">
-                  <span className={`px-2 py-0.5 rounded-md font-semibold border ${departmentColorMap[task.department] || 'bg-slate-100 text-slate-700'}`}>
-                    {task.department}
-                  </span>
-                  {task.status !== 'completed' && (
-                    <span className={`px-1.5 py-0.5 rounded-md font-semibold border text-[11px] flex items-center gap-1 ${daysInfo.badgeColor}`}>
-                      <Clock className="w-2.5 h-2.5 shrink-0" />
-                      <span>{daysInfo.label}</span>
-                    </span>
-                  )}
-                </div>
+                <DeptLabel department={task.department} />
 
-                {/* Task Title */}
-                <h4
+                <button
+                  type="button"
                   onClick={() => onOpenDetail && onOpenDetail(task)}
-                  className={`font-semibold text-xs leading-snug cursor-pointer hover:text-[#2C69FF] transition ${task.status === 'completed' ? 'text-slate-400 line-through' : 'text-slate-900 dark:text-slate-100'
-                    }`}
+                  className={`block w-full text-left text-[13px] font-semibold leading-snug transition hover:text-primary cursor-pointer ${
+                    task.status === 'completed' ? 'text-muted line-through' : 'text-fg'
+                  }`}
                   title="Bấm để xem chi tiết"
                 >
                   {task.title}
-                </h4>
+                </button>
 
-                {/* Assignee & Deadline row */}
-                <div className="text-[11px] text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/60 space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-1">
-                    {finalAssigneeNames.length > 1 ? (
-                      <Users className="w-3 h-3 text-[#2C69FF] shrink-0" />
-                    ) : (
-                      <User className="w-3 h-3 text-[#2C69FF] shrink-0" />
-                    )}
-                    {finalAssigneeNames.length > 0 && (
-                      <span
-                        className="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-900/40 text-[#1F56D6] dark:text-[#8FB2FF] border border-blue-200 dark:border-blue-800 text-[10px] font-medium truncate max-w-[170px]"
-                        title={finalAssigneeNames[0]}
-                      >
-                        {finalAssigneeNames[0]}
-                      </span>
-                    )}
-                    {finalAssigneeNames.length > 1 && (
-                      <span
-                        className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-[#1F56D6] dark:text-[#8FB2FF] border border-blue-300 dark:border-blue-700 text-[10px] font-bold cursor-help transition shadow-2xs shrink-0"
-                        title={`Còn lại ${finalAssigneeNames.length - 1} người phụ trách:\n• ${finalAssigneeNames.slice(1).join('\n• ')}`}
-                      >
-                        +{finalAssigneeNames.length - 1}
-                      </span>
-                    )}
-                    {/* Trạng thái chờ duyệt (chỉ là nhãn, không bấm được) — đặt cạnh người phụ trách cho gọn hàng nút */}
-                    {task.status === 'pending_approval' && !canReview && (
-                      <span className="ml-auto px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 text-[10px] font-semibold flex items-center gap-0.5 shrink-0">
-                        <Clock className="w-2.5 h-2.5 text-amber-600" />
-                        <span>Chờ duyệt</span>
-                      </span>
-                    )}
+                <div className="space-y-1.5">
+                  <div className="flex min-w-0">
+                    <AssigneeLine names={finalAssigneeNames} />
                   </div>
-                  <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-700/50 text-[10px]">
-                    <span className="text-slate-400 flex items-center gap-1 font-medium">
-                      <Calendar className="w-3 h-3 text-slate-400" />
-                      <span>Hạn chót:</span>
-                    </span>
-                    <span className="font-mono text-slate-700 dark:text-slate-300 font-semibold">{formatDateVN(task.deadline)}</span>
+                  <div className="flex min-w-0">
+                    <DueText deadline={task.deadline} status={task.status} />
                   </div>
                 </div>
 
-                {/* Bottom Actions */}
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-1 text-[11px]">
-                  <div className="text-[10px] text-slate-400 truncate max-w-[90px]" title={task.sourceMeetingTitle}>
-                    {task.verificationType === 'link_required' ? '🔗 Link URL' : '📝 Báo cáo'}
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    {/* Nộp bài */}
+                {(canSubmit && task.status !== 'completed' && task.status !== 'pending_approval') ||
+                (canRemind && (task.status === 'in_progress' || task.status === 'overdue') && onRemindTask) ||
+                (task.status === 'pending_approval' && (canReview || isAssignee)) ||
+                isPresident ? (
+                  <div className="flex items-center justify-end gap-1 border-t border-border pt-2.5">
                     {canSubmit && task.status !== 'completed' && task.status !== 'pending_approval' && (
-                      <button
-                        onClick={() => onOpenSubmitModal(task)}
-                        className="px-2.5 py-1 rounded-md text-[11px] font-bold flex items-center gap-1 bg-[#2C69FF] hover:bg-[#1F56D6] text-white shadow-2xs transition active:scale-95 cursor-pointer"
-                      >
-                        <Send className="w-3 h-3" />
-                        <span>Nộp</span>
+                      <button type="button" onClick={() => onOpenSubmitModal(task)} className={btnPrimarySm}>
+                        <Send className="size-3.5" />
+                        Nộp
                       </button>
                     )}
-
-                    {/* Nhắc nộp (cho Ban quản lý khi chưa xong) */}
                     {canRemind && (task.status === 'in_progress' || task.status === 'overdue') && onRemindTask && (
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           onRemindTask(task);
                         }}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer shadow-2xs ${
-                          task.status === 'overdue'
-                            ? 'bg-red-500 hover:bg-red-600 text-white'
-                            : 'bg-amber-500 hover:bg-amber-600 text-white'
-                        }`}
+                        className={btnOutlineSm}
                         title="Gửi thông báo nhắc nộp minh chứng"
                       >
-                        <Bell className="w-3 h-3" />
-                        <span>Nhắc nộp</span>
+                        <Bell className="size-3.5" />
+                        Nhắc nộp
                       </button>
                     )}
-
-                    {/* Kiểm tra */}
                     {task.status === 'pending_approval' && canReview && (
-                      <button
-                        onClick={() => onOpenReviewModal(task)}
-                        className="px-2.5 py-1 rounded-md bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30 dark:hover:bg-amber-500/25 text-[11px] font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer"
-                        title="Kiểm tra minh chứng"
-                      >
-                        <ShieldCheck className="w-3 h-3" />
-                        <span>Kiểm tra</span>
+                      <button type="button" onClick={() => onOpenReviewModal(task)} className={btnSoftSm} title="Kiểm tra minh chứng">
+                        <ShieldCheck className="size-3.5" />
+                        Kiểm tra
                       </button>
                     )}
-
-                    {/* Xin sửa / phản hồi yêu cầu sửa minh chứng */}
                     <UpdateRequestAction task={task} isAssignee={isAssignee} canReview={canReview} onUpdateRequest={onUpdateRequest} compact />
-
-                    {/* Duyệt nhanh (Chủ nhiệm) */}
                     {isPresident && task.status !== 'completed' && task.status !== 'pending_approval' && onQuickApprove && (
-                      <button
-                        onClick={() => onQuickApprove(task.id)}
-                        className="p-1 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-emerald-100 dark:hover:bg-emerald-950/40 text-slate-500 hover:text-emerald-700 dark:hover:text-emerald-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-                        title="Duyệt nhanh"
-                      >
-                        <CheckCircle2 className="w-3 h-3" />
+                      <button type="button" onClick={() => onQuickApprove(task.id)} className={`${iconBtnSm} hover:text-success`} title="Duyệt nhanh" aria-label="Duyệt nhanh">
+                        <CheckCircle2 className="size-4" />
                       </button>
                     )}
-
-                    {/* Xóa việc (Chủ nhiệm) */}
                     {isPresident && (
-                      <button
-                        onClick={() => onDeleteTask(task.id)}
-                        className="p-1 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-red-100 dark:hover:bg-red-950/40 text-slate-400 hover:text-red-600 dark:hover:text-red-400 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-                        title="Xóa nhiệm vụ"
-                      >
-                        <Trash2 className="w-3 h-3" />
+                      <button type="button" onClick={() => onDeleteTask(task.id)} className={`${iconBtnSm} hover:text-danger`} title="Xóa nhiệm vụ" aria-label="Xóa nhiệm vụ">
+                        <Trash2 className="size-4" />
                       </button>
                     )}
                   </div>
-                </div>
+                ) : null}
               </div>
             );
           })
         ) : (
-          <div className="h-32 flex flex-col items-center justify-center text-slate-400 text-xs text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-4">
-            <span className="text-base mb-1">📭</span>
+          <div className="flex h-32 flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border-strong p-4 text-center text-[13px] text-muted">
+            <Inbox className="size-5" />
             <span>Chưa có việc nào</span>
           </div>
         )}
@@ -1176,7 +969,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
                 <button
                   type="button"
                   onClick={() => setDisplayLimit((prev) => prev + 5)}
-                  className="flex-1 py-1.5 px-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-[#2C69FF] hover:text-[#2C69FF] text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition active:scale-98 cursor-pointer shadow-2xs"
+                  className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 text-[13px] font-medium text-fg-2 transition hover:bg-surface-2 hover:text-fg cursor-pointer"
                   title={`Hiển thị thêm 5 việc tiếp theo (còn ${remainingCount} việc)`}
                 >
                   <span>Xem thêm ({Math.min(5, remainingCount)}/{remainingCount} việc)</span>
@@ -1185,7 +978,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
                 <button
                   type="button"
                   onClick={() => setDisplayLimit(tasks.length)}
-                  className="py-1.5 px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold transition active:scale-98 cursor-pointer whitespace-nowrap"
+                  className="h-9 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-medium text-muted transition hover:bg-surface hover:text-fg cursor-pointer"
                   title="Hiện tất cả việc trong cột này"
                 >
                   Tất cả ({tasks.length})
@@ -1195,7 +988,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
               <button
                 type="button"
                 onClick={() => setDisplayLimit(INITIAL_LIMIT)}
-                className="w-full py-1.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition active:scale-98 cursor-pointer"
+                className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg px-3 text-[13px] font-medium text-muted transition hover:bg-surface hover:text-fg cursor-pointer"
                 title={`Thu gọn lại ${INITIAL_LIMIT} việc ban đầu`}
               >
                 <span>Thu gọn về {INITIAL_LIMIT} việc</span>
@@ -1230,42 +1023,40 @@ const EmptyTaskState: React.FC<EmptyTaskStateProps> = ({
   onOpenBBHParser,
 }) => {
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-12 text-center space-y-4 shadow-sm">
-      <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
-        {onlyMyTasks ? <span className="text-2xl">🎉</span> : <Layers className="w-6 h-6" />}
-      </div>
-      <div>
-        <h3 className="text-base font-bold text-slate-800">
-          {onlyMyTasks
-            ? 'Tuyệt vời! Bạn không có nhiệm vụ nào tồn đọng'
-            : 'Không tìm thấy công việc nào phù hợp'}
-        </h3>
-        <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-          {onlyMyTasks
-            ? 'Tất cả nhiệm vụ của bạn đã hoàn thành hoặc chưa có việc mới được giao.'
-            : searchQuery || selectedStatus !== 'all' || selectedDept !== 'all'
-              ? 'Thử xóa bộ lọc tìm kiếm hoặc chuyển sang ban khác để xem công việc.'
-              : 'Chưa có công việc nào trong hệ thống. Hãy tải lên Biên bản họp để AI tự động trích xuất!'}
-        </p>
-      </div>
+    <div className="flex flex-col items-center rounded-2xl border border-border bg-surface px-6 py-14 text-center">
+      <span className="flex size-12 items-center justify-center rounded-full bg-surface-2 text-muted ring-1 ring-border">
+        {onlyMyTasks ? <CheckCircle2 className="size-6 text-success" /> : <Layers className="size-6" />}
+      </span>
+      <h3 className="mt-4 font-display text-[18px] font-bold text-fg">
+        {onlyMyTasks ? 'Bạn không còn việc nào tồn đọng' : 'Không có việc nào khớp bộ lọc'}
+      </h3>
+      <p className="mx-auto mt-1 max-w-md text-[14px] text-muted">
+        {onlyMyTasks
+          ? 'Tất cả việc của bạn đã xong hoặc chưa có việc mới được giao.'
+          : searchQuery || selectedStatus !== 'all' || selectedDept !== 'all'
+            ? 'Thử xoá bộ lọc hoặc chuyển sang ban khác.'
+            : 'Chưa có việc nào trong hệ thống. Nhập biên bản họp để AI tự tách thành việc.'}
+      </p>
 
-      <div className="flex items-center justify-center gap-3 pt-2">
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
         {(searchQuery || selectedStatus !== 'all' || selectedDept !== 'all' || onlyMyTasks) && (
           <button
+            type="button"
             onClick={onResetFilters}
-            className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer"
+            className="inline-flex h-10 items-center rounded-[10px] border border-border-strong bg-surface px-3.5 text-[14px] font-medium text-fg-2 transition hover:bg-surface-2 cursor-pointer"
           >
-            {onlyMyTasks ? 'Xem toàn bộ công việc CLB →' : 'Xóa tất cả bộ lọc'}
+            {onlyMyTasks ? 'Xem toàn bộ việc CLB' : 'Xóa bộ lọc'}
           </button>
         )}
 
         {!onlyMyTasks && (
           <button
+            type="button"
             onClick={onOpenBBHParser}
-            className="px-4 py-2 rounded-lg bg-[#2C69FF] hover:bg-[#1F56D6] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+            className="btn-primary inline-flex h-10 items-center gap-2 rounded-[10px] px-3.5 text-[14px] font-medium transition cursor-pointer"
           >
-            <Sparkles className="w-4 h-4" />
-            <span>Nhập Biên bản họp mới</span>
+            <Sparkles className="size-4" />
+            Nhập biên bản họp
           </button>
         )}
       </div>
