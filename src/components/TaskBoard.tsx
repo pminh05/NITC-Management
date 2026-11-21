@@ -594,6 +594,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 <table className="w-full border-collapse text-left text-[13px]">
                   <thead>
                     <tr className="whitespace-nowrap border-b border-border bg-surface-2 text-[12px] font-medium text-muted">
+                      <th className="w-12 py-3 pl-4 pr-1 text-right font-medium">STT</th>
                       <th className="px-4 py-3 font-medium">Tên việc</th>
                       <th className="px-3 py-3 font-medium">Ban</th>
                       <th className="px-3 py-3 font-medium">Người phụ trách</th>
@@ -604,7 +605,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {filteredTasks.map((task) => {
+                    {filteredTasks.map((task, index) => {
                       const daysInfo = getDaysRemaining(task.deadline);
                       const isPresident = currentRole === 'Chủ nhiệm';
                       const isVicePresident = currentRole === 'Phó Chủ nhiệm';
@@ -656,6 +657,9 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                               : 'hover:bg-surface-2'
                           }`}
                         >
+                          {/* 0. Số thứ tự (theo danh sách đang hiện) */}
+                          <td className="w-12 py-3 pl-4 pr-1 text-right text-[13px] tabular-nums text-muted">{index + 1}</td>
+
                           {/* 1. Tên việc */}
                           <td className="max-w-[280px] px-4 py-3">
                             <div
