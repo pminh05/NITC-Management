@@ -33,7 +33,7 @@ import { formatDateVN, getDaysRemaining } from '../utils/dateUtils';
 import { AssigneeMultiSelect } from './AssigneeMultiSelect';
 import { TaskCard } from './TaskCard';
 import { QuickAddTaskModal } from './QuickAddTaskModal';
-import { AssigneeLine, DeptLabel, DueText, StatusChip, btnOutlineSm, btnPrimarySm, btnSoftSm, iconBtnSm } from './taskUi';
+import { AssigneeLine, DeptLabel, DueText, StatusChip, btnPrimarySm, btnRemindSm, btnSoftSm, iconBtnSm } from './taskUi';
 
 export type ViewMode = 'grid' | 'kanban' | 'table';
 
@@ -716,7 +716,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                                     e.stopPropagation();
                                     onRemindTask(task);
                                   }}
-                                  className={btnOutlineSm}
+                                  className={btnRemindSm}
                                   title="Gửi thông báo nhắc nộp minh chứng"
                                 >
                                   <Bell className="size-3.5" />
@@ -961,7 +961,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
                           e.stopPropagation();
                           onRemindTask(task);
                         }}
-                        className={btnOutlineSm}
+                        className={btnRemindSm}
                         title="Gửi thông báo nhắc nộp minh chứng"
                       >
                         <Bell className="size-3.5" />

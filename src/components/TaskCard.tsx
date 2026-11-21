@@ -21,7 +21,7 @@ import {
 import { Department, Role, Task, Member } from '../types';
 import { canReviewTask } from '../../shared/permissions';
 import { UpdateRequestAction } from './UpdateRequestAction';
-import { AssigneeLine, DeptLabel, DueText, StatusChip, btnOutlineSm, btnPrimarySm, btnSoftSm, iconBtnSm } from './taskUi';
+import { AssigneeLine, DeptLabel, DueText, StatusChip, btnPrimarySm, btnRemindSm, btnSoftSm, iconBtnSm } from './taskUi';
 
 interface TaskCardProps {
   task: Task;
@@ -223,7 +223,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 onRemindTask(task);
               }}
-              className={btnOutlineSm}
+              className={btnRemindSm}
               title="Gửi thông báo nhắc nộp minh chứng đến người phụ trách"
             >
               <Bell className="size-3.5" />

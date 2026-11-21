@@ -236,7 +236,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
             {canRemind && (task.status === 'in_progress' || task.status === 'overdue') && onRemindTask && (
               <button
                 onClick={() => onRemindTask(task)}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border-strong bg-surface px-3.5 text-[13px] font-medium text-fg-2 transition hover:bg-surface-2 hover:text-fg cursor-pointer"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-[13px] font-medium transition cursor-pointer border border-warning-bar/40 bg-warning-bg text-warning hover:bg-[#FEF0C7] hover:border-warning-bar/60"
               >
                 <Bell className="w-3.5 h-3.5" />
                 <span>Nhắc nộp việc này</span>

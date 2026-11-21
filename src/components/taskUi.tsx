@@ -103,5 +103,7 @@ export const btnSm = 'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg p
 export const btnPrimarySm = `${btnSm} btn-primary`;
 export const btnSoftSm = `${btnSm} bg-primary-light text-primary hover:bg-primary/15`;
 export const btnOutlineSm = `${btnSm} border border-border-strong bg-surface text-fg-2 hover:bg-surface-2 hover:text-fg`;
+/** Nhắc nộp: nền vàng nhạt, chữ hổ phách — nổi hơn nút viền nhưng không đỏ rực */
+export const btnRemindSm = `${btnSm} border border-warning-bar/40 bg-warning-bg text-warning hover:bg-[#FEF0C7] hover:border-warning-bar/60`;
 export const iconBtnSm =
   'inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-surface-2 cursor-pointer';

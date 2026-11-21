@@ -478,7 +478,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                         <button
                           type="button"
                           onClick={() => onRemind(t)}
-                          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-[13px] font-medium text-fg-2 transition hover:bg-surface-2 cursor-pointer"
+                          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-[13px] font-medium transition cursor-pointer border border-warning-bar/40 bg-warning-bg text-warning hover:bg-[#FEF0C7] hover:border-warning-bar/60"
                         >
                           <BellRing className="size-4" />
                           Nhắc
