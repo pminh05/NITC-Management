@@ -23,9 +23,9 @@ interface AuthConfig {
 
 // Ba việc chính của hệ thống, hiện ở cột giới thiệu
 const FEATURES = [
-  { icon: Sparkles, text: 'AI đọc biên bản họp, tự tách thành việc cho từng ban' },
-  { icon: ShieldCheck, text: 'Nộp minh chứng và duyệt ngay trên một màn' },
-  { icon: BellRing, text: 'Nhắc việc quá hạn và báo cáo tuần tự động' },
+  { icon: Sparkles, title: 'AI đọc biên bản họp', text: 'Dán biên bản, AI tự tách thành việc cho từng ban' },
+  { icon: ShieldCheck, title: 'Nộp và duyệt minh chứng', text: 'Thành viên nộp link hoặc báo cáo, ban điều hành duyệt ngay' },
+  { icon: BellRing, title: 'Nhắc việc tự động', text: 'Nhắc việc quá hạn và gửi báo cáo tuần cho Ban Chủ nhiệm' },
 ];
 
 const Logo: React.FC<{ size?: 'md' | 'lg' }> = ({ size = 'md' }) => (
@@ -115,29 +115,35 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, notice }) => {
           <span className="font-display text-[17px] font-bold tracking-[-0.3px] text-fg">NITC Command Center</span>
         </div>
 
-        <div className="relative z-10 max-w-[680px] px-12 pt-16 xl:px-16 xl:pt-20">
-          <h1 className="font-display text-[44px] font-bold leading-[1.08] tracking-[-1.5px] text-fg xl:text-[52px]">
-            Điều hành CLB,
-            <br />
-            gọn trong một màn
-          </h1>
-          <p className="mt-5 max-w-[460px] text-[17px] leading-[1.55] text-muted [text-wrap:pretty]">
-            Hệ thống quản trị tích hợp AI cho CLB Công nghệ thông tin — Trường Công nghệ, ĐH Kinh tế Quốc dân.
-          </p>
-          <ul className="mt-8 space-y-3">
-            {FEATURES.map(({ icon: Icon, text }) => (
-              <li key={text} className="flex items-center gap-3 text-[15px] text-fg-2">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white text-primary shadow-[0_1px_2px_rgba(16,24,40,0.06)] ring-1 ring-black/5">
-                  <Icon className="size-4" />
-                </span>
-                {text}
-              </li>
-            ))}
-          </ul>
+        {/* Nội dung giới thiệu: căn giữa theo chiều dọc để lấp đầy cả cột */}
+        <div className="relative z-10 flex flex-1 items-center px-12 py-10 xl:px-16">
+          <div className="w-full max-w-[620px]">
+            <h1 className="font-display text-[48px] font-bold leading-[1.06] tracking-[-1.6px] text-fg xl:text-[60px] xl:tracking-[-2px]">
+              Điều hành CLB,
+              <br />
+              gọn trong một màn
+            </h1>
+            <p className="mt-6 max-w-[520px] text-[18px] leading-[1.55] text-muted [text-wrap:pretty]">
+              Hệ thống quản trị tích hợp AI cho CLB Công nghệ thông tin — Trường Công nghệ, ĐH Kinh tế Quốc dân.
+            </p>
+            <ul className="mt-10 grid gap-3">
+              {FEATURES.map(({ icon: Icon, title, text }) => (
+                <li key={title} className="glass-chip flex items-center gap-4 rounded-2xl px-4 py-3.5">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-light text-primary">
+                    <Icon className="size-5" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[15px] font-semibold text-fg">{title}</span>
+                    <span className="block text-[14px] text-muted">{text}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
-        {/* Khối cầu kính, tràn ra mép dưới phải */}
-        <div aria-hidden="true" className="pointer-events-none absolute -bottom-[18%] -right-[14%] w-[68%] max-w-[620px]">
+        {/* Khối cầu kính ở góc trên phải, tràn ra mép (không đè chữ) */}
+        <div aria-hidden="true" className="pointer-events-none absolute -right-[22%] -top-[16%] w-[58%] max-w-[560px]">
           <div className="orb orb-float">
             <div className="orb-halo" />
             <div className="orb-core" />
