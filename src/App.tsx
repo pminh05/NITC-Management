@@ -798,6 +798,10 @@ export function App() {
     setMainView('overview');
     window.scrollTo({ top: 0 });
   };
+  const goView = (view: MainView) => {
+    setMainView(view);
+    window.scrollTo({ top: 0 });
+  };
   const goBoard = (dept: string, status: string) => {
     setSidebarDeptFilter(dept);
     setSidebarStatusFilter(status);
@@ -874,10 +878,10 @@ export function App() {
           onGoOverview={goOverview}
           onGoBoard={goBoard}
           onOpenParser={() => setIsParserOpen(true)}
-          onOpenCalendar={() => setIsCalendarOpen(true)}
-          onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
-          onOpenDashboard={() => setIsDashOpen(true)}
-          onOpenDocs={() => setIsDocsOpen(true)}
+          onOpenCalendar={() => goView('calendar')}
+          onOpenLeaderboard={() => goView('leaderboard')}
+          onOpenDashboard={() => goView('analytics')}
+          onOpenDocs={() => goView('docs')}
           onCollapse={handleToggleSidebar}
         />
       )}
@@ -921,7 +925,7 @@ export function App() {
 
         {/* Nội dung chính */}
         <main className="relative mx-auto flex w-full min-w-0 max-w-[1320px] flex-1 flex-col gap-4 px-3 pb-24 pt-6 sm:gap-5 sm:px-6 lg:px-8 lg:pb-10">
-          {mainView === 'overview' ? (
+          {mainView === 'overview' && (
             <OverviewPage
               tasks={tasks}
               authMember={authMember}
@@ -934,7 +938,8 @@ export function App() {
               onOpenQuickAdd={canCreateTask(actor) ? () => setIsQuickAddOpen(true) : undefined}
               onOpenParser={canManageMeetings ? () => setIsParserOpen(true) : undefined}
             />
-          ) : (
+          )}
+          {mainView === 'board' && (
             <TaskBoard
               tasks={tasks}
               members={members}
@@ -955,6 +960,27 @@ export function App() {
               onUpdateRequest={(task) => setUpdateReqTask({ task, mode: 'request' })}
               onRemindTask={handleOpenRemindConfirm}
             />
+          )}
+          {/* Các tính năng mở thành trang trong vùng chính (không còn là hộp thoại) */}
+          {mainView !== 'overview' && mainView !== 'board' && (
+            <Suspense
+              fallback={
+                <div className="rounded-2xl border border-border bg-surface p-6" aria-busy="true" aria-label="Đang tải">
+                  <div className="skeleton h-5 w-48" />
+                  <div className="skeleton mt-3 h-3 w-72" />
+                  <div className="skeleton mt-6 h-64 w-full" />
+                </div>
+              }
+            >
+              {mainView === 'calendar' && (
+                <CalendarModal isOpen asPage onClose={goOverview} tasks={tasks} meetings={meetings} onOpenDetail={setDetailTask} />
+              )}
+              {mainView === 'leaderboard' && <LeaderboardModal isOpen asPage onClose={goOverview} authMember={authMember} />}
+              {mainView === 'analytics' && (
+                <DashboardModal isOpen asPage onClose={goOverview} tasks={tasks} meetings={meetings} authMember={authMember} />
+              )}
+              {mainView === 'docs' && <DocsModal isOpen asPage onClose={goOverview} terms={terms} authMember={authMember} />}
+            </Suspense>
           )}
         </main>
 
@@ -1194,13 +1220,13 @@ export function App() {
         overdueCount={overdueCount}
         onOpenBBHParser={() => setIsParserOpen(true)}
         onOpenQuickAdd={() => setIsQuickAddOpen(true)}
-        onOpenDashboard={() => setIsDashOpen(true)}
+        onOpenDashboard={() => goView('analytics')}
         onOpenOverview={goOverview}
         onOpenBoard={() => goBoard('all', 'all')}
         activeView={mainView}
-        onOpenCalendar={() => setIsCalendarOpen(true)}
-        onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
-        onOpenDocs={() => setIsDocsOpen(true)}
+        onOpenCalendar={() => goView('calendar')}
+        onOpenLeaderboard={() => goView('leaderboard')}
+        onOpenDocs={() => goView('docs')}
         onOpenNag={() => setIsNagOpen(true)}
         canNag={canUseNag(actor)}
         onOpenMeetingHistory={() => setIsMeetingHistoryOpen(true)}

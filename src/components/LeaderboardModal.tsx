@@ -49,7 +49,9 @@ export const LeaderboardModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   authMember: Member;
-}> = ({ isOpen, onClose, authMember }) => {
+  /** Hiện như một trang trong vùng chính (không lớp phủ, không nút đóng) */
+  asPage?: boolean;
+}> = ({ isOpen, onClose, authMember, asPage = false }) => {
   const [data, setData] = useState<KpiData | null>(null);
   const [tab, setTab] = useState<'members' | 'departments'>('members');
   const [loading, setLoading] = useState(false);
@@ -77,8 +79,8 @@ export const LeaderboardModal: React.FC<{
     p > 0 ? 'text-success' : p < 0 ? 'text-danger' : 'text-muted';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#101828]/50 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-surface border border-border rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-xs">
+    <div className={asPage ? 'contents' : 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#101828]/50 backdrop-blur-sm overflow-y-auto'}>
+      <div className={asPage ? 'flex w-full flex-col overflow-hidden rounded-2xl border border-border bg-surface text-xs' : 'bg-surface border border-border rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-xs'}>
 
         {/* Header */}
         <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-surface sticky top-0 z-10">
@@ -95,7 +97,7 @@ export const LeaderboardModal: React.FC<{
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg text-muted hover:text-fg hover:bg-surface-2 transition">
+          <button onClick={onClose} className={`${asPage ? 'hidden' : ''} p-1 rounded-lg text-muted hover:text-fg hover:bg-surface-2 transition`}>
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -265,7 +267,7 @@ export const LeaderboardModal: React.FC<{
               ? `${(data?.members || []).filter((m) => deptFilter === 'all' || m.department === deptFilter).length} thành viên${deptFilter !== 'all' ? ` — Ban ${deptFilter}` : ' trong phạm vi của bạn'}`
               : `${(data?.departments || []).filter((d) => deptFilter === 'all' || d.department === deptFilter).length} ban`}
           </span>
-          <button onClick={onClose} className="px-4 py-1.5 rounded-lg bg-surface-2 hover:bg-[#F2F4F7] text-fg font-semibold cursor-pointer">
+          <button onClick={onClose} className={`${asPage ? 'hidden' : ''} px-4 py-1.5 rounded-lg bg-surface-2 hover:bg-[#F2F4F7] text-fg font-semibold cursor-pointer`}>
             Đóng
           </button>
         </div>

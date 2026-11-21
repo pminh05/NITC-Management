@@ -34,7 +34,7 @@ interface MobileBottomNavProps {
   /** Màn Tổng quan và Bảng việc (giao diện mới); thiếu thì dùng hành vi cũ */
   onOpenOverview?: () => void;
   onOpenBoard?: () => void;
-  activeView?: 'overview' | 'board';
+  activeView?: string;
   onOpenCalendar: () => void;
   onOpenLeaderboard: () => void;
   onOpenDocs: () => void;

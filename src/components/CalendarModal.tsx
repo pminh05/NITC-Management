@@ -8,6 +8,8 @@ interface CalendarModalProps {
   tasks: Task[];
   meetings: Meeting[];
   onOpenDetail?: (task: Task) => void;
+  /** Hiện như một trang trong vùng chính (không lớp phủ, không nút đóng) */
+  asPage?: boolean;
 }
 
 const DAY_HEADERS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
@@ -47,6 +49,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
   tasks,
   meetings,
   onOpenDetail,
+  asPage = false,
 }) => {
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -121,9 +124,9 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-[#101828]/50 backdrop-blur-sm overflow-hidden">
+    <div className={asPage ? 'contents' : 'fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-[#101828]/50 backdrop-blur-sm overflow-hidden'}>
       {/* Modal Container: Kích thước lớn, cố định chiều cao để không bị resize */}
-      <div className="bg-surface border border-border rounded-2xl w-[98vw] sm:w-[96vw] max-w-7xl h-[94vh] sm:h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-xs">
+      <div className={asPage ? 'flex h-[calc(100vh-7.5rem)] min-h-[620px] w-full flex-col overflow-hidden rounded-2xl border border-border bg-surface text-xs' : 'bg-surface border border-border rounded-2xl w-[98vw] sm:w-[96vw] max-w-7xl h-[94vh] sm:h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-xs'}>
 
         {/* 1. Header */}
         <div className="px-4 sm:px-6 py-3 sm:py-3.5 border-b border-border flex items-center justify-between bg-surface shrink-0">
@@ -138,7 +141,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-muted hover:text-fg hover:bg-surface-2 transition cursor-pointer"
+            className={`${asPage ? 'hidden' : ''} p-1.5 rounded-lg text-muted hover:text-fg hover:bg-surface-2 transition cursor-pointer`}
           >
             <X className="w-5 h-5" />
           </button>
@@ -446,7 +449,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
           <span className="text-xs">💡 Bấm vào ô ngày để xem danh sách hoặc bấm trực tiếp vào thẻ công việc để mở chi tiết.</span>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-surface-2 hover:bg-[#F2F4F7] text-fg font-semibold cursor-pointer transition"
+            className={`${asPage ? 'hidden' : ''} px-4 py-1.5 rounded-lg bg-surface-2 hover:bg-[#F2F4F7] text-fg font-semibold cursor-pointer transition`}
           >
             Đóng
           </button>

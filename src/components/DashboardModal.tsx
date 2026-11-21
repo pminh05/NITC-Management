@@ -10,6 +10,8 @@ interface DashboardModalProps {
   tasks: Task[];
   meetings: Meeting[];
   authMember: Member;
+  /** Hiện như một trang trong vùng chính (không lớp phủ, không nút đóng) */
+  asPage?: boolean;
 }
 
 interface KpiResponse {
@@ -97,7 +99,7 @@ const DonutChart: React.FC<{ slices: Array<{ label: string; value: number; color
   );
 };
 
-export const DashboardModal: React.FC<DashboardModalProps> = ({ isOpen, onClose, tasks, meetings, authMember }) => {
+export const DashboardModal: React.FC<DashboardModalProps> = ({ isOpen, onClose, tasks, meetings, authMember, asPage = false }) => {
   const [kpi, setKpi] = useState<KpiResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -151,8 +153,8 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({ isOpen, onClose,
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#101828]/50 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-surface border border-border rounded-2xl w-full max-w-5xl max-h-[94vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-xs">
+    <div className={asPage ? 'contents' : 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#101828]/50 backdrop-blur-sm overflow-y-auto'}>
+      <div className={asPage ? 'flex w-full flex-col overflow-hidden rounded-2xl border border-border bg-surface text-xs' : 'bg-surface border border-border rounded-2xl w-full max-w-5xl max-h-[94vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-xs'}>
 
         {/* Header */}
         <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-surface sticky top-0 z-10">
@@ -171,7 +173,7 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({ isOpen, onClose,
             <button onClick={load} disabled={loading} className="p-2 rounded-lg bg-surface-2 hover:bg-[#F2F4F7] text-fg-2 disabled:opacity-50 transition cursor-pointer" title="Làm mới">
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
-            <button onClick={onClose} className="p-1 rounded-lg text-muted hover:text-fg hover:bg-surface-2 transition">
+            <button onClick={onClose} className={`${asPage ? 'hidden' : ''} p-1 rounded-lg text-muted hover:text-fg hover:bg-surface-2 transition`}>
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -292,7 +294,7 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({ isOpen, onClose,
         {/* Footer */}
         <div className="px-6 py-3 border-t border-border bg-surface flex items-center justify-between text-muted">
           <span>Số liệu tính trực tiếp từ dữ liệu điều hành hiện tại của {isLeadership ? 'toàn CLB' : `Ban ${authMember.department}`}.</span>
-          <button onClick={onClose} className="px-4 py-1.5 rounded-lg bg-surface-2 hover:bg-[#F2F4F7] text-fg font-semibold cursor-pointer">
+          <button onClick={onClose} className={`${asPage ? 'hidden' : ''} px-4 py-1.5 rounded-lg bg-surface-2 hover:bg-[#F2F4F7] text-fg font-semibold cursor-pointer`}>
             Đóng
           </button>
         </div>

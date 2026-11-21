@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { Department, Member, Task } from '../types';
 
-export type MainView = 'overview' | 'board';
+export type MainView = 'overview' | 'board' | 'calendar' | 'leaderboard' | 'analytics' | 'docs';
 
 interface SidebarProps {
   authMember: Member;
@@ -144,10 +144,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }
         />
         {canManageMeetings && <NavItem icon={Sparkles} label="Biên bản họp (AI)" onClick={onOpenParser} />}
-        <NavItem icon={CalendarDays} label="Lịch tổng" onClick={onOpenCalendar} />
-        <NavItem icon={Trophy} label="Bảng xếp hạng" onClick={onOpenLeaderboard} />
-        <NavItem icon={BarChart3} label="Phân tích" onClick={onOpenDashboard} />
-        <NavItem icon={FolderOpen} label="Kho tài liệu" onClick={onOpenDocs} />
+        <NavItem icon={CalendarDays} label="Lịch tổng" active={view === 'calendar'} onClick={onOpenCalendar} />
+        <NavItem icon={Trophy} label="Bảng xếp hạng" active={view === 'leaderboard'} onClick={onOpenLeaderboard} />
+        <NavItem icon={BarChart3} label="Phân tích" active={view === 'analytics'} onClick={onOpenDashboard} />
+        <NavItem icon={FolderOpen} label="Kho tài liệu" active={view === 'docs'} onClick={onOpenDocs} />
 
         <p className="px-3 pb-1.5 pt-5 text-[11px] font-semibold uppercase tracking-wider text-muted">Các ban</p>
         {DEPARTMENTS.map(({ name, icon }) => {
