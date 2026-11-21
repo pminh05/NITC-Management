@@ -101,14 +101,27 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, notice }) => {
     'h-12 w-full rounded-[10px] border border-border-strong bg-surface px-3.5 text-[15px] text-fg outline-none transition placeholder:text-muted focus:border-primary focus:ring-4 focus:ring-[var(--app-ring)]';
 
   return (
-    <div className="grid min-h-screen grid-cols-1 bg-surface font-sans text-fg antialiased lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-      {/* ===== Cột giới thiệu (máy tính) ===== */}
-      <section className="relative hidden overflow-clip bg-[#F3F8FF] lg:flex lg:flex-col" aria-label="Giới thiệu">
-        {/* Vệt sáng xanh góc trên trái */}
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          <div className="absolute -left-[220px] -top-[260px] h-[620px] w-[760px] rounded-full bg-[var(--app-glow-1)] opacity-30 blur-[140px]" />
-          <div className="absolute -left-[120px] -top-[160px] h-[360px] w-[460px] rounded-full bg-[var(--app-glow-2)] opacity-30 blur-[110px]" />
+    <div className="relative grid min-h-screen grid-cols-1 overflow-clip bg-[#F3F8FF] font-sans text-fg antialiased lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+      {/* ===== Nền chung phủ cả màn: vệt sáng xanh + khối cầu kính góc dưới phải (nằm sau thẻ đăng nhập) ===== */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-[220px] -top-[260px] h-[620px] w-[760px] rounded-full bg-[var(--app-glow-1)] opacity-30 blur-[140px]" />
+        <div className="absolute -left-[120px] -top-[160px] h-[360px] w-[460px] rounded-full bg-[var(--app-glow-2)] opacity-30 blur-[110px]" />
+        <div className="absolute -bottom-[200px] right-[10%] h-[480px] w-[640px] rounded-full bg-[var(--app-glow-1)] opacity-25 blur-[140px]" />
+        <div className="absolute -bottom-[16%] -right-[10%] w-[58vw] max-w-[620px] sm:w-[44vw] lg:w-[36%]">
+          <div className="orb orb-float">
+            <div className="orb-halo" />
+            <div className="orb-core" />
+            <div className="orb-caustic" />
+            <div className="orb-swirl" />
+            <div className="orb-swirl reverse" />
+            <div className="orb-shine" />
+            <div className="orb-rim" />
+          </div>
         </div>
+      </div>
+
+      {/* ===== Cột giới thiệu (máy tính) ===== */}
+      <section className="relative hidden lg:flex lg:flex-col" aria-label="Giới thiệu">
 
         <div className="relative z-10 flex items-center gap-2.5 px-12 pt-10 xl:px-16">
           <Logo />
@@ -142,30 +155,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, notice }) => {
           </div>
         </div>
 
-        {/* Khối cầu kính ở góc trên phải, tràn ra mép (không đè chữ) */}
-        <div aria-hidden="true" className="pointer-events-none absolute -right-[22%] -top-[16%] w-[58%] max-w-[560px]">
-          <div className="orb orb-float">
-            <div className="orb-halo" />
-            <div className="orb-core" />
-            <div className="orb-caustic" />
-            <div className="orb-swirl" />
-            <div className="orb-swirl reverse" />
-            <div className="orb-shine" />
-            <div className="orb-rim" />
-          </div>
-        </div>
-
         <p className="relative z-10 mt-auto px-12 pb-8 text-[13px] text-muted xl:px-16">NITC Command Center v3 · CLB CNTT NEU</p>
       </section>
 
       {/* ===== Cột đăng nhập ===== */}
-      <main className="relative flex min-h-screen flex-col items-center justify-center overflow-clip px-4 py-10 sm:px-8">
-        {/* Điện thoại: vệt sáng nhẹ phía sau */}
-        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[320px] lg:hidden">
-          <div className="absolute -left-[160px] -top-[200px] h-[380px] w-[520px] rounded-full bg-[var(--app-glow-1)] opacity-25 blur-[110px]" />
-        </div>
-
-        <div className="relative w-full max-w-[400px]">
+      <main className="relative z-10 flex min-h-screen flex-col items-center justify-center px-3 py-8 sm:px-8 sm:py-10">
+        <div className="relative w-full max-w-[460px] rounded-3xl bg-white/85 p-5 shadow-[0_30px_70px_-30px_rgba(0,60,140,0.45)] ring-1 ring-white/80 backdrop-blur-xl sm:p-9">
           <div className="flex items-center gap-2.5 lg:hidden">
             <Logo size="lg" />
             <span className="font-display text-[18px] font-bold tracking-[-0.3px] text-fg">NITC Command Center</span>
