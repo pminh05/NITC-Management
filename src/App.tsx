@@ -819,12 +819,12 @@ export function App() {
 
   if (booting) {
     return (
-      <div className="min-h-screen bg-[#10192F] flex items-center justify-center">
+      <div className="min-h-screen bg-surface flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 bg-[#2C69FF]/100 rounded-xl flex items-center justify-center font-bold text-white text-xl mx-auto animate-pulse">
+          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center font-display font-bold text-white text-xl mx-auto animate-pulse">
             N
           </div>
-          <p className="text-slate-400 text-sm mt-3">Đang khởi động NITC Command Center...</p>
+          <p className="text-muted text-sm mt-3">Đang khởi động NITC Command Center...</p>
         </div>
       </div>
     );

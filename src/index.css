@@ -89,6 +89,43 @@ html, body {
   transition: opacity 150ms ease-out, transform 150ms ease-out, visibility 0s;
 }
 
+/* Khối cầu kính (màn đăng nhập) — dựng bằng CSS, không dùng video */
+.orb { position: relative; aspect-ratio: 1; border-radius: 9999px; }
+.orb > * { position: absolute; inset: 0; border-radius: inherit; }
+.orb-halo { inset: -14%; background: radial-gradient(closest-side, rgb(10 108 255 / 0.32), rgb(96 177 255 / 0.12) 60%, transparent); filter: blur(24px); }
+.orb-core {
+  background: radial-gradient(circle at 30% 25%, #FFFFFF 0%, #CFE8FF 9%, #74BDFF 28%, #1A86FF 52%, #0A52DC 76%, #072F92 100%);
+  box-shadow: inset -30px -40px 80px rgb(0 20 90 / 0.4), inset 20px 30px 60px rgb(255 255 255 / 0.35);
+}
+.orb-caustic {
+  background: radial-gradient(ellipse 55% 30% at 58% 86%, rgb(190 232 255 / 0.95), rgb(120 200 255 / 0.35) 55%, transparent 75%);
+  mix-blend-mode: screen;
+  filter: blur(8px);
+}
+.orb-swirl {
+  background: conic-gradient(from 0deg, transparent 0 12%, rgb(255 255 255 / 0.55) 18%, transparent 30%, rgb(120 200 255 / 0.7) 46%, transparent 58%, rgb(0 90 255 / 0.6) 72%, transparent 84%);
+  mix-blend-mode: screen;
+  filter: blur(22px);
+  animation: orb-spin 16s linear infinite;
+  -webkit-mask: radial-gradient(circle, #000 55%, transparent 72%);
+  mask: radial-gradient(circle, #000 55%, transparent 72%);
+}
+.orb-swirl.reverse { animation-duration: 24s; animation-direction: reverse; opacity: 0.7; }
+.orb-shine { inset: 8% 40% 52% 14%; background: radial-gradient(closest-side, rgb(255 255 255 / 0.95), rgb(255 255 255 / 0)); filter: blur(6px); transform: rotate(-24deg); }
+.orb-rim { box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / 0.55), inset 0 -10px 30px rgb(140 210 255 / 0.55), 0 30px 80px -20px rgb(0 100 255 / 0.45); }
+.orb-float { animation: orb-float 9s ease-in-out infinite; }
+@keyframes orb-spin { to { transform: rotate(360deg); } }
+@keyframes orb-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+
+/* Thẻ kính nhỏ nổi trên khối cầu */
+.glass-chip {
+  background: rgb(255 255 255 / 0.72);
+  border: 1px solid rgb(255 255 255 / 0.75);
+  box-shadow: 0 16px 40px -16px rgb(0 60 140 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.8);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+
 /* Khung chờ tải */
 @keyframes app-shimmer { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
 .skeleton { background: #EAECF0; border-radius: 6px; animation: app-shimmer 1.4s ease-in-out infinite; }
