@@ -27,13 +27,13 @@ const DEPT_EMOJI: Record<string, string> = {
 
 const TYPE_META: Record<string, { icon: React.ReactNode; label: string }> = {
   drive: { icon: <FolderOpen className="w-4 h-4" />, label: 'Thư mục Drive' },
-  sheet: { icon: <FileSpreadsheet className="w-4 h-4 text-emerald-400" />, label: 'Google Sheet' },
-  doc: { icon: <FileText className="w-4 h-4 text-sky-400" />, label: 'Google Docs' },
-  slide: { icon: <FileText className="w-4 h-4 text-amber-400" />, label: 'Slide' },
-  pdf: { icon: <File className="w-4 h-4 text-red-400" />, label: 'PDF' },
-  image: { icon: <ImageIcon className="w-4 h-4 text-purple-400" />, label: 'Ảnh' },
-  form: { icon: <FileText className="w-4 h-4 text-indigo-400" />, label: 'Form' },
-  other: { icon: <File className="w-4 h-4 text-slate-400" />, label: 'Khác' },
+  sheet: { icon: <FileSpreadsheet className="w-4 h-4 text-success" />, label: 'Google Sheet' },
+  doc: { icon: <FileText className="w-4 h-4 text-info" />, label: 'Google Docs' },
+  slide: { icon: <FileText className="w-4 h-4 text-warning" />, label: 'Slide' },
+  pdf: { icon: <File className="w-4 h-4 text-danger" />, label: 'PDF' },
+  image: { icon: <ImageIcon className="w-4 h-4 text-primary" />, label: 'Ảnh' },
+  form: { icon: <FileText className="w-4 h-4 text-primary" />, label: 'Form' },
+  other: { icon: <File className="w-4 h-4 text-muted" />, label: 'Khác' },
 };
 
 const DEPARTMENTS = ['Học thuật', 'Truyền thông', 'Sự kiện', 'Đối ngoại'];
@@ -172,29 +172,29 @@ export const DocsModal: React.FC<DocsModalProps> = ({ isOpen, onClose, terms, au
     const canEditThis = isLeadership || (isDeptHead && d.department === authMember.department);
     const meta = TYPE_META[d.docType] || TYPE_META.other;
     return (
-      <div key={d.id} className="p-3 hover:bg-slate-800/50 transition flex items-center gap-3 border-b border-slate-800 last:border-0">
+      <div key={d.id} className="p-3 hover:bg-surface-2 transition flex items-center gap-3 border-b border-border last:border-0">
         <span className="shrink-0">{meta.icon}</span>
         <div className="flex-1 min-w-0">
           <a
             href={d.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs font-semibold text-white hover:text-[#8FB2FF] flex items-center gap-1.5 truncate"
+            className="text-xs font-semibold text-fg hover:text-primary flex items-center gap-1.5 truncate"
             title={d.url}
           >
-            {d.pinned && <Pin className="w-3 h-3 text-amber-400 shrink-0 rotate-45" />}
+            {d.pinned && <Pin className="w-3 h-3 text-warning shrink-0 rotate-45" />}
             {d.name}
-            <ExternalLink className="w-3 h-3 text-slate-500 shrink-0" />
+            <ExternalLink className="w-3 h-3 text-muted shrink-0" />
           </a>
-          <div className="text-[10px] text-slate-500 flex items-center gap-2 mt-0.5">
+          <div className="text-[10px] text-muted flex items-center gap-2 mt-0.5">
             <span className={`px-1.5 py-0.5 rounded font-semibold ${
               d.department === 'Ban Chủ nhiệm'
-                ? 'bg-[#2C69FF]/15 text-[#8FB2FF]'
-                : 'bg-slate-800 text-slate-300'
+                ? 'bg-primary-light text-primary'
+                : 'bg-surface-2 text-fg-2'
             }`}>
               {deptLabel(d.department)}
             </span>
-            {d.label && <span className="px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300">{d.label}</span>}
+            {d.label && <span className="px-1.5 py-0.5 rounded bg-primary-light text-primary">{d.label}</span>}
             <span>{meta.label}</span>
             {d.createdByName && <span>· {d.createdByName}</span>}
           </div>
@@ -204,16 +204,16 @@ export const DocsModal: React.FC<DocsModalProps> = ({ isOpen, onClose, terms, au
             href={d.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-2 py-1 rounded bg-[#2C69FF]/15 text-[#8FB2FF] hover:bg-[#2C69FF]/30 text-[10px] font-bold transition cursor-pointer"
+            className="px-2 py-1 rounded bg-primary-light text-primary hover:bg-primary-light text-[10px] font-bold transition cursor-pointer"
           >
             Mở
           </a>
           {canEditThis && (
             <>
-              <button onClick={() => handleStartEdit(d)} className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer" title="Sửa">
+              <button onClick={() => handleStartEdit(d)} className="p-1 rounded text-muted hover:text-fg hover:bg-surface-2 transition cursor-pointer" title="Sửa">
                 <Edit2 className="w-3.5 h-3.5" />
               </button>
-              <button onClick={() => handleDelete(d.id)} className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition cursor-pointer" title="Xóa">
+              <button onClick={() => handleDelete(d.id)} className="p-1 rounded text-muted hover:text-danger hover:bg-danger-bg transition cursor-pointer" title="Xóa">
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             </>
@@ -221,7 +221,7 @@ export const DocsModal: React.FC<DocsModalProps> = ({ isOpen, onClose, terms, au
           {isLeadership && (
             <button
               onClick={() => handlePin(d.id)}
-              className={`p-1 rounded transition cursor-pointer ${d.pinned ? 'text-amber-400' : 'text-slate-600 hover:text-amber-400'}`}
+              className={`p-1 rounded transition cursor-pointer ${d.pinned ? 'text-warning' : 'text-muted hover:text-warning'}`}
               title={d.pinned ? 'Bỏ ghim' : 'Ghim lên đầu (Ban lãnh đạo)'}
             >
               <Pin className="w-3.5 h-3.5 rotate-45" />
@@ -233,34 +233,34 @@ export const DocsModal: React.FC<DocsModalProps> = ({ isOpen, onClose, terms, au
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#101828]/50 backdrop-blur-sm overflow-y-auto">
+      <div className="bg-surface border border-border rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-xs">
 
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900 sticky top-0 z-10">
+        <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-surface sticky top-0 z-10">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-sky-500/20 text-sky-400 border border-sky-500/30">
+            <div className="p-2 rounded-xl bg-info-bg text-info border border-info-bar/30">
               <FolderOpen className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white tracking-tight">Kho tài liệu CLB</h2>
-              <p className="text-slate-400">
+              <h2 className="text-lg font-bold text-fg tracking-tight">Kho tài liệu CLB</h2>
+              <p className="text-muted">
                 Phản chiếu Drive của CLB — tài liệu chung + riêng từng ban theo nhiệm kỳ
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          <button onClick={onClose} className="p-1 rounded-lg text-muted hover:text-fg hover:bg-surface-2 transition">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Toolbar */}
-        <div className="p-4 bg-slate-950/80 border-b border-slate-800 space-y-2">
+        <div className="p-4 bg-surface-2 border-b border-border space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
             <select
               value={termFilter}
               onChange={(e) => setTermFilter(e.target.value)}
-              className="px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-sky-500 cursor-pointer"
+              className="px-2.5 py-1.5 bg-surface border border-border rounded-lg text-fg focus:outline-none focus:border-sky-500 cursor-pointer"
               title="Xem theo nhiệm kỳ"
             >
               <option value="active">⭐ Nhiệm kỳ hiện hành{activeTerm ? `: ${activeTerm.name}` : ''}</option>
@@ -275,7 +275,7 @@ export const DocsModal: React.FC<DocsModalProps> = ({ isOpen, onClose, terms, au
             <select
               value={deptFilter}
               onChange={(e) => setDeptFilter(e.target.value)}
-              className="px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-sky-500 cursor-pointer"
+              className="px-2.5 py-1.5 bg-surface border border-border rounded-lg text-fg focus:outline-none focus:border-sky-500 cursor-pointer"
               title="Lọc theo nơi lưu trữ"
             >
               <option value="all">Tất cả nơi lưu</option>
@@ -286,13 +286,13 @@ export const DocsModal: React.FC<DocsModalProps> = ({ isOpen, onClose, terms, au
             </select>
 
             <div className="relative flex-1 min-w-[140px]">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
               <input
                 type="text"
                 placeholder="Tìm theo tên, nhãn, ban..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                className="w-full pl-9 pr-3 py-1.5 bg-surface border border-border rounded-lg text-fg placeholder:text-muted focus:outline-none focus:border-sky-500"
               />
             </div>
 
@@ -310,40 +310,40 @@ export const DocsModal: React.FC<DocsModalProps> = ({ isOpen, onClose, terms, au
 
         {/* Form thêm/sửa */}
         {(isAdding || editingId) && (
-          <form onSubmit={handleSave} className="p-4 bg-slate-800/80 border-b border-slate-700 space-y-3">
-            <div className="flex items-center justify-between font-bold text-white text-sm">
+          <form onSubmit={handleSave} className="p-4 bg-surface-2 border-b border-border space-y-3">
+            <div className="flex items-center justify-between font-bold text-fg text-sm">
               <span>{editingId ? 'Sửa tài liệu' : 'Thêm tài liệu mới'}</span>
-              <button type="button" onClick={resetForm} className="text-slate-400 hover:text-white">Hủy</button>
+              <button type="button" onClick={resetForm} className="text-muted hover:text-fg">Hủy</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="md:col-span-2">
-                <label className="block text-slate-300 font-semibold mb-1">Đường dẫn (link Drive/Docs/Sheet...):</label>
+                <label className="block text-fg-2 font-semibold mb-1">Đường dẫn (link Drive/Docs/Sheet...):</label>
                 <input
                   type="url"
                   value={fUrl}
                   onChange={(e) => setFUrl(e.target.value)}
                   placeholder="https://drive.google.com/..."
-                  className="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono text-[11px] focus:outline-none focus:border-sky-500"
+                  className="w-full px-3 py-1.5 bg-surface border border-border rounded-lg text-fg font-mono text-[11px] focus:outline-none focus:border-sky-500"
                   required
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Tên tài liệu:</label>
+                <label className="block text-fg-2 font-semibold mb-1">Tên tài liệu:</label>
                 <input
                   type="text"
                   value={fName}
                   onChange={(e) => setFName(e.target.value)}
                   placeholder="VD: Key visual tuyển Gen 8"
-                  className="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-sky-500"
+                  className="w-full px-3 py-1.5 bg-surface border border-border rounded-lg text-fg focus:outline-none focus:border-sky-500"
                   required
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Loại:</label>
+                <label className="block text-fg-2 font-semibold mb-1">Loại:</label>
                 <select
                   value={fType}
                   onChange={(e) => setFType(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-sky-500"
+                  className="w-full px-3 py-1.5 bg-surface border border-border rounded-lg text-fg focus:outline-none focus:border-sky-500"
                 >
                   {Object.entries(TYPE_META).map(([k, v]) => (
                     <option key={k} value={k}>{v.label}</option>
@@ -351,12 +351,12 @@ export const DocsModal: React.FC<DocsModalProps> = ({ isOpen, onClose, terms, au
                 </select>
               </div>
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Nơi lưu trữ:</label>
+                <label className="block text-fg-2 font-semibold mb-1">Nơi lưu trữ:</label>
                 <select
                   value={fDept}
                   onChange={(e) => setFDept(e.target.value)}
                   disabled={isDeptHead && !isLeadership}
-                  className="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-sky-500 disabled:opacity-60"
+                  className="w-full px-3 py-1.5 bg-surface border border-border rounded-lg text-fg focus:outline-none focus:border-sky-500 disabled:opacity-60"
                 >
                   {isLeadership && <option value="Ban Chủ nhiệm">🌐 Tài liệu chung (toàn CLB)</option>}
                   {DEPARTMENTS.map((d) => (
@@ -365,13 +365,13 @@ export const DocsModal: React.FC<DocsModalProps> = ({ isOpen, onClose, terms, au
                 </select>
               </div>
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Nhãn (không bắt buộc):</label>
+                <label className="block text-fg-2 font-semibold mb-1">Nhãn (không bắt buộc):</label>
                 <input
                   type="text"
                   value={fLabel}
                   onChange={(e) => setFLabel(e.target.value)}
                   placeholder="VD: Key element, Hồ sơ tài trợ..."
-                  className="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                  className="w-full px-3 py-1.5 bg-surface border border-border rounded-lg text-fg placeholder:text-muted focus:outline-none focus:border-sky-500"
                 />
               </div>
             </div>
@@ -387,18 +387,18 @@ export const DocsModal: React.FC<DocsModalProps> = ({ isOpen, onClose, terms, au
         <div className="flex-1 overflow-y-auto p-4">
           {pinnedDocs.length > 0 && (
             <>
-              <div className="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+              <div className="text-[10px] font-bold text-warning uppercase tracking-wider mb-2 flex items-center gap-1">
                 <Pin className="w-3 h-3 rotate-45" /> Được ghim
               </div>
-              <div className="border border-slate-800 rounded-xl overflow-hidden mb-4">
+              <div className="border border-border rounded-xl overflow-hidden mb-4">
                 {pinnedDocs.map(renderRow)}
               </div>
             </>
           )}
-          <div className="border border-slate-800 rounded-xl overflow-hidden">
+          <div className="border border-border rounded-xl overflow-hidden">
             {normalDocs.map(renderRow)}
             {normalDocs.length === 0 && pinnedDocs.length === 0 && (
-              <div className="p-10 text-center text-slate-500">
+              <div className="p-10 text-center text-muted">
                 Kho trống trong phạm vi này. Thêm link Drive/Docs của CLB để mọi người cùng truy cập!
               </div>
             )}
@@ -406,13 +406,13 @@ export const DocsModal: React.FC<DocsModalProps> = ({ isOpen, onClose, terms, au
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t border-slate-800 bg-slate-900 flex items-center justify-between text-slate-400">
+        <div className="px-6 py-3 border-t border-border bg-surface flex items-center justify-between text-muted">
           <span>
             {visibleDocs.length} tài liệu
             {termFilter === 'active' && activeTerm ? ` — nhiệm kỳ ${activeTerm.name}` : ''}
             {deptFilter !== 'all' ? ` · ${deptLabel(deptFilter)}` : ''}
           </span>
-          <button onClick={onClose} className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-semibold cursor-pointer">
+          <button onClick={onClose} className="px-4 py-1.5 rounded-lg bg-surface-2 hover:bg-[#F2F4F7] text-fg font-semibold cursor-pointer">
             Đóng
           </button>
         </div>

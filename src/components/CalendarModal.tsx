@@ -19,26 +19,26 @@ const MONTH_NAMES = [
 ];
 
 const STATUS_STYLE: Record<string, { dot: string; label: string }> = {
-  in_progress: { dot: 'bg-[#2C69FF]', label: 'Đang làm' },
+  in_progress: { dot: 'bg-primary', label: 'Đang làm' },
   pending_approval: { dot: 'bg-amber-400', label: 'Chờ duyệt' },
   overdue: { dot: 'bg-red-500', label: 'Quá hạn' },
   completed: { dot: 'bg-emerald-500', label: 'Đã xong' },
 };
 
 const DEPARTMENT_STYLE: Record<string, string> = {
-  'Học thuật': 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+  'Học thuật': 'bg-info-bg text-info border-info-bar/30',
   'Truyền thông': 'bg-pink-500/15 text-pink-300 border-pink-500/30',
-  'Sự kiện': 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-  'Đối ngoại': 'bg-purple-500/15 text-purple-300 border-purple-500/30',
-  'Ban Chủ nhiệm': 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+  'Sự kiện': 'bg-success-bg text-success border-success-bar/30',
+  'Đối ngoại': 'bg-primary-light text-primary border-primary/30',
+  'Ban Chủ nhiệm': 'bg-warning-bg text-warning border-warning-bar/30',
 };
 
 const STATUS_BADGE: Record<string, { label: string; style: string }> = {
-  in_progress: { label: 'Đang làm', style: 'bg-blue-500/20 text-[#8FB2FF] border-blue-500/30' },
-  pending_approval: { label: 'Chờ duyệt', style: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
-  overdue: { label: 'Quá hạn 🚨', style: 'bg-red-500/20 text-red-300 border-red-500/30 font-bold' },
-  completed: { label: 'Đã xong', style: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
-  draft: { label: 'Bản nháp', style: 'bg-slate-700 text-slate-300 border-slate-600' },
+  in_progress: { label: 'Đang làm', style: 'bg-info-bg text-primary border-info-bar/30' },
+  pending_approval: { label: 'Chờ duyệt', style: 'bg-warning-bg text-warning border-warning-bar/30' },
+  overdue: { label: 'Quá hạn 🚨', style: 'bg-danger-bg text-danger border-danger-bar/30 font-bold' },
+  completed: { label: 'Đã xong', style: 'bg-success-bg text-success border-success-bar/30' },
+  draft: { label: 'Bản nháp', style: 'bg-[#F2F4F7] text-fg-2 border-border-strong' },
 };
 
 export const CalendarModal: React.FC<CalendarModalProps> = ({
@@ -121,35 +121,35 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-slate-950/80 backdrop-blur-sm overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-[#101828]/50 backdrop-blur-sm overflow-hidden">
       {/* Modal Container: Kích thước lớn, cố định chiều cao để không bị resize */}
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-[98vw] sm:w-[96vw] max-w-7xl h-[94vh] sm:h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-xs">
+      <div className="bg-surface border border-border rounded-2xl w-[98vw] sm:w-[96vw] max-w-7xl h-[94vh] sm:h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-xs">
 
         {/* 1. Header */}
-        <div className="px-4 sm:px-6 py-3 sm:py-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900 shrink-0">
+        <div className="px-4 sm:px-6 py-3 sm:py-3.5 border-b border-border flex items-center justify-between bg-surface shrink-0">
           <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="p-1.5 sm:p-2 rounded-xl bg-violet-500/20 text-violet-400 border border-violet-500/30">
+            <div className="p-1.5 sm:p-2 rounded-xl bg-primary-light text-primary border border-primary/30">
               <CalendarDays className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">Lịch tổng — Deadline & Họp</h2>
-              <p className="text-slate-400 text-[10px] sm:text-[11px]">Toàn bộ hạn chót và kỳ họp trong phạm vi của bạn</p>
+              <h2 className="text-base sm:text-lg font-bold text-fg tracking-tight">Lịch tổng — Deadline & Họp</h2>
+              <p className="text-muted text-[10px] sm:text-[11px]">Toàn bộ hạn chót và kỳ họp trong phạm vi của bạn</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+            className="p-1.5 rounded-lg text-muted hover:text-fg hover:bg-surface-2 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* 2. Toolbar: Bộ chọn Tháng/Năm trực tiếp + Điều hướng nhanh + Chú thích */}
-        <div className="px-3 sm:px-6 py-2 sm:py-2.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 sm:gap-3 bg-slate-900/90 shrink-0">
+        <div className="px-3 sm:px-6 py-2 sm:py-2.5 border-b border-border flex flex-wrap items-center justify-between gap-2 sm:gap-3 bg-surface-2 shrink-0">
           <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={prevMonth}
-              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
+              className="p-1.5 rounded-lg bg-surface-2 hover:bg-[#F2F4F7] text-fg-2 transition cursor-pointer"
               title="Tháng trước"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -162,10 +162,10 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
                 setViewMonth(Number(e.target.value));
                 setSelectedDay(null);
               }}
-              className="bg-slate-800 hover:bg-slate-750 text-white font-bold text-xs rounded-lg px-2 sm:px-2.5 py-1.5 border border-slate-700 focus:outline-none focus:border-[#2C69FF] cursor-pointer"
+              className="bg-surface-2 hover:bg-[#F2F4F7] text-fg font-bold text-xs rounded-lg px-2 sm:px-2.5 py-1.5 border border-border focus:outline-none focus:border-primary cursor-pointer"
             >
               {MONTH_NAMES.map((name, idx) => (
-                <option key={name} value={idx} className="bg-slate-900 text-white">
+                <option key={name} value={idx} className="bg-surface text-fg">
                   {name}
                 </option>
               ))}
@@ -178,10 +178,10 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
                 setViewYear(Number(e.target.value));
                 setSelectedDay(null);
               }}
-              className="bg-slate-800 hover:bg-slate-750 text-white font-bold text-xs rounded-lg px-2 sm:px-2.5 py-1.5 border border-slate-700 focus:outline-none focus:border-[#2C69FF] cursor-pointer"
+              className="bg-surface-2 hover:bg-[#F2F4F7] text-fg font-bold text-xs rounded-lg px-2 sm:px-2.5 py-1.5 border border-border focus:outline-none focus:border-primary cursor-pointer"
             >
               {yearsList.map((y) => (
-                <option key={y} value={y} className="bg-slate-900 text-white">
+                <option key={y} value={y} className="bg-surface text-fg">
                   Năm {y}
                 </option>
               ))}
@@ -189,7 +189,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
 
             <button
               onClick={nextMonth}
-              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
+              className="p-1.5 rounded-lg bg-surface-2 hover:bg-[#F2F4F7] text-fg-2 transition cursor-pointer"
               title="Tháng sau"
             >
               <ChevronRight className="w-4 h-4" />
@@ -202,14 +202,14 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
                 setViewMonth(today.getMonth());
                 setSelectedDay(todayStr);
               }}
-              className="ml-0.5 sm:ml-1 px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#2C69FF]/15 text-[#8FB2FF] text-xs font-bold hover:bg-[#2C69FF]/30 transition cursor-pointer"
+              className="ml-0.5 sm:ml-1 px-2.5 sm:px-3 py-1.5 rounded-lg bg-primary-light text-primary text-xs font-bold hover:bg-primary-light transition cursor-pointer"
             >
               Hôm nay
             </button>
           </div>
 
           {/* Chú thích màu sắc */}
-          <div className="hidden sm:flex items-center gap-3 text-[11px] text-slate-400">
+          <div className="hidden sm:flex items-center gap-3 text-[11px] text-muted">
             {Object.entries(STATUS_STYLE).map(([k, v]) => (
               <span key={k} className="flex items-center gap-1.5">
                 <span className={`w-2 h-2 rounded-full ${v.dot}`} /> {v.label}
@@ -225,11 +225,11 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
         <div className="flex-1 overflow-y-auto lg:overflow-hidden p-3 sm:p-5 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 min-h-0">
 
           {/* Lưới lịch tháng */}
-          <div className="flex flex-col h-full min-h-0 bg-slate-950/30 rounded-xl p-2 sm:p-3 border border-slate-800/80">
+          <div className="flex flex-col h-full min-h-0 bg-surface-2 rounded-xl p-2 sm:p-3 border border-border">
             {/* Tiêu đề thứ trong tuần */}
             <div className="grid grid-cols-7 gap-1 sm:gap-1.5 mb-1.5 shrink-0">
               {DAY_HEADERS.map((d) => (
-                <div key={d} className="text-center text-[10px] sm:text-[11px] font-bold text-slate-400 py-0.5 sm:py-1 uppercase tracking-wider">
+                <div key={d} className="text-center text-[10px] sm:text-[11px] font-bold text-muted py-0.5 sm:py-1 uppercase tracking-wider">
                   {d}
                 </div>
               ))}
@@ -242,7 +242,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
                   return (
                     <div
                       key={`empty-${i}`}
-                      className="rounded-lg bg-slate-950/20 border border-slate-800/40 opacity-30"
+                      className="rounded-lg bg-surface-2 border border-border opacity-30"
                     />
                   );
                 }
@@ -260,23 +260,23 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
                     onClick={() => setSelectedDay(day)}
                     className={`p-1 sm:p-1.5 rounded-lg border flex flex-col justify-between transition cursor-pointer overflow-hidden ${
                       isSelected
-                        ? 'border-[#2C69FF] bg-[#2C69FF]/10 ring-1 ring-[#2C69FF]'
+                        ? 'border-primary bg-primary-light ring-1 ring-primary'
                         : isToday
-                        ? 'border-amber-500/60 bg-amber-500/5 hover:bg-slate-800/60'
-                        : 'border-slate-800 bg-slate-950/40 hover:bg-slate-800/50'
+                        ? 'border-warning-bar/30 bg-warning-bg hover:bg-surface-2'
+                        : 'border-border bg-surface-2 hover:bg-surface-2'
                     }`}
                   >
                     {/* Hàng ngày & số lượng việc */}
                     <div className="flex items-center justify-between shrink-0 mb-0.5 sm:mb-1">
-                      <span className={`text-[11px] sm:text-xs font-bold ${isToday ? 'text-amber-400' : isSelected ? 'text-white' : 'text-slate-300'}`}>
+                      <span className={`text-[11px] sm:text-xs font-bold ${isToday ? 'text-warning' : isSelected ? 'text-fg' : 'text-fg-2'}`}>
                         {dayNum}
                       </span>
                       {openTasks.length > 0 && (
                         <span
                           className={`text-[8px] sm:text-[9px] px-1 py-0.2 rounded font-bold ${
                             cellTasks.some((t) => t.deadline < todayStr && t.status !== 'completed')
-                              ? 'bg-red-500/20 text-red-300 border border-red-500/30'
-                              : 'bg-[#2C69FF]/20 text-[#8FB2FF] border border-[#2C69FF]/30'
+                              ? 'bg-danger-bg text-danger border border-danger-bar/30'
+                              : 'bg-primary-light text-primary border border-primary/30'
                           }`}
                         >
                           {openTasks.length}
@@ -289,7 +289,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
                       {/* Desktop View (sm:block) */}
                       <div className="hidden sm:block space-y-0.5">
                         {cellMeetings.length > 0 && (
-                          <div className="text-[9px] text-violet-300 bg-violet-500/10 px-1 py-0.5 rounded border border-violet-500/20 truncate font-semibold">
+                          <div className="text-[9px] text-primary bg-primary-light px-1 py-0.5 rounded border border-primary/30 truncate font-semibold">
                             🤝 {cellMeetings.length} họp
                           </div>
                         )}
@@ -301,15 +301,15 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
                               e.stopPropagation();
                               onOpenDetail?.(t);
                             }}
-                            className="w-full flex items-center gap-1 px-1 py-0.5 rounded bg-slate-800/70 hover:bg-[#2C69FF]/30 hover:border-[#2C69FF]/40 border border-transparent transition text-left cursor-pointer group"
+                            className="w-full flex items-center gap-1 px-1 py-0.5 rounded bg-surface-2 hover:bg-primary-light hover:border-primary/30 border border-transparent transition text-left cursor-pointer group"
                             title={`Bấm để mở chi tiết: ${t.title}`}
                           >
                             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_STYLE[t.status]?.dot || 'bg-slate-500'}`} />
                             <span
                               className={`text-[9px] truncate ${
                                 t.status === 'completed'
-                                  ? 'text-slate-500 line-through'
-                                  : 'text-slate-200 group-hover:text-white font-medium'
+                                  ? 'text-muted line-through'
+                                  : 'text-fg group-hover:text-fg font-medium'
                               }`}
                             >
                               {t.title}
@@ -317,7 +317,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
                           </button>
                         ))}
                         {cellTasks.length > 2 && (
-                          <div className="text-[9px] text-slate-400 font-medium px-0.5">
+                          <div className="text-[9px] text-muted font-medium px-0.5">
                             +{cellTasks.length - 2} việc khác
                           </div>
                         )}
@@ -329,7 +329,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
                         {cellTasks.slice(0, 3).map((t) => (
                           <span key={t.id} className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_STYLE[t.status]?.dot || 'bg-slate-500'}`} />
                         ))}
-                        {cellTasks.length > 3 && <span className="text-[8px] text-slate-400 leading-none font-bold">+</span>}
+                        {cellTasks.length > 3 && <span className="text-[8px] text-muted leading-none font-bold">+</span>}
                       </div>
                     </div>
                   </div>
@@ -339,10 +339,10 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
           </div>
 
           {/* Chi tiết ngày đang chọn (Bên phải): Hiển thị task đẹp như card ở bên ngoài */}
-          <div className="bg-slate-900 border border-slate-700/80 rounded-xl flex flex-col h-full min-h-0 overflow-hidden shadow-inner">
+          <div className="bg-surface border border-border rounded-xl flex flex-col h-full min-h-0 overflow-hidden shadow-inner">
             {/* Header cột chi tiết */}
-            <div className="p-3.5 border-b border-slate-800 bg-slate-900/90 shrink-0">
-              <div className="text-xs font-bold text-white">
+            <div className="p-3.5 border-b border-border bg-surface-2 shrink-0">
+              <div className="text-xs font-bold text-fg">
                 {selectedDay
                   ? new Date(selectedDay).toLocaleDateString('vi-VN', {
                       weekday: 'long',
@@ -352,7 +352,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
                     })
                   : 'Chọn một ngày trên lịch'}
               </div>
-              <div className="text-[11px] text-slate-400 mt-0.5">
+              <div className="text-[11px] text-muted mt-0.5">
                 {selectedDay
                   ? `${dayTasks.length} công việc · ${dayMeetings.length} cuộc họp`
                   : 'Bấm vào một ô ngày để xem tất cả nhiệm vụ và kỳ họp'}
@@ -362,7 +362,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
             {/* Danh sách nhiệm vụ & họp trong ngày */}
             <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
               {selectedDay && dayMeetings.length === 0 && dayTasks.length === 0 && (
-                <div className="text-slate-500 text-xs py-8 text-center flex flex-col items-center justify-center gap-2">
+                <div className="text-muted text-xs py-8 text-center flex flex-col items-center justify-center gap-2">
                   <span>📅</span>
                   <span>Không có deadline hay kỳ họp nào trong ngày này.</span>
                 </div>
@@ -370,14 +370,14 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
 
               {/* Các cuộc họp */}
               {dayMeetings.map((m) => (
-                <div key={m.id} className="p-3 rounded-xl bg-violet-500/10 border border-violet-500/30 space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-violet-300">
+                <div key={m.id} className="p-3 rounded-xl bg-primary-light border border-primary/30 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-primary">
                     <span>🤝</span>
                     <span>{m.title}</span>
                   </div>
-                  <div className="text-[11px] text-slate-400 flex items-center justify-between pt-1">
+                  <div className="text-[11px] text-muted flex items-center justify-between pt-1">
                     <span>Chủ trì: {m.chairperson}</span>
-                    {m.time && <span className="font-mono text-violet-400">{m.time}</span>}
+                    {m.time && <span className="font-mono text-primary">{m.time}</span>}
                   </div>
                 </div>
               ))}
@@ -385,21 +385,21 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
               {/* Các nhiệm vụ - Định dạng như TaskCard ở bên ngoài, có thể bấm xem chi tiết */}
               {dayTasks.map((t) => {
                 const isOverdue = t.deadline < todayStr && t.status !== 'completed';
-                const stInfo = STATUS_BADGE[t.status] || { label: t.status, style: 'bg-slate-800 text-slate-300 border-slate-700' };
-                const deptStyle = DEPARTMENT_STYLE[t.department] || 'bg-slate-800 text-slate-300 border-slate-700';
+                const stInfo = STATUS_BADGE[t.status] || { label: t.status, style: 'bg-surface-2 text-fg-2 border-border' };
+                const deptStyle = DEPARTMENT_STYLE[t.department] || 'bg-surface-2 text-fg-2 border-border';
 
                 return (
                   <div
                     key={t.id}
                     onClick={() => onOpenDetail?.(t)}
-                    className={`p-3 rounded-xl border transition-all duration-150 cursor-pointer shadow-sm hover:shadow-md hover:border-[#2C69FF] group ${
+                    className={`p-3 rounded-xl border transition-all duration-150 cursor-pointer shadow-sm hover:shadow-md hover:border-primary group ${
                       t.status === 'completed'
-                        ? 'bg-slate-900/60 border-slate-700/60 opacity-80'
+                        ? 'bg-surface-2 border-border opacity-80'
                         : isOverdue
-                        ? 'bg-slate-900 border-l-4 border-l-red-500 border-slate-700'
+                        ? 'bg-surface border-l-4 border-l-red-500 border-border'
                         : t.status === 'pending_approval'
-                        ? 'bg-slate-900 border-l-4 border-l-amber-500 border-slate-700'
-                        : 'bg-slate-900 border-slate-700 hover:bg-slate-850'
+                        ? 'bg-surface border-l-4 border-l-amber-500 border-border'
+                        : 'bg-surface border-border hover:bg-surface-2'
                     }`}
                   >
                     {/* Dải badge: Ban & Trạng thái */}
@@ -414,23 +414,23 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
 
                     {/* Tiêu đề nhiệm vụ */}
                     <div
-                      className={`text-xs font-semibold leading-snug group-hover:text-blue-300 transition ${
-                        t.status === 'completed' ? 'text-slate-500 line-through' : 'text-slate-100'
+                      className={`text-xs font-semibold leading-snug group-hover:text-info transition ${
+                        t.status === 'completed' ? 'text-muted line-through' : 'text-fg'
                       }`}
                     >
                       {t.title}
                     </div>
 
                     {/* Người phụ trách & Liên kết xem chi tiết */}
-                    <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-800 text-[11px] text-slate-400">
+                    <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border text-[11px] text-muted">
                       <div className="flex items-center gap-1.5 truncate">
-                        <User className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                        <User className="w-3.5 h-3.5 text-muted shrink-0" />
                         <span className="truncate">
                           {t.assigneeName}
                           {(t.assigneeIds?.length || 0) > 1 ? ` +${t.assigneeIds.length - 1}` : ''}
                         </span>
                       </div>
-                      <span className="text-[11px] text-blue-400 font-semibold group-hover:underline shrink-0">
+                      <span className="text-[11px] text-info font-semibold group-hover:underline shrink-0">
                         Chi tiết &rarr;
                       </span>
                     </div>
@@ -442,11 +442,11 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
         </div>
 
         {/* 4. Footer */}
-        <div className="px-6 py-3 border-t border-slate-800 bg-slate-900 flex items-center justify-between text-slate-400 shrink-0">
+        <div className="px-6 py-3 border-t border-border bg-surface flex items-center justify-between text-muted shrink-0">
           <span className="text-xs">💡 Bấm vào ô ngày để xem danh sách hoặc bấm trực tiếp vào thẻ công việc để mở chi tiết.</span>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-semibold cursor-pointer transition"
+            className="px-4 py-1.5 rounded-lg bg-surface-2 hover:bg-[#F2F4F7] text-fg font-semibold cursor-pointer transition"
           >
             Đóng
           </button>
