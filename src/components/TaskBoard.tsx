@@ -459,10 +459,10 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
           <div className="sticky top-16 z-10 flex items-center gap-1 overflow-x-auto rounded-[10px] bg-[#F2F4F7] p-1 [scrollbar-width:none] sm:hidden" role="tablist" aria-label="Cột trạng thái">
             {(
               [
-                { key: 'in_progress', label: 'Đang làm', n: countInProgress, dot: 'bg-info-bar' },
-                { key: 'pending_approval', label: 'Chờ duyệt', n: countPending, dot: 'bg-warning-bar' },
-                { key: 'overdue', label: 'Quá hạn', n: countOverdue, dot: 'bg-danger-bar' },
-                { key: 'completed', label: 'Đã xong', n: countCompleted, dot: 'bg-success-bar' },
+                { key: 'in_progress', label: 'Đang làm', n: countInProgress, dot: 'bg-info-bar', on: 'bg-info-bg text-info' },
+                { key: 'pending_approval', label: 'Chờ duyệt', n: countPending, dot: 'bg-warning-bar', on: 'bg-warning-bg text-warning' },
+                { key: 'overdue', label: 'Quá hạn', n: countOverdue, dot: 'bg-danger-bar', on: 'bg-danger-bg text-danger' },
+                { key: 'completed', label: 'Đã xong', n: countCompleted, dot: 'bg-success-bar', on: 'bg-success-bg text-success' },
               ] as const
             ).map((t) => (
               <button
@@ -472,7 +472,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 aria-selected={mobileKanbanTab === t.key}
                 onClick={() => setMobileKanbanTab(t.key)}
                 className={`flex h-8 shrink-0 grow items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-medium transition cursor-pointer ${
-                  mobileKanbanTab === t.key ? 'bg-surface text-fg shadow-[0_1px_2px_rgba(16,24,40,0.08)]' : 'text-muted'
+                  mobileKanbanTab === t.key ? `${t.on} shadow-[0_1px_2px_rgba(16,24,40,0.08)]` : 'text-muted'
                 }`}
               >
                 <i className={`size-1.5 rounded-full ${t.dot}`} aria-hidden />
@@ -490,7 +490,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 title="Đang làm"
                 icon={<i className="size-2 rounded-full bg-info-bar" />}
                 badgeCount={baseTasks.filter((t) => t.status === 'in_progress' && (selectedDept === 'all' || t.department === selectedDept)).length}
-                headerColor=""
+                headerColor="info"
                 badgeColor=""
                 tasks={filteredTasks.filter((t) => t.status === 'in_progress')}
                 members={members}
@@ -514,7 +514,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 title="Chờ duyệt"
                 icon={<i className="size-2 rounded-full bg-warning-bar" />}
                 badgeCount={baseTasks.filter((t) => t.status === 'pending_approval' && (selectedDept === 'all' || t.department === selectedDept)).length}
-                headerColor=""
+                headerColor="warning"
                 badgeColor=""
                 tasks={filteredTasks.filter((t) => t.status === 'pending_approval')}
                 members={members}
@@ -538,7 +538,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 title="Quá hạn"
                 icon={<i className="size-2 rounded-full bg-danger-bar" />}
                 badgeCount={baseTasks.filter((t) => t.status === 'overdue' && (selectedDept === 'all' || t.department === selectedDept)).length}
-                headerColor=""
+                headerColor="danger"
                 badgeColor=""
                 tasks={filteredTasks.filter((t) => t.status === 'overdue')}
                 members={members}
@@ -562,7 +562,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                 title="Đã xong"
                 icon={<i className="size-2 rounded-full bg-success-bar" />}
                 badgeCount={baseTasks.filter((t) => t.status === 'completed' && (selectedDept === 'all' || t.department === selectedDept)).length}
-                headerColor=""
+                headerColor="success"
                 badgeColor=""
                 tasks={filteredTasks.filter((t) => t.status === 'completed')}
                 members={members}
@@ -808,6 +808,41 @@ interface KanbanColumnProps {
   departmentColorMap: Record<Department, string>;
 }
 
+// Mỗi cột Kanban mang màu trạng thái của nó: nền nhạt + vạch đỉnh + tên cột cùng sắc.
+// Thẻ bên trong giữ nền trắng nên vẫn nổi trên nền cột.
+const KANBAN_TONES: Record<string, { column: string; title: string; dot: string; badge: string }> = {
+  info: {
+    column: 'bg-info-bg border-info-bar',
+    title: 'text-info',
+    dot: 'bg-info-bar',
+    badge: 'bg-surface text-info ring-1 ring-info-bar/30',
+  },
+  warning: {
+    column: 'bg-warning-bg border-warning-bar',
+    title: 'text-warning',
+    dot: 'bg-warning-bar',
+    badge: 'bg-surface text-warning ring-1 ring-warning-bar/30',
+  },
+  danger: {
+    column: 'bg-danger-bg border-danger-bar',
+    title: 'text-danger',
+    dot: 'bg-danger-bar',
+    badge: 'bg-surface text-danger ring-1 ring-danger-bar/30',
+  },
+  success: {
+    column: 'bg-success-bg border-success-bar',
+    title: 'text-success',
+    dot: 'bg-success-bar',
+    badge: 'bg-surface text-success ring-1 ring-success-bar/30',
+  },
+  neutral: {
+    column: 'bg-[#F2F4F7] border-transparent',
+    title: 'text-fg',
+    dot: 'bg-muted',
+    badge: 'bg-surface text-muted ring-1 ring-border',
+  },
+};
+
 const KanbanColumn: React.FC<KanbanColumnProps> = ({
   title,
   icon,
@@ -829,6 +864,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   departmentColorMap,
 }) => {
   const isPresident = currentRole === 'Chủ nhiệm';
+  const tone = KANBAN_TONES[headerColor] || KANBAN_TONES.neutral;
   const INITIAL_LIMIT = 5;
   const [displayLimit, setDisplayLimit] = useState(INITIAL_LIMIT);
 
@@ -837,14 +873,14 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   const remainingCount = tasks.length - displayLimit;
 
   return (
-    <div className="flex min-w-[275px] flex-col rounded-2xl bg-[#F2F4F7] p-2.5 sm:min-w-[285px] xl:min-w-[290px]">
+    <div className={`flex min-w-[275px] flex-col rounded-2xl border-t-[3px] p-2.5 sm:min-w-[285px] xl:min-w-[290px] ${tone.column}`}>
       {/* Đầu cột: chấm màu trạng thái · tên · số việc */}
-      <div className={`mb-2.5 flex items-center justify-between px-1.5 pt-1 ${headerColor}`}>
-        <div className="flex items-center gap-2 text-[14px] font-semibold text-fg">
-          {icon}
+      <div className="mb-2.5 flex items-center justify-between px-1.5 pt-1">
+        <div className={`flex items-center gap-2 text-[14px] font-semibold ${tone.title}`}>
+          <i className={`size-2.5 rounded-full ${tone.dot}`} aria-hidden="true" />
           <span>{title}</span>
         </div>
-        <span className={`rounded-full bg-surface px-2 text-[12px] font-medium tabular-nums text-muted ring-1 ring-border ${badgeColor}`} title={`Tổng số công việc: ${tasks.length}`}>
+        <span className={`rounded-full px-2 text-[12px] font-semibold tabular-nums ${tone.badge}`} title={`Tổng số công việc: ${tasks.length}`}>
           {tasks.length > displayLimit ? `${displayLimit}/${tasks.length}` : badgeCount}
         </span>
       </div>
@@ -955,7 +991,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
             );
           })
         ) : (
-          <div className="flex h-32 flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border-strong p-4 text-center text-[13px] text-muted">
+          <div className="flex h-32 flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-current/25 bg-surface/50 p-4 text-center text-[13px] text-muted">
             <Inbox className="size-5" />
             <span>Chưa có việc nào</span>
           </div>
