@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   ListTodo,
   BarChart3,
+  LayoutDashboard,
   Plus,
   Calendar,
   Menu,
@@ -30,6 +31,10 @@ interface MobileBottomNavProps {
   onOpenBBHParser: () => void;
   onOpenQuickAdd: () => void;
   onOpenDashboard: () => void;
+  /** Màn Tổng quan và Bảng việc (giao diện mới); thiếu thì dùng hành vi cũ */
+  onOpenOverview?: () => void;
+  onOpenBoard?: () => void;
+  activeView?: 'overview' | 'board';
   onOpenCalendar: () => void;
   onOpenLeaderboard: () => void;
   onOpenDocs: () => void;
@@ -53,6 +58,9 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   onOpenBBHParser,
   onOpenQuickAdd,
   onOpenDashboard,
+  onOpenOverview,
+  onOpenBoard,
+  activeView,
   onOpenCalendar,
   onOpenLeaderboard,
   onOpenDocs,
@@ -92,28 +100,36 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         {/* Tab 1: Bảng việc */}
         <button
           type="button"
-          onClick={handleScrollToBoard}
+          onClick={onOpenBoard ?? handleScrollToBoard}
+          aria-current={activeView === 'board' ? 'page' : undefined}
           className="flex-1 py-1 flex flex-col items-center justify-center text-slate-600 hover:text-[#2C69FF] active:scale-95 transition cursor-pointer relative"
         >
           <div className="relative">
-            <ListTodo className="w-5 h-5 text-slate-700" />
+            <ListTodo className={`w-5 h-5 ${activeView === 'board' ? 'text-primary' : 'text-slate-700'}`} />
             {activeTasksCount > 0 && (
               <span className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-[#2C69FF] text-white font-mono text-[9px] font-bold flex items-center justify-center shadow-xs">
                 {activeTasksCount > 99 ? '99+' : activeTasksCount}
               </span>
             )}
           </div>
-          <span className="text-[10px] font-bold text-slate-700 mt-0.5">Bảng việc</span>
+          <span className={`text-[10px] font-bold mt-0.5 ${activeView === 'board' ? 'text-primary' : 'text-slate-700'}`}>Bảng việc</span>
         </button>
 
-        {/* Tab 2: Dashboard */}
+        {/* Tab 2: Tổng quan (giao diện mới) — hoặc Thống kê nếu chưa nối màn Tổng quan */}
         <button
           type="button"
-          onClick={onOpenDashboard}
+          onClick={onOpenOverview ?? onOpenDashboard}
+          aria-current={activeView === 'overview' ? 'page' : undefined}
           className="flex-1 py-1 flex flex-col items-center justify-center text-slate-600 hover:text-[#2C69FF] active:scale-95 transition cursor-pointer"
         >
-          <BarChart3 className="w-5 h-5 text-slate-700" />
-          <span className="text-[10px] font-bold text-slate-700 mt-0.5">Thống kê</span>
+          {onOpenOverview ? (
+            <LayoutDashboard className={`w-5 h-5 ${activeView === 'overview' ? 'text-primary' : 'text-slate-700'}`} />
+          ) : (
+            <BarChart3 className="w-5 h-5 text-slate-700" />
+          )}
+          <span className={`text-[10px] font-bold mt-0.5 ${activeView === 'overview' ? 'text-primary' : 'text-slate-700'}`}>
+            {onOpenOverview ? 'Tổng quan' : 'Thống kê'}
+          </span>
         </button>
 
         {/* Tab 3: Center Elevated Action Button (FAB) */}
