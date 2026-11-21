@@ -55,7 +55,7 @@ const LEAVE_MS = 160;
 
 const TONE: Record<ToastType, { box: string; icon: React.ReactNode }> = {
   success: {
-    box: 'bg-white border-emerald-300 text-slate-900',
+    box: 'bg-surface border-emerald-300 text-fg',
     icon: <CheckCircle2 className="w-5 h-5 text-emerald-600" />,
   },
   info: {
@@ -144,12 +144,12 @@ export const FeedbackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             <div className="shrink-0 mt-0.5">{TONE[t.type].icon}</div>
             <div className="flex-1 min-w-0">
               <h5 className="font-bold text-sm">{t.title}</h5>
-              {t.desc && <p className="text-xs text-slate-600 mt-0.5 break-words">{t.desc}</p>}
+              {t.desc && <p className="text-xs text-muted mt-0.5 break-words">{t.desc}</p>}
             </div>
             <button
               type="button"
               onClick={() => dismiss(t.id)}
-              className="shrink-0 p-0.5 rounded text-slate-400 hover:text-slate-700 hover:bg-black/5 transition cursor-pointer"
+              className="shrink-0 p-0.5 rounded text-muted hover:text-fg-2 hover:bg-black/5 transition cursor-pointer"
               title="Đóng"
             >
               <X className="w-3.5 h-3.5" />
@@ -161,13 +161,13 @@ export const FeedbackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       {/* Hộp xác nhận */}
       {confirmState && (
         <div
-          className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-[2px] animate-in fade-in duration-150"
+          className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-[#101828]/50 backdrop-blur-[2px] animate-in fade-in duration-150"
           onClick={() => closeConfirm(false)}
         >
           <div
             role="alertdialog"
             aria-modal="true"
-            className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-slate-200 p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150"
+            className="w-full max-w-sm bg-surface rounded-2xl shadow-2xl border border-border p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start gap-3">
@@ -175,9 +175,9 @@ export const FeedbackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 {confirmState.danger ? <AlertTriangle className="w-5 h-5" /> : <Info className="w-5 h-5" />}
               </div>
               <div className="min-w-0">
-                <h3 className="font-bold text-slate-900 text-sm">{confirmState.title}</h3>
+                <h3 className="font-bold text-fg text-sm">{confirmState.title}</h3>
                 {confirmState.message && (
-                  <p className="text-xs text-slate-600 mt-1 whitespace-pre-line leading-relaxed">{confirmState.message}</p>
+                  <p className="text-xs text-muted mt-1 whitespace-pre-line leading-relaxed">{confirmState.message}</p>
                 )}
               </div>
             </div>
@@ -185,7 +185,7 @@ export const FeedbackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               <button
                 type="button"
                 onClick={() => closeConfirm(false)}
-                className="px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition cursor-pointer"
+                className="px-3.5 py-2 rounded-lg text-xs font-semibold text-fg-2 bg-[#F2F4F7] hover:bg-[#EAECF0] transition cursor-pointer"
               >
                 {confirmState.cancelText || 'Hủy'}
               </button>
@@ -194,7 +194,7 @@ export const FeedbackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 type="button"
                 onClick={() => closeConfirm(true)}
                 className={`px-3.5 py-2 rounded-lg text-xs font-bold text-white transition cursor-pointer ${
-                  confirmState.danger ? 'bg-red-600 hover:bg-red-500' : 'bg-[#2C69FF] hover:bg-[#1F56D6]'
+                  confirmState.danger ? 'bg-red-600 hover:bg-red-500' : 'bg-primary hover:bg-primary-hover'
                 }`}
               >
                 {confirmState.confirmText || 'Đồng ý'}
