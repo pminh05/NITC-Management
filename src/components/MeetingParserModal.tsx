@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Sparkles,
   Link as LinkIcon,
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { ExtractedDraftTask, Meeting, Member } from '../types';
 import { SAMPLE_BBH_TEMPLATES } from '../data/initialData';
+import { buildBbhTemplates } from '../data/bbhTemplates';
 import { api } from '../api/client';
 
 
@@ -98,9 +99,14 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
   onExtractionSuccess,
   asPage = false,
 }) => {
-  const [selectedTemplateId, setSelectedTemplateId] = useState(SAMPLE_BBH_TEMPLATES[0].id);
-  const [bbhText, setBbhText] = useState(SAMPLE_BBH_TEMPLATES[0].content);
-  const [meetingDate, setMeetingDate] = useState('2026-11-03');
+  // Mẫu dựng từ thành viên hiện tại + ngày hôm nay; chưa tải được thành viên thì dùng mẫu tĩnh cũ
+  const templates = useMemo(() => {
+    const built = buildBbhTemplates(members);
+    return built.length > 0 ? built : SAMPLE_BBH_TEMPLATES;
+  }, [members]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState(templates[0].id);
+  const [bbhText, setBbhText] = useState(templates[0].content);
+  const [meetingDate, setMeetingDate] = useState(templates[0].date);
   const [inputMode, setInputMode] = useState<'text' | 'file' | 'link'>('text');
   const [docUrl, setDocUrl] = useState('');
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -108,6 +114,10 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
   const [pdfData, setPdfData] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // Huỷ trích xuất giữa chừng
+  const abortRef = useRef<AbortController | null>(null);
+  useEffect(() => () => abortRef.current?.abort(), []);
+  const handleCancelAnalyze = () => abortRef.current?.abort();
 
   // Stepper state when AI is processing
   const [currentStep, setCurrentStep] = useState(1);
@@ -144,7 +154,7 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
   if (!isOpen) return null;
 
   const handleSelectSample = (sampleId: string) => {
-    const sample = SAMPLE_BBH_TEMPLATES.find((s) => s.id === sampleId);
+    const sample = templates.find((s) => s.id === sampleId);
     if (sample) {
       setSelectedTemplateId(sampleId);
       setBbhText(sample.content);
@@ -169,10 +179,13 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
 
     setIsLoading(true);
     setErrorMsg(null);
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     try {
       const data = await api<{ meeting: any; tasks: ExtractedDraftTask[] }>('/ai/parse-bbh', {
         method: 'POST',
+        signal: controller.signal,
         body:
           inputMode === 'file'
             ? { images: imagePreviews, pdf: pdfData, members, meetingDate }
@@ -213,8 +226,8 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
       const meetingData: Partial<Meeting> = {
         title: toSafeString(data?.meeting?.title, 'Biên bản họp Ban Điều Hành'),
         date: toSafeString(data?.meeting?.date, meetingDate),
-        chairperson: toSafeString(data?.meeting?.chairperson, 'Lê Hồng Phúc Minh'),
-        secretary: toSafeString(data?.meeting?.secretary, 'Nguyễn Thị Ngọc Ánh'),
+        chairperson: toSafeString(data?.meeting?.chairperson, members.find((m) => m.role === 'Chủ nhiệm')?.name || ''),
+        secretary: toSafeString(data?.meeting?.secretary, ''),
         attendees: toSafeStringArray(data?.meeting?.attendees),
         absentees: toSafeStringArray(data?.meeting?.absentees),
         latecomers: toSafeStringArray(data?.meeting?.latecomers),
@@ -258,9 +271,14 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
 
       onExtractionSuccess(meetingData, extractedTasks, bbhText);
     } catch (err: any) {
+      if (controller.signal.aborted || err?.name === 'AbortError') {
+        // Người dùng chủ động dừng: không báo lỗi, giữ nguyên nội dung để sửa hoặc chạy lại
+        return;
+      }
       console.error('Error analyzing BBH:', err);
       setErrorMsg(err.message || 'Không thể trích xuất biên bản họp. Vui lòng thử lại.');
     } finally {
+      if (abortRef.current === controller) abortRef.current = null;
       setIsLoading(false);
     }
   };
@@ -364,6 +382,17 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
               <div className="text-center text-[11px] text-muted">
                 ⚡ Công nghệ AI OpenAI & Quy tắc phân công độc quyền NITC
               </div>
+
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleCancelAnalyze}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border-strong bg-surface px-4 text-[13px] font-medium text-fg-2 transition hover:border-danger-bar/40 hover:bg-danger-bg hover:text-danger cursor-pointer"
+                >
+                  <X className="size-4" />
+                  Dừng trích xuất
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -409,7 +438,7 @@ export const MeetingParserModal: React.FC<MeetingParserModalProps> = ({
               </span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {SAMPLE_BBH_TEMPLATES.map((sample, idx) => {
+              {templates.map((sample, idx) => {
                 const isSelected = selectedTemplateId === sample.id;
                 return (
                   <button

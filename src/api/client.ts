@@ -48,6 +48,8 @@ function toApiError(path: string, res: Response, data: any, hadToken: boolean): 
 interface ApiOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   body?: unknown;
+  /** Huỷ yêu cầu giữa chừng (vd. người dùng bấm Dừng trích xuất) */
+  signal?: AbortSignal;
 }
 
 export async function api<T>(path: string, opts: ApiOptions = {}): Promise<T> {
@@ -66,8 +68,10 @@ export async function api<T>(path: string, opts: ApiOptions = {}): Promise<T> {
       method: opts.method || 'GET',
       headers,
       body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+      signal: opts.signal,
     });
-  } catch {
+  } catch (e) {
+    if ((e as { name?: string })?.name === 'AbortError') throw e;
     throw new ApiError('Không kết nối được máy chủ. Kiểm tra server đang chạy?', 0);
   }
 
